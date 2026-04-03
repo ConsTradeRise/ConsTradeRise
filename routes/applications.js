@@ -88,7 +88,18 @@ router.get('/mine', requireAuth, requireRole('WORKER'), async (req, res) => {
       }
     });
 
-    res.json({ applications });
+    // Attach ATS score for each job
+    const jobIds = applications.map(a => a.jobId);
+    const atsResults = await prisma.atsResult.findMany({
+      where: { userId: req.user.id, jobId: { in: jobIds } },
+      select: { jobId: true, score: true, matchStrength: true }
+    });
+    const atsMap = {};
+    atsResults.forEach(r => { atsMap[r.jobId] = r.score; });
+
+    const enriched = applications.map(a => ({ ...a, atsScore: atsMap[a.jobId] ?? null }));
+
+    res.json({ applications: enriched });
 
   } catch (e) {
     console.error('[applications/mine]', e.message);

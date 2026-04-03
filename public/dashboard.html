@@ -444,9 +444,11 @@ function appRow(a) {
       <div class="app-company">${escapeHtml(a.job?.companyName || 'Company')}${a.job?.location ? ' · ' + escapeHtml(a.job.location) : ''}</div>
       <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Applied ${formatDate(a.appliedAt)} · ${escapeHtml(a.job?.jobType || '')}</div>
     </div>
-    <div style="text-align:right;flex-shrink:0;">
+    <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
       <span class="badge ${statusColors[s] || 'badge-gray'}">${statusLabel[s] || s}</span>
-      ${a.job?.isActive === false ? `<div style="font-size:11px;color:var(--gray-400);margin-top:4px;">Job closed</div>` : ''}
+      ${a.atsScore != null ? `<span style="font-size:11px;font-weight:700;color:${a.atsScore>=70?'var(--green)':a.atsScore>=50?'var(--blue)':'var(--orange)'};">ATS ${a.atsScore}%</span>` : ''}
+      ${a.job?.id ? `<a href="/job.html?id=${a.job.id}" style="font-size:11px;color:var(--blue);">View Job →</a>` : ''}
+      ${a.job?.isActive === false ? `<div style="font-size:11px;color:var(--gray-400);">Job closed</div>` : ''}
     </div>
   </div>`;
 }
@@ -831,11 +833,13 @@ async function dashFetchMsgs(userId) {
   const atBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 50;
   body.innerHTML = data.messages.map(m => {
     const mine = m.senderId === me;
-    return `<div style="display:flex;justify-content:${mine?'flex-end':'flex-start'};">
+    const ts = m.createdAt ? new Date(m.createdAt).toLocaleTimeString('en-CA', { hour:'2-digit', minute:'2-digit' }) : '';
+    return `<div style="display:flex;flex-direction:column;align-items:${mine?'flex-end':'flex-start'};">
       <div style="max-width:70%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;
         ${mine?'background:var(--blue);color:#fff;':'background:#fff;border:1px solid var(--gray-200);color:var(--gray-800);'}">
         ${escapeHtml(m.content)}
       </div>
+      ${ts ? `<span style="font-size:10px;color:var(--gray-400);margin-top:2px;padding:0 4px;">${ts}</span>` : ''}
     </div>`;
   }).join('');
   if (atBottom) body.scrollTop = body.scrollHeight;

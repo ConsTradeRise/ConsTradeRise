@@ -64,10 +64,13 @@
     <div class="modal-body">
       <div id="applyMsg"></div>
       <div class="form-group">
-        <label class="form-label">Cover Letter <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label class="form-label" style="margin:0;">Cover Letter <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
+          <button type="button" id="genCLBtn" onclick="genCoverLetter()" style="font-size:12px;background:var(--blue-light);color:var(--blue);border:none;border-radius:var(--radius);padding:4px 10px;cursor:pointer;font-weight:600;">✨ Auto-Generate</button>
+        </div>
         <textarea class="form-textarea" id="coverLetterInput" style="min-height:140px;"
           placeholder="Tell the employer why you're a great fit for this role..."></textarea>
-        <p class="form-hint">A cover letter can increase your chances of getting an interview.</p>
+        <p class="form-hint" id="clHint">Click <strong>Auto-Generate</strong> to create a personalised cover letter from your profile.</p>
       </div>
     </div>
     <div class="modal-footer">
@@ -283,7 +286,32 @@ function openApplyModal() {
   document.getElementById('applyJobTitle').textContent = currentJob?.title || 'this job';
   document.getElementById('applyMsg').innerHTML = '';
   document.getElementById('coverLetterInput').value = '';
+  document.getElementById('clHint').innerHTML = 'Click <strong>Auto-Generate</strong> to create a personalised cover letter from your profile.';
+  document.getElementById('genCLBtn').disabled = false;
+  document.getElementById('genCLBtn').textContent = '✨ Auto-Generate';
   document.getElementById('applyModal').classList.add('open');
+}
+
+async function genCoverLetter() {
+  if (!currentJob?.id) return;
+  const btn  = document.getElementById('genCLBtn');
+  const hint = document.getElementById('clHint');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  hint.textContent = 'Writing your cover letter…';
+
+  const { ok, data } = await apiCall('POST', '/api/cover-letter/generate', { jobId: currentJob.id });
+
+  if (ok) {
+    document.getElementById('coverLetterInput').value = data.coverLetter;
+    hint.innerHTML = data.source === 'ai'
+      ? '✨ <strong>AI-generated</strong> — review and edit before sending.'
+      : '✓ <strong>Generated from your profile</strong> — review and edit before sending.';
+    btn.textContent = '✨ Regenerate';
+  } else {
+    hint.textContent = data.error || 'Generation failed. Please write manually.';
+  }
+  btn.disabled = false;
 }
 
 function closeApplyModal() {
