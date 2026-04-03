@@ -1,0 +1,30 @@
+{
+  "name": "tradesup",
+  "version": "1.0.0",
+  "description": "AI-powered job search platform for Canadian construction & trades professionals",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "db:push": "npx prisma db push",
+    "db:studio": "npx prisma studio",
+    "db:generate": "npx prisma generate"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.8.0",
+    "multer": "^1.4.5-lts.1",
+    "pdf-parse": "^1.1.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}

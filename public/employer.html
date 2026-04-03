@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employer Dashboard — ConsTradeRise</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .tab-bar { display:flex; gap:4px; border-bottom:1px solid var(--gray-200); margin-bottom:24px; }
+    .tab-btn { padding:10px 16px; font-size:13px; font-weight:600; color:var(--gray-500); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
+    .tab-btn.active { color:var(--blue); border-bottom-color:var(--blue); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    .job-row { display:flex; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--gray-100); flex-wrap:wrap; }
+    .job-row:last-child { border-bottom:none; }
+    .job-row-info { flex:1; min-width:0; }
+    .job-row-title { font-size:14px; font-weight:700; color:var(--gray-900); }
+    .job-row-meta  { font-size:12px; color:var(--gray-500); margin-top:2px; }
+    .job-row-actions { display:flex; gap:6px; align-items:center; }
+
+    .applicant-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius); padding:16px; margin-bottom:10px; }
+    .applicant-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .applicant-name { font-size:15px; font-weight:700; }
+    .applicant-meta { font-size:13px; color:var(--gray-500); }
+    .applicant-skills { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+
+    .post-job-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media(max-width:600px){ .post-job-grid{grid-template-columns:1fr;} }
+    .skills-input-wrap { display:flex; gap:8px; margin-bottom:10px; }
+    .skills-tags { display:flex; flex-wrap:wrap; gap:6px; }
+    .skill-tag { display:inline-flex; align-items:center; gap:6px; background:var(--blue-light); color:var(--blue); border:1px solid #bfdbfe; font-size:12px; font-weight:600; padding:4px 10px; border-radius:100px; }
+    .skill-tag button { background:none; border:none; cursor:pointer; color:var(--blue); font-size:14px; line-height:1; padding:0; }
+
+    .status-select { font-size:12px; padding:4px 8px; border:1px solid var(--gray-200); border-radius:var(--radius); background:#fff; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="logo">ConsTradeRise</a>
+    <div class="nav-links" id="navLinks">
+      <span id="empNameDisplay" style="font-size:13px;color:var(--gray-500);"></span>
+      <a href="#" id="navLogoutBtn" class="btn btn-ghost">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="dash-layout">
+
+  <!-- Sidebar -->
+  <aside class="dash-sidebar">
+    <div class="dash-sidebar-item active" data-tab="overview">
+      <span class="dash-sidebar-icon">📊</span> Overview
+    </div>
+    <div class="dash-sidebar-item" data-tab="post">
+      <span class="dash-sidebar-icon">➕</span> Post a Job
+    </div>
+    <div class="dash-sidebar-item" data-tab="jobs">
+      <span class="dash-sidebar-icon">📋</span> My Jobs
+    </div>
+    <div class="dash-sidebar-item" data-tab="applicants">
+      <span class="dash-sidebar-icon">👥</span> Applicants
+    </div>
+    <div class="dash-sidebar-item" data-tab="messages">
+      <span class="dash-sidebar-icon">💬</span> Messages
+      <span id="empMsgBadge" style="display:none;background:var(--blue);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
+    </div>
+    <div class="dash-sidebar-item" data-tab="profile">
+      <span class="dash-sidebar-icon">🏢</span> Company Profile
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="dash-main">
+
+    <div class="dash-header">
+      <div>
+        <h1 id="empWelcome">Employer Dashboard</h1>
+        <p id="empSubtitle">Manage your jobs and candidates</p>
+      </div>
+      <button class="btn btn-primary" onclick="switchTab('post')">+ Post a Job</button>
+    </div>
+
+    <!-- ── OVERVIEW TAB ── -->
+    <div class="tab-panel active" id="tab-overview">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-card-num" id="statJobs">—</div>
+          <div class="stat-card-label">Active Jobs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-num" id="statApplicants">—</div>
+          <div class="stat-card-label">Total Applicants</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-num" id="statShortlisted">—</div>
+          <div class="stat-card-label">Shortlisted</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex-between mb-2">
+          <div class="card-title" style="margin-bottom:0;">Active Job Listings</div>
+          <button class="btn btn-ghost btn-sm" onclick="switchTab('jobs')">Manage All</button>
+        </div>
+        <div id="overviewJobs">
+          <div style="text-align:center;padding:20px"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── POST JOB TAB ── -->
+    <div class="tab-panel" id="tab-post">
+      <div class="card">
+        <div class="card-title">Post a New Job</div>
+        <div id="postJobSuccess" class="alert alert-success hidden">Job posted successfully! <a href="#" onclick="switchTab('jobs')">View your jobs →</a></div>
+        <div id="postJobError" class="alert alert-error hidden"></div>
+        <form id="postJobForm">
+          <div class="post-job-grid">
+            <div class="form-group">
+              <label class="form-label">Job Title *</label>
+              <input class="form-input" id="jobTitle" type="text" placeholder="e.g. Senior Estimator" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Job Type</label>
+              <select class="form-select" id="jobType">
+                <option>Full-time</option>
+                <option>Contract</option>
+                <option>Part-time</option>
+                <option>Seasonal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">City *</label>
+              <input class="form-input" id="jobCity" type="text" placeholder="e.g. Toronto" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Province</label>
+              <select class="form-select" id="jobProvince">
+                <option value="">Select province</option>
+                <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
+                <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
+                <option>Nova Scotia</option><option>New Brunswick</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Salary Range</label>
+              <input class="form-input" id="jobSalary" type="text" placeholder="e.g. $80,000–$100,000/yr" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Job Description *</label>
+            <textarea class="form-textarea" id="jobDesc" style="min-height:160px;" placeholder="Describe the role, responsibilities, and requirements..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Required Skills</label>
+            <div class="skills-input-wrap">
+              <input class="form-input" id="jobSkillInput" type="text" placeholder="e.g. HeavyBid, AutoCAD..." />
+              <button type="button" class="btn btn-outline" id="addJobSkillBtn">Add</button>
+            </div>
+            <div class="skills-tags" id="jobSkillsTags"></div>
+            <p class="form-hint">Skills help AI match the best candidates to your job</p>
+          </div>
+          <button type="submit" class="btn btn-primary">Post Job</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── MY JOBS TAB ── -->
+    <div class="tab-panel" id="tab-jobs">
+      <div class="card">
+        <div class="card-title">My Job Listings</div>
+        <div id="myJobsList">
+          <div style="text-align:center;padding:20px"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── APPLICANTS TAB ── -->
+    <div class="tab-panel" id="tab-applicants">
+      <div class="card">
+        <div class="flex-between mb-2">
+          <div class="card-title" style="margin-bottom:0">Applicants</div>
+          <select class="form-select" id="jobFilter" style="width:auto;font-size:13px;">
+            <option value="">Select a job</option>
+          </select>
+        </div>
+        <p class="text-sm text-gray mb-2">Candidates ranked by AI match score.</p>
+        <div id="applicantsList">
+          <div class="empty-state">
+            <div class="empty-state-icon">👥</div>
+            <h3>Select a job above</h3>
+            <p>Choose one of your jobs to see applicants</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MESSAGES TAB ── -->
+    <div class="tab-panel" id="tab-messages">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="display:grid;grid-template-columns:260px 1fr;height:500px;">
+          <div style="border-right:1px solid var(--gray-200);display:flex;flex-direction:column;">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:14px;">Conversations</div>
+            <div id="empConvList" style="flex:1;overflow-y:auto;">
+              <div style="padding:20px;text-align:center;"><div class="spinner"></div></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;">
+            <div id="empChatEmpty" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:14px;text-align:center;padding:20px;">
+              <div><div style="font-size:36px;margin-bottom:8px;">💬</div>Select a conversation</div>
+            </div>
+            <div id="empChatArea" style="display:none;flex-direction:column;flex:1;">
+              <div style="padding:12px 16px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:14px;" id="empChatHeader"></div>
+              <div id="empChatBody" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--gray-50);"></div>
+              <div style="padding:12px 16px;border-top:1px solid var(--gray-200);display:flex;gap:8px;">
+                <input class="form-input" id="empMsgInput" placeholder="Type a message..." style="flex:1;" />
+                <button class="btn btn-primary btn-sm" onclick="empSendMsg()">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COMPANY PROFILE TAB ── -->
+    <div class="tab-panel" id="tab-profile">
+      <div class="card">
+        <div class="card-title">Company Profile</div>
+        <div id="profileSaved" class="alert alert-success hidden">Profile saved!</div>
+        <form id="companyForm">
+          <div class="post-job-grid">
+            <div class="form-group">
+              <label class="form-label">Company Name</label>
+              <input class="form-input" id="companyName" type="text" placeholder="Your company name" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Industry</label>
+              <input class="form-input" id="companyIndustry" type="text" placeholder="e.g. ICI Construction" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Company Size</label>
+              <select class="form-select" id="companySize">
+                <option value="">Select size</option>
+                <option>1–10</option><option>11–50</option><option>51–200</option>
+                <option>201–500</option><option>500+</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Website</label>
+              <input class="form-input" id="companyWebsite" type="url" placeholder="https://yourcompany.ca" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">City</label>
+              <input class="form-input" id="companyCity" type="text" placeholder="e.g. Toronto" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Province</label>
+              <select class="form-select" id="companyProvince">
+                <option value="">Select province</option>
+                <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
+                <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Profile</button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="/app.js"></script>
+<script>
+let myJobs    = [];
+let jobSkills = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (Auth.redirectIfNotAuth()) return;
+  const user = Auth.getUser();
+  if (user?.role !== 'EMPLOYER' && user?.role !== 'ADMIN') {
+    window.location.href = '/dashboard.html'; return;
+  }
+
+  document.getElementById('empWelcome').textContent  = `Welcome, ${user?.name?.split(' ')[0] || 'there'}`;
+  document.getElementById('empNameDisplay').textContent = user?.name || '';
+
+  document.getElementById('navLogoutBtn').addEventListener('click', () => {
+    Auth.clear(); window.location.href = '/';
+  });
+
+  loadOverview();
+  loadProfile();
+});
+
+// Tab switching
+document.querySelectorAll('.dash-sidebar-item').forEach(item => {
+  item.addEventListener('click', () => switchTab(item.dataset.tab));
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.dash-sidebar-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
+  if (tab === 'jobs')       loadMyJobs();
+  if (tab === 'applicants') loadJobFilter();
+  if (tab === 'messages')   empLoadInbox();
+}
+
+// ── OVERVIEW ──
+async function loadOverview() {
+  const { ok, data } = await apiCall('GET', '/api/jobs/employer/mine');
+  if (!ok) return;
+  myJobs = data.jobs || [];
+
+  const activeJobs = myJobs.filter(j => j.isActive);
+  const totalApps  = myJobs.reduce((s, j) => s + (j._count?.applications || 0), 0);
+
+  document.getElementById('statJobs').textContent       = activeJobs.length;
+  document.getElementById('statApplicants').textContent = totalApps;
+
+  // Fetch shortlisted count
+  let shortlisted = 0;
+  for (const job of myJobs.slice(0, 5)) {
+    const { ok, data } = await apiCall('GET', `/api/applications/job/${job.id}`);
+    if (ok) shortlisted += (data.applications||[]).filter(a => a.status === 'SHORTLISTED').length;
+  }
+  document.getElementById('statShortlisted').textContent = shortlisted;
+
+  const el = document.getElementById('overviewJobs');
+  if (!activeJobs.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px;"><p class="text-gray">No active jobs. <button class="btn btn-primary btn-sm" onclick="switchTab('post')">Post your first job</button></p></div>`;
+    return;
+  }
+  el.innerHTML = activeJobs.slice(0, 5).map(j => jobRow(j)).join('');
+}
+
+// ── MY JOBS ──
+async function loadMyJobs() {
+  const el = document.getElementById('myJobsList');
+  el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
+  const { ok, data } = await apiCall('GET', '/api/jobs/employer/mine');
+  if (!ok) { el.innerHTML = `<p class="text-gray">${data.error}</p>`; return; }
+  myJobs = data.jobs || [];
+  if (!myJobs.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No jobs yet</h3><p>Post your first job to start receiving applications</p><button class="btn btn-primary" onclick="switchTab('post')">Post a Job</button></div>`;
+    return;
+  }
+  el.innerHTML = myJobs.map(j => jobRow(j, true)).join('');
+}
+
+function jobRow(j, withActions = false) {
+  const apps = j._count?.applications || 0;
+  return `<div class="job-row">
+    <div class="job-row-info">
+      <div class="job-row-title">${escapeHtml(j.title)}</div>
+      <div class="job-row-meta">${escapeHtml(j.city || j.location || '')} · ${j.jobType || ''} · ${apps} applicant${apps !== 1 ? 's' : ''} · ${formatDate(j.postedAt)}</div>
+    </div>
+    <span class="badge ${j.isActive ? 'badge-green' : 'badge-gray'}">${j.isActive ? 'Active' : 'Closed'}</span>
+    ${withActions ? `
+      <div class="job-row-actions">
+        <button class="btn btn-sm btn-ghost" onclick="viewApplicants('${j.id}', '${escapeHtml(j.title)}')">View Applicants</button>
+        <button class="btn btn-sm btn-danger" onclick="closeJob('${j.id}')">Close</button>
+      </div>` : ''}
+  </div>`;
+}
+
+async function closeJob(id) {
+  if (!confirm('Close this job listing?')) return;
+  const { ok, data } = await apiCall('DELETE', `/api/jobs/${id}`);
+  if (ok) { Toast.success('Job closed'); loadMyJobs(); loadOverview(); }
+  else Toast.error(data.error || 'Failed to close job');
+}
+
+// ── POST JOB ──
+document.getElementById('addJobSkillBtn').addEventListener('click', () => {
+  const input = document.getElementById('jobSkillInput');
+  const val   = input.value.trim();
+  if (val && !jobSkills.includes(val)) { jobSkills.push(val); renderJobSkills(); }
+  input.value = '';
+});
+document.getElementById('jobSkillInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addJobSkillBtn').click(); }
+});
+
+function renderJobSkills() {
+  document.getElementById('jobSkillsTags').innerHTML = jobSkills.map((s, i) =>
+    `<span class="skill-tag">${escapeHtml(s)} <button onclick="removeJobSkill(${i})">×</button></span>`
+  ).join('');
+}
+function removeJobSkill(i) { jobSkills.splice(i, 1); renderJobSkills(); }
+
+document.getElementById('postJobForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type=submit]');
+  btn.disabled = true; btn.textContent = 'Posting...';
+
+  const city     = document.getElementById('jobCity').value.trim();
+  const province = document.getElementById('jobProvince').value;
+  const location = [city, province].filter(Boolean).join(', ');
+
+  const { ok, data } = await apiCall('POST', '/api/jobs', {
+    title:       document.getElementById('jobTitle').value.trim(),
+    description: document.getElementById('jobDesc').value.trim(),
+    location,
+    city,
+    province,
+    salary:      document.getElementById('jobSalary').value.trim(),
+    jobType:     document.getElementById('jobType').value,
+    skills:      jobSkills
+  });
+
+  btn.disabled = false; btn.textContent = 'Post Job';
+
+  const successEl = document.getElementById('postJobSuccess');
+  const errorEl   = document.getElementById('postJobError');
+
+  if (ok) {
+    successEl.classList.remove('hidden');
+    errorEl.classList.add('hidden');
+    e.target.reset();
+    jobSkills = [];
+    renderJobSkills();
+    Toast.success('Job posted successfully!');
+    loadOverview();
+  } else {
+    errorEl.textContent = data.error || 'Failed to post job';
+    errorEl.classList.remove('hidden');
+    successEl.classList.add('hidden');
+  }
+});
+
+// ── APPLICANTS ──
+async function loadJobFilter() {
+  if (!myJobs.length) {
+    const { ok, data } = await apiCall('GET', '/api/jobs/employer/mine');
+    if (ok) myJobs = data.jobs || [];
+  }
+  const sel = document.getElementById('jobFilter');
+  sel.innerHTML = '<option value="">Select a job</option>' +
+    myJobs.filter(j => j.isActive).map(j =>
+      `<option value="${j.id}">${escapeHtml(j.title)} (${j._count?.applications || 0} applicants)</option>`
+    ).join('');
+  sel.onchange = () => { if (sel.value) loadApplicants(sel.value); };
+}
+
+function viewApplicants(jobId, title) {
+  switchTab('applicants');
+  setTimeout(async () => {
+    await loadJobFilter();
+    document.getElementById('jobFilter').value = jobId;
+    loadApplicants(jobId);
+  }, 100);
+}
+
+async function loadApplicants(jobId) {
+  const el = document.getElementById('applicantsList');
+  el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
+  const { ok, data } = await apiCall('GET', `/api/applications/job/${jobId}`);
+  if (!ok) { el.innerHTML = `<p class="text-gray">${data.error}</p>`; return; }
+  const apps = data.applications || [];
+  if (!apps.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div><h3>No applicants yet</h3><p>Share your job listing to attract candidates</p></div>`;
+    return;
+  }
+  el.innerHTML = apps.map(a => applicantCard(a, jobId)).join('');
+}
+
+function applicantCard(a, jobId) {
+  const p      = a.user?.profile;
+  const score  = a.atsScore;
+  const statusColors = { APPLIED:'badge-blue', VIEWED:'badge-yellow', SHORTLISTED:'badge-green', REJECTED:'badge-red' };
+  const coverId = `cover-${a.id}`;
+
+  return `<div class="applicant-card">
+    <div class="applicant-header">
+      <div style="flex:1;min-width:0;">
+        <div class="applicant-name">${escapeHtml(a.user?.name || 'Candidate')}</div>
+        <div class="applicant-meta">
+          ${p?.headline ? `<span style="color:var(--blue);font-weight:600;">${escapeHtml(p.headline)}</span> · ` : ''}
+          ${p?.city ? escapeHtml(p.city) + (p.province ? ', ' + p.province : '') : 'Location not set'}
+          ${p?.yearsExperience ? ' · ' + p.yearsExperience + ' yrs exp' : ''}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+        ${score ? `
+        <div style="text-align:center;">
+          <span class="ats-score-badge ${getScoreClass(score.score)}">${score.score}% Match</span>
+          <div style="font-size:10px;color:var(--gray-400);margin-top:2px;">${escapeHtml(score.matchStrength||'')}</div>
+        </div>` : ''}
+        <select class="status-select" onchange="updateStatus('${a.id}', this.value, '${jobId}')">
+          <option value="APPLIED"     ${a.status==='APPLIED'     ?'selected':''}>Applied</option>
+          <option value="VIEWED"      ${a.status==='VIEWED'      ?'selected':''}>Viewed</option>
+          <option value="SHORTLISTED" ${a.status==='SHORTLISTED' ?'selected':''}>Shortlisted</option>
+          <option value="REJECTED"    ${a.status==='REJECTED'    ?'selected':''}>Rejected</option>
+        </select>
+      </div>
+    </div>
+
+    ${p?.skills?.length ? `<div class="applicant-skills">${p.skills.slice(0,8).map(s=>`<span class="kw-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+
+    ${score?.missingKeywords?.length ? `
+    <div style="margin:8px 0;font-size:12px;color:var(--gray-500);">
+      Missing: ${score.missingKeywords.slice(0,4).map(k=>`<span style="background:#fef2f2;color:#dc2626;padding:1px 6px;border-radius:4px;margin-right:4px;">${escapeHtml(k)}</span>`).join('')}
+    </div>` : ''}
+
+    ${a.coverLetter ? `
+    <div style="margin:10px 0;">
+      <button class="btn btn-ghost btn-sm" onclick="toggleCover('${coverId}')">📝 Cover Letter</button>
+      <div id="${coverId}" style="display:none;margin-top:8px;padding:12px;background:var(--gray-50);border-radius:var(--radius);font-size:13px;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;">${escapeHtml(a.coverLetter)}</div>
+    </div>` : ''}
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+      <div style="font-size:12px;color:var(--gray-400);">Applied ${formatDate(a.appliedAt)}</div>
+      <button class="btn btn-ghost btn-sm" onclick="empMsgApplicant('${a.user?.id}','${escapeHtml(a.user?.name||'')}')">💬 Message</button>
+    </div>
+  </div>`;
+}
+
+function toggleCover(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function empMsgApplicant(userId, name) {
+  switchTab('messages');
+  setTimeout(() => empOpenConv(userId, name), 200);
+}
+
+async function updateStatus(appId, status, jobId) {
+  const { ok, data } = await apiCall('PUT', `/api/applications/${appId}/status`, { status });
+  if (ok) Toast.success('Status updated');
+  else    Toast.error(data.error || 'Failed to update');
+}
+
+// ── COMPANY PROFILE ──
+async function loadProfile() {
+  const { ok, data } = await apiCall('GET', '/api/profile/me');
+  if (!ok) return;
+  const p = data.profile;
+  if (!p) return;
+  document.getElementById('companyName').value     = p.companyName  || '';
+  document.getElementById('companyIndustry').value = p.industry     || '';
+  document.getElementById('companySize').value     = p.companySize  || '';
+  document.getElementById('companyWebsite').value  = p.website      || '';
+  document.getElementById('companyCity').value     = p.city         || '';
+  document.getElementById('companyProvince').value = p.province     || '';
+
+  if (p.companyName) {
+    document.getElementById('empSubtitle').textContent = p.companyName;
+  }
+}
+
+// ── MESSAGES ──────────────────────────────────
+let empActiveConv = null;
+let empMsgPoll    = null;
+
+async function empLoadInbox() {
+  const el = document.getElementById('empConvList');
+  const { ok, data } = await apiCall('GET', '/api/messages/inbox');
+  if (!ok || !data.conversations?.length) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px;">No messages yet.</div>`;
+    return;
+  }
+  el.innerHTML = data.conversations.map(c => {
+    const initials = c.user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div onclick="empOpenConv('${c.user.id}','${escapeHtml(c.user.name)}')"
+      style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--gray-100);${empActiveConv===c.user.id?'background:var(--blue-light)':''}">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${initials}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;">${escapeHtml(c.user.name)}</div>
+        <div style="font-size:11px;color:var(--gray-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(c.lastMessage||'')}</div>
+      </div>
+      ${c.unread>0?`<span style="background:var(--blue);color:#fff;border-radius:100px;font-size:10px;font-weight:700;padding:1px 6px;">${c.unread}</span>`:''}
+    </div>`;
+  }).join('');
+  const totalUnread = data.conversations.reduce((n,c)=>n+c.unread,0);
+  const badge = document.getElementById('empMsgBadge');
+  if (badge) { badge.textContent = totalUnread; badge.style.display = totalUnread > 0 ? 'inline' : 'none'; }
+}
+
+async function empOpenConv(userId, name) {
+  empActiveConv = userId;
+  document.getElementById('empChatEmpty').style.display = 'none';
+  const area = document.getElementById('empChatArea');
+  area.style.display = 'flex';
+  document.getElementById('empChatHeader').textContent = name;
+  await empFetchMsgs(userId);
+  if (empMsgPoll) clearInterval(empMsgPoll);
+  empMsgPoll = setInterval(() => empFetchMsgs(userId), 5000);
+  empLoadInbox();
+}
+
+async function empFetchMsgs(userId) {
+  const { ok, data } = await apiCall('GET', `/api/messages/${userId}`);
+  if (!ok) return;
+  const me   = Auth.getUser()?.id;
+  const body = document.getElementById('empChatBody');
+  const atBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 50;
+  body.innerHTML = data.messages.map(m => {
+    const mine = m.senderId === me;
+    return `<div style="display:flex;justify-content:${mine?'flex-end':'flex-start'};">
+      <div style="max-width:70%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;
+        ${mine?'background:var(--blue);color:#fff;':'background:#fff;border:1px solid var(--gray-200);color:var(--gray-800);'}">
+        ${escapeHtml(m.content)}
+      </div>
+    </div>`;
+  }).join('');
+  if (atBottom) body.scrollTop = body.scrollHeight;
+}
+
+async function empSendMsg() {
+  if (!empActiveConv) return;
+  const input = document.getElementById('empMsgInput');
+  const content = input.value.trim();
+  if (!content) return;
+  input.value = '';
+  await apiCall('POST', `/api/messages/${empActiveConv}`, { content });
+  empFetchMsgs(empActiveConv);
+  empLoadInbox();
+}
+
+document.getElementById('empMsgInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); empSendMsg(); }
+});
+
+// Poll unread count every 30s
+async function empPollUnread() {
+  const { ok, data } = await apiCall('GET', '/api/messages/unread-count');
+  if (ok && data.count > 0) {
+    const badge = document.getElementById('empMsgBadge');
+    if (badge) { badge.textContent = data.count; badge.style.display = 'inline'; }
+  }
+}
+empPollUnread();
+setInterval(empPollUnread, 30000);
+
+document.getElementById('companyForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type=submit]');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const { ok, data } = await apiCall('PUT', '/api/profile/me', {
+    companyName: document.getElementById('companyName').value,
+    industry:    document.getElementById('companyIndustry').value,
+    companySize: document.getElementById('companySize').value,
+    website:     document.getElementById('companyWebsite').value,
+    city:        document.getElementById('companyCity').value,
+    province:    document.getElementById('companyProvince').value
+  });
+
+  btn.disabled = false; btn.textContent = 'Save Profile';
+  if (ok) {
+    document.getElementById('profileSaved').classList.remove('hidden');
+    setTimeout(() => document.getElementById('profileSaved').classList.add('hidden'), 3000);
+    Toast.success('Company profile saved!');
+    if (document.getElementById('companyName').value) {
+      document.getElementById('empSubtitle').textContent = document.getElementById('companyName').value;
+    }
+  } else {
+    Toast.error(data.error || 'Failed to save profile');
+  }
+});
+</script>
+</body>
+</html>

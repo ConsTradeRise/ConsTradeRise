@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — ConsTradeRise</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="logo">ConsTradeRise</a>
+  </div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>Create your account</h1>
+    <p class="subtitle">Free for workers. Start finding jobs today.</p>
+
+    <div class="role-tabs">
+      <div class="role-tab active" data-role="WORKER">
+        <span class="role-tab-icon">👷</span>
+        <span class="role-tab-label">I'm a Worker</span>
+      </div>
+      <div class="role-tab" data-role="EMPLOYER">
+        <span class="role-tab-icon">🏢</span>
+        <span class="role-tab-label">I'm an Employer</span>
+      </div>
+    </div>
+
+    <div id="registerError" class="alert alert-error hidden"></div>
+
+    <form id="registerForm">
+      <div class="form-group">
+        <label class="form-label" for="regName">Full Name</label>
+        <input class="form-input" id="regName" type="text" placeholder="John Smith" autocomplete="name" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="regEmail">Email Address</label>
+        <input class="form-input" id="regEmail" type="email" placeholder="you@example.com" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="regPassword">Password</label>
+        <input class="form-input" id="regPassword" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required />
+        <p class="form-hint">At least 8 characters</p>
+      </div>
+      <p class="form-hint mb-2">
+        By creating an account you agree to our
+        <a href="/terms.html" style="color:var(--blue)">Terms of Service</a> and
+        <a href="/privacy.html" style="color:var(--blue)">Privacy Policy</a> (PIPEDA compliant).
+      </p>
+      <button type="submit" class="btn btn-primary btn-full">Create Account — Free</button>
+    </form>
+
+    <p class="auth-link">Already have an account? <a href="/login.html">Login</a></p>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

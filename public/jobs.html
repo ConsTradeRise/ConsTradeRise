@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browse Jobs — ConsTradeRise</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .jobs-layout { display:grid; grid-template-columns:260px 1fr; gap:24px; padding:32px 0; }
+    @media(max-width:768px){ .jobs-layout{grid-template-columns:1fr;} .filters-panel{display:none;} }
+    .filters-panel { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:20px; height:fit-content; position:sticky; top:80px; }
+    .filters-panel h3 { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--gray-500); margin-bottom:14px; }
+    .filter-group { margin-bottom:18px; }
+    .filter-group label { display:block; font-size:13px; font-weight:600; color:var(--gray-700); margin-bottom:6px; }
+    .jobs-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+    .jobs-count { font-size:14px; color:var(--gray-500); }
+    .search-hero { background:linear-gradient(135deg,#1e3a5f,#2563eb); padding:28px 0; }
+    .search-bar { display:flex; gap:8px; flex-wrap:wrap; }
+    .search-bar .form-input { flex:1; min-width:180px; background:#fff; }
+    #jobsList { display:flex; flex-direction:column; gap:12px; }
+    .job-card .job-desc { font-size:13px; color:var(--gray-500); line-height:1.5; margin:8px 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .live-badge { display:inline-block; background:#dcfce7; color:#16a34a; font-size:10px; font-weight:700; padding:2px 7px; border-radius:100px; text-transform:uppercase; letter-spacing:.5px; }
+    .quick-tags { display:flex; flex-wrap:wrap; gap:6px; }
+    .quick-tag { padding:5px 12px; border-radius:100px; font-size:12px; font-weight:600; background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3); cursor:pointer; transition:all .15s; }
+    .quick-tag:hover { background:rgba(255,255,255,.25); }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="logo">ConsTradeRise</a>
+    <div class="nav-links" id="navLinks">
+      <a href="/jobs.html">Browse Jobs</a>
+      <a href="#" id="navDashboardLink" style="display:none">Dashboard</a>
+      <a href="#" id="navLogoutBtn" style="display:none" class="btn btn-ghost">Logout</a>
+      <a href="/login.html" id="navLoginBtn" class="btn btn-ghost">Login</a>
+      <a href="/register.html" id="navRegisterBtn" class="btn btn-primary">Get Started</a>
+    </div>
+    <button class="nav-toggle" id="navToggle">&#9776;</button>
+  </div>
+</nav>
+
+<!-- Search hero -->
+<div class="search-hero">
+  <div class="container">
+    <div class="search-bar" style="margin-bottom:14px;">
+      <input class="form-input" id="jobSearch" type="text" placeholder="Job title, skill, keyword..." />
+      <input class="form-input" id="jobLocation" type="text" placeholder="City or province" style="max-width:180px;" />
+      <button class="btn btn-primary" id="searchBtn" style="background:#fff;color:var(--blue);font-weight:700;">Search</button>
+    </div>
+    <div class="quick-tags">
+      <span class="quick-tag" onclick="quickSearch('Estimator')">Estimator</span>
+      <span class="quick-tag" onclick="quickSearch('Project Manager')">Project Manager</span>
+      <span class="quick-tag" onclick="quickSearch('Site Supervisor')">Site Supervisor</span>
+      <span class="quick-tag" onclick="quickSearch('Carpenter')">Carpenter</span>
+      <span class="quick-tag" onclick="quickSearch('Electrician')">Electrician</span>
+      <span class="quick-tag" onclick="quickSearch('Plumber')">Plumber</span>
+      <span class="quick-tag" onclick="quickSearch('Labourer')">Labourer</span>
+      <span class="quick-tag" onclick="quickSearch('Civil Engineer')">Civil Engineer</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="jobs-layout">
+
+    <!-- Filters sidebar -->
+    <aside class="filters-panel">
+      <h3>Filters</h3>
+
+      <div class="filter-group">
+        <label>Job Type</label>
+        <select class="form-select" id="jobType">
+          <option value="">All Types</option>
+          <option>Full-time</option>
+          <option>Contract</option>
+          <option>Part-time</option>
+          <option>Seasonal</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Province</label>
+        <select class="form-select" id="jobProvince">
+          <option value="">All Provinces</option>
+          <option>Ontario</option>
+          <option>British Columbia</option>
+          <option>Alberta</option>
+          <option>Quebec</option>
+          <option>Manitoba</option>
+          <option>Saskatchewan</option>
+          <option>Nova Scotia</option>
+          <option>New Brunswick</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Source</label>
+        <select class="form-select" id="jobSource">
+          <option value="">All Jobs</option>
+          <option value="live">Live (Adzuna)</option>
+          <option value="posted">Posted Here</option>
+        </select>
+      </div>
+
+      <button class="btn btn-ghost btn-full btn-sm" id="clearFilters" style="margin-top:4px;">Clear Filters</button>
+    </aside>
+
+    <!-- Jobs list -->
+    <div>
+      <div class="jobs-header">
+        <span class="jobs-count" id="jobsCount">Loading jobs...</span>
+        <select class="form-select" style="width:auto;font-size:13px;" id="sortJobs" onchange="loadJobs(1)">
+          <option value="newest">Newest First</option>
+          <option value="featured">Featured First</option>
+        </select>
+      </div>
+
+      <!-- Live jobs banner -->
+      <div id="liveJobsBanner" style="display:none;background:var(--green-light);border:1px solid #bbf7d0;border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;font-size:13px;color:#166534;display:flex;align-items:center;gap:8px;">
+        <span>🌐</span> <span id="liveJobsText">Loading live jobs from Adzuna...</span>
+      </div>
+
+      <div id="jobsList"></div>
+      <div id="paginationWrap" style="text-align:center;margin-top:24px;"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+let liveJobs = [];
+
+function quickSearch(term) {
+  document.getElementById('jobSearch').value = term;
+  loadJobs(1);
+}
+
+document.getElementById('clearFilters').addEventListener('click', () => {
+  document.getElementById('jobSearch').value   = '';
+  document.getElementById('jobLocation').value = '';
+  document.getElementById('jobType').value     = '';
+  document.getElementById('jobProvince').value = '';
+  document.getElementById('jobSource').value   = '';
+  loadJobs(1);
+});
+
+document.getElementById('searchBtn').addEventListener('click', () => loadJobs(1));
+document.getElementById('jobSearch').addEventListener('keydown', e => { if (e.key === 'Enter') loadJobs(1); });
+
+async function loadJobs(page = 1) {
+  const container = document.getElementById('jobsList');
+  const countEl   = document.getElementById('jobsCount');
+  const pagWrap   = document.getElementById('paginationWrap');
+  container.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner"></div></div>';
+
+  const search   = document.getElementById('jobSearch').value.trim();
+  const location = document.getElementById('jobLocation').value.trim();
+  const type     = document.getElementById('jobType').value;
+  const province = document.getElementById('jobProvince').value;
+  const source   = document.getElementById('jobSource').value;
+  const sort     = document.getElementById('sortJobs').value;
+
+  const query = new URLSearchParams({ page, limit: 20 });
+  if (search)   query.set('search', search);
+  if (location) query.set('location', location);
+  if (type)     query.set('type', type);
+  if (province) query.set('province', province);
+  if (sort)     query.set('sort', sort);
+
+  const { ok, data } = await apiCall('GET', `/api/jobs?${query}`);
+  if (!ok) {
+    container.innerHTML = `<div class="empty-state"><p class="text-gray">${data.error || 'Failed to load jobs'}</p></div>`;
+    return;
+  }
+
+  let jobs = data.jobs || [];
+
+  // Merge live jobs if source=live or no source filter
+  if (source !== 'posted' && liveJobs.length) {
+    const searchLower = search.toLowerCase();
+    let filtered = liveJobs;
+    if (search) filtered = filtered.filter(j =>
+      j.title?.toLowerCase().includes(searchLower) ||
+      j.company?.toLowerCase().includes(searchLower) ||
+      j.summary?.toLowerCase().includes(searchLower)
+    );
+    if (source === 'live') {
+      jobs = filtered;
+    } else {
+      // Merge — live jobs go to top
+      jobs = [...filtered, ...jobs];
+    }
+  } else if (source === 'live') {
+    jobs = liveJobs;
+  }
+
+  if (countEl) countEl.textContent = `${(data.pagination?.total || jobs.length).toLocaleString()} jobs found`;
+
+  if (!jobs.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>No jobs found</h3><p>Try different keywords or clear filters</p></div>`;
+    pagWrap.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = jobs.map(job => jobCard(job)).join('');
+
+  // Pagination (DB jobs only)
+  const pg = data.pagination;
+  if (pg && pg.pages > 1 && source !== 'live') {
+    let btns = '';
+    for (let i = 1; i <= Math.min(pg.pages, 10); i++) {
+      btns += `<button class="btn btn-sm ${i === pg.page ? 'btn-primary' : 'btn-ghost'}" onclick="loadJobs(${i})">${i}</button>`;
+    }
+    pagWrap.innerHTML = `<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">${btns}</div>`;
+  } else {
+    pagWrap.innerHTML = '';
+  }
+}
+
+// ── Saved Jobs (localStorage) ─────────────────
+function getSaved() { try { return JSON.parse(localStorage.getItem('ctr_saved')||'[]'); } catch { return []; } }
+function isSaved(id) { return getSaved().includes(String(id)); }
+function toggleSave(e, id, title) {
+  e.preventDefault(); e.stopPropagation();
+  const saved = getSaved();
+  const idx   = saved.indexOf(String(id));
+  if (idx >= 0) saved.splice(idx, 1); else saved.push(String(id));
+  localStorage.setItem('ctr_saved', JSON.stringify(saved));
+  const btn = document.getElementById(`save-${id}`);
+  if (btn) { btn.textContent = idx >= 0 ? '🤍' : '❤️'; btn.title = idx >= 0 ? 'Save job' : 'Saved'; }
+}
+
+function jobCard(job) {
+  const isLive = !!job.url;
+  const href   = isLive ? job.url : `/job.html?id=${job.id}`;
+  const target = isLive ? 'target="_blank" rel="noopener"' : '';
+  const jobId  = job.id || job.url;
+  const saved  = isSaved(jobId);
+  return `<div style="position:relative;">
+    <a href="${escapeHtml(href)}" ${target} style="text-decoration:none;">
+      <div class="job-card">
+        <div class="job-card-header">
+          <div>
+            <div class="job-title">${escapeHtml(job.title)}</div>
+            <div class="job-company">${escapeHtml(job.company || job.companyName || job.employer?.name || 'Company')}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            ${isLive ? `<span class="live-badge">Live</span>` : ''}
+            ${job.isFeatured ? `<span class="badge badge-yellow" style="font-size:10px;">⭐ Featured</span>` : ''}
+          </div>
+        </div>
+        <div class="job-meta">
+          ${(job.location||job.city) ? `<span class="job-tag">📍 ${escapeHtml(job.location||job.city)}</span>` : ''}
+          ${job.type||job.jobType   ? `<span class="job-tag">🕐 ${escapeHtml(job.type||job.jobType)}</span>` : ''}
+          ${job.salary              ? `<span class="job-tag">💰 ${escapeHtml(job.salary)}</span>` : ''}
+          ${job.posted||job.postedAt? `<span class="job-tag">📅 ${formatDate(job.posted||job.postedAt)}</span>` : ''}
+        </div>
+        ${job.summary||job.description ? `<div class="job-desc">${escapeHtml((job.summary||job.description).substring(0,160))}</div>` : ''}
+        ${job.skills?.length ? `<div class="kw-tags" style="margin-bottom:6px;">${job.skills.slice(0,5).map(s=>`<span class="kw-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+        <div class="job-footer">
+          <span></span>
+          <span class="btn btn-sm btn-primary">${isLive ? 'View & Apply →' : 'View Job'}</span>
+        </div>
+      </div>
+    </a>
+    <button id="save-${jobId}" onclick="toggleSave(event,'${jobId}','${escapeHtml(job.title)}')"
+      title="${saved ? 'Saved' : 'Save job'}"
+      style="position:absolute;top:14px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;z-index:2;line-height:1;"
+    >${saved ? '❤️' : '🤍'}</button>
+  </div>`;
+}
+
+// Load live jobs from Adzuna cache
+async function loadLiveJobs() {
+  const banner = document.getElementById('liveJobsBanner');
+  banner.style.display = 'flex';
+  const { ok, data } = await apiCall('GET', '/api/jobs/live');
+  if (ok && data.jobs?.length) {
+    liveJobs = data.jobs;
+    document.getElementById('liveJobsText').textContent =
+      `${data.jobs.length} live jobs from Adzuna · Last updated ${formatDate(data.lastSearched)}`;
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('search'))   document.getElementById('jobSearch').value = params.get('search');
+  if (params.get('province')) document.getElementById('jobProvince').value = params.get('province');
+  await loadLiveJobs();
+  loadJobs(1);
+});
+</script>
+</body>
+</html>

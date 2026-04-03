@@ -1,0 +1,322 @@
+// TradesUp AI — Prisma Schema
+// PostgreSQL + Prisma ORM
+// Phase 1: Core MVP
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+//  ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  WORKER
+  EMPLOYER
+  ADMIN
+}
+
+enum JobSource {
+  MANUAL
+  API
+}
+
+enum ApplicationStatus {
+  APPLIED
+  VIEWED
+  SHORTLISTED
+  REJECTED
+}
+
+// ─────────────────────────────────────────────
+//  USERS
+// ─────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  role          Role     @default(WORKER)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  profile       Profile?
+  resumes       Resume[]
+  postedJobs    Job[]          @relation("EmployerJobs")
+  applications  Application[]
+  sentMessages  Message[]      @relation("SentMessages")
+  receivedMessages Message[]   @relation("ReceivedMessages")
+  notifications Notification[]
+  atsResults    AtsResult[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+//  PROFILES
+// ─────────────────────────────────────────────
+
+model Profile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // ── CONTACT DETAILS ──────────────────────────
+  phone              String?
+  email              String?  // secondary contact email (may differ from login)
+  linkedin           String?
+  city               String?
+  province           String?
+  country            String?  @default("Canada")
+  location           String?  // full location string e.g. "Newmarket, ON, Canada"
+
+  // ── PROFESSIONAL IDENTITY ────────────────────
+  headline           String?  // e.g. "Construction Estimator | Project Coordinator | ICI & Residential"
+  summary            String?  // optional — some resumes have this, some don't
+  yearsExperience    Int?
+  availability       String?  // "Full-time", "Contract", "Immediate", etc.
+  openToRelocation   Boolean  @default(false)
+  driversLicence     String?  // e.g. "G2", "G", "AZ"
+
+  // ── SKILLS ───────────────────────────────────
+  skills             String[] // flat list for quick matching
+  skillCategories    Json?
+  // Stored as: {
+  //   "Estimating": ["QTO", "Hard Bid", "Lump Sum", ...],
+  //   "Technical Tools": ["PlanSwift", "Bluebeam", ...],
+  //   "Project Coordination": ["CPM", "WBS", "RFIs", ...],
+  //   "Sectors": ["ICI", "Residential", "Civil", ...],
+  //   "Compliance": ["OBC", "CSA", "CCDC", ...]
+  // }
+
+  // ── WORK EXPERIENCE ──────────────────────────
+  experiences        Json?
+  // Array of:
+  // {
+  //   "title": "Estimator",
+  //   "company": "Nextgen Exterior Inc.",
+  //   "location": "Newmarket, ON",
+  //   "startDate": "Jun 2025",
+  //   "endDate": "Present",
+  //   "isCurrent": true,
+  //   "bullets": ["bullet 1", "bullet 2", ...]
+  // }
+
+  // ── EDUCATION ────────────────────────────────
+  educations         Json?
+  // Array of:
+  // {
+  //   "degree": "Post Graduate Certificate – Construction Project Management",
+  //   "institution": "Lambton College",
+  //   "location": "Toronto, ON, Canada",
+  //   "startDate": "Sep 2023",
+  //   "endDate": "Apr 2025"
+  // }
+
+  // ── CERTIFICATIONS ───────────────────────────
+  certifications     Json?
+  // Array of:
+  // {
+  //   "name": "WHMIS 2015",
+  //   "issuer": "Ontario Ministry of Labour",
+  //   "year": "2024"
+  // }
+
+  // ── VISIBILITY (PIPEDA) ──────────────────────
+  visibleToEmployers Boolean  @default(true)
+  openToMatching     Boolean  @default(true)
+
+  // ── EMPLOYER FIELDS ──────────────────────────
+  companyName        String?
+  companySize        String?
+  industry           String?
+  website            String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+// ─────────────────────────────────────────────
+//  RESUMES
+// ─────────────────────────────────────────────
+
+model Resume {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String   @default("My Resume") // label e.g. "Resume v2 - Estimator"
+  content     String?  // parsed text content
+  fileUrl     String?  // cloud storage URL
+  isDefault   Boolean  @default(false)
+  aiGenerated Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  applications Application[]
+  atsResults   AtsResult[]
+
+  @@map("resumes")
+}
+
+// ─────────────────────────────────────────────
+//  JOBS
+// ─────────────────────────────────────────────
+
+model Job {
+  id           String    @id @default(uuid())
+  title        String
+  description  String
+  location     String
+  city         String?
+  province     String?
+  salary       String?
+  jobType      String?   // Full-time, Contract, Part-time
+  skills       String[]  // required skills tags
+
+  // Source tracking
+  source       JobSource @default(MANUAL)
+  externalId   String?   // ID from Adzuna/Jooble
+  externalUrl  String?   // original job URL
+
+  // Employer
+  employerId   String?
+  employer     User?     @relation("EmployerJobs", fields: [employerId], references: [id])
+  companyName  String?   // for aggregated jobs
+
+  isActive     Boolean   @default(true)
+  isFeatured   Boolean   @default(false)
+
+  postedAt     DateTime  @default(now())
+  expiresAt    DateTime?
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  applications Application[]
+  atsResults   AtsResult[]
+  matches      Match[]
+
+  @@map("jobs")
+}
+
+// ─────────────────────────────────────────────
+//  APPLICATIONS
+// ─────────────────────────────────────────────
+
+model Application {
+  id          String            @id @default(uuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId       String
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeId    String?
+  resume      Resume?           @relation(fields: [resumeId], references: [id])
+
+  status      ApplicationStatus @default(APPLIED)
+  coverLetter String?
+  notes       String?           // employer notes
+
+  appliedAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([userId, jobId]) // prevent duplicate applications
+  @@map("applications")
+}
+
+// ─────────────────────────────────────────────
+//  ATS RESULTS
+// ─────────────────────────────────────────────
+
+model AtsResult {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId           String
+  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeId        String?
+  resume          Resume?  @relation(fields: [resumeId], references: [id])
+
+  score           Int      // 0-100
+  keywordScore    Int?     // keyword match %
+  skillsScore     Int?     // skills match %
+  experienceScore Int?     // experience relevance %
+  titleScore      Int?     // job title relevance %
+  formatScore     Int?     // formatting score %
+
+  matchedKeywords String[] // keywords found in both
+  missingKeywords String[] // keywords in job but not resume
+  suggestions     String[] // AI-generated improvement tips
+  matchStrength   String?  // "Excellent" | "Good" | "Fair" | "Poor"
+
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, jobId, resumeId]) // cache: same combo = same result
+  @@map("ats_results")
+}
+
+// ─────────────────────────────────────────────
+//  MATCHES (AI Job Matching)
+// ─────────────────────────────────────────────
+
+model Match {
+  id        String   @id @default(uuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId    String
+  score     Int      // 0-100 match score
+
+  createdAt DateTime @default(now())
+
+  @@unique([jobId, userId])
+  @@map("matches")
+}
+
+// ─────────────────────────────────────────────
+//  MESSAGES
+// ─────────────────────────────────────────────
+
+model Message {
+  id          String   @id @default(uuid())
+  senderId    String
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  content     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("messages")
+}
+
+// ─────────────────────────────────────────────
+//  NOTIFICATIONS
+// ─────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String   // "new_job", "application_update", "new_message", "ats_complete"
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  link      String?  // optional deep link
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}

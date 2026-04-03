@@ -1,0 +1,129 @@
+// ─────────────────────────────────────────────
+//  TradesUp — Profile Routes
+//  GET /api/profile/me
+//  PUT /api/profile/me
+// ─────────────────────────────────────────────
+
+'use strict';
+const express = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth } = require('../middleware/auth');
+
+const router = express.Router();
+const prisma = new PrismaClient();
+
+// ─── GET MY PROFILE ───────────────────────────
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const profile = await prisma.profile.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    res.json({ profile });
+
+  } catch (e) {
+    console.error('[profile/me]', e.message);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+// ─── UPDATE MY PROFILE ────────────────────────
+router.put('/me', requireAuth, async (req, res) => {
+  try {
+    const {
+      // Contact
+      phone, email, linkedin, city, province, country, location,
+      // Identity
+      headline, summary, yearsExperience, availability,
+      openToRelocation, driversLicence,
+      // Skills
+      skills, skillCategories,
+      // Structured
+      experiences, educations, certifications,
+      // Preferences
+      visibleToEmployers, openToMatching, travelRadius,
+      // Employer
+      companyName, companySize, industry, website
+    } = req.body;
+
+    const data = {
+      ...(phone       !== undefined && { phone }),
+      ...(email       !== undefined && { email }),
+      ...(linkedin    !== undefined && { linkedin }),
+      ...(city        !== undefined && { city }),
+      ...(province    !== undefined && { province }),
+      ...(country     !== undefined && { country }),
+      ...(location    !== undefined && { location }),
+      ...(headline    !== undefined && { headline }),
+      ...(summary     !== undefined && { summary }),
+      ...(yearsExperience !== undefined && { yearsExperience: parseInt(yearsExperience) || null }),
+      ...(availability    !== undefined && { availability }),
+      ...(openToRelocation !== undefined && { openToRelocation: Boolean(openToRelocation) }),
+      ...(driversLicence  !== undefined && { driversLicence }),
+      ...(skills          !== undefined && { skills: Array.isArray(skills) ? skills : [] }),
+      ...(skillCategories !== undefined && { skillCategories }),
+      ...(experiences     !== undefined && { experiences }),
+      ...(educations      !== undefined && { educations }),
+      ...(certifications  !== undefined && { certifications }),
+      ...(visibleToEmployers !== undefined && { visibleToEmployers }),
+      ...(openToMatching     !== undefined && { openToMatching }),
+      ...(travelRadius    !== undefined && { travelRadius: parseInt(travelRadius) || null }),
+      ...(companyName  !== undefined && { companyName }),
+      ...(companySize  !== undefined && { companySize }),
+      ...(industry     !== undefined && { industry }),
+      ...(website      !== undefined && { website })
+    };
+
+    const profile = await prisma.profile.upsert({
+      where: { userId: req.user.id },
+      update: data,
+      create: { userId: req.user.id, skills: [], visibleToEmployers: true, openToMatching: true, ...data }
+    });
+
+    res.json({ message: 'Profile updated', profile });
+
+  } catch (e) {
+    console.error('[profile/update]', e.message);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// ─── GET PUBLIC PROFILE (employer views candidate) ───
+// Returns limited data based on visibility settings
+router.get('/:userId', requireAuth, async (req, res) => {
+  try {
+    const profile = await prisma.profile.findUnique({
+      where: { userId: req.params.userId },
+      include: {
+        user: { select: { id: true, name: true, role: true } }
+      }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    // If employer is requesting a worker profile, respect visibility
+    if (req.user.role === 'EMPLOYER' && !profile.visibleToEmployers) {
+      return res.status(403).json({ error: 'This candidate has restricted their profile visibility' });
+    }
+
+    // Return limited data to employers (no phone for privacy)
+    if (req.user.role === 'EMPLOYER') {
+      const { phone, ...publicProfile } = profile;
+      return res.json({ profile: publicProfile });
+    }
+
+    res.json({ profile });
+
+  } catch (e) {
+    console.error('[profile/public]', e.message);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+module.exports = router;

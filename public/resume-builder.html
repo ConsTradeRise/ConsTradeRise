@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Builder — ConsTradeRise</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    /* ── Screen UI ── */
+    .builder-toolbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: #1e293b; color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 24px; gap: 12px; flex-wrap: wrap;
+    }
+    .builder-toolbar .logo { color: #fff; font-weight: 800; font-size: 16px; text-decoration: none; }
+    .toolbar-actions { display: flex; gap: 10px; align-items: center; }
+    .toolbar-btn {
+      padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 700; transition: all .15s;
+    }
+    .toolbar-btn-primary { background: #3b82f6; color: #fff; }
+    .toolbar-btn-primary:hover { background: #2563eb; }
+    .toolbar-btn-ghost { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2); }
+    .toolbar-btn-ghost:hover { background: rgba(255,255,255,.2); }
+
+    .builder-wrap { margin-top: 60px; background: #e5e7eb; min-height: 100vh; padding: 32px 20px; display: flex; justify-content: center; }
+
+    /* ── Resume Paper ── */
+    .resume-paper {
+      background: #fff;
+      width: 100%;
+      max-width: 760px;
+      min-height: 1050px;
+      box-shadow: 0 4px 40px rgba(0,0,0,.18);
+      border-radius: 4px;
+      font-family: 'Georgia', serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #1a1a1a;
+      padding: 48px 52px;
+    }
+
+    /* ── Resume Header ── */
+    .resume-name {
+      font-size: 26pt; font-weight: 700; color: #1e3a5f;
+      letter-spacing: -0.5px; margin-bottom: 2px;
+    }
+    .resume-headline {
+      font-size: 13pt; color: #3b82f6; font-style: italic; margin-bottom: 10px;
+    }
+    .resume-contact {
+      display: flex; flex-wrap: wrap; gap: 6px 18px;
+      font-size: 9.5pt; color: #444; margin-bottom: 18px;
+    }
+    .resume-contact span { display: flex; align-items: center; gap: 4px; }
+
+    /* ── Divider ── */
+    .resume-divider {
+      border: none; border-top: 2px solid #1e3a5f; margin: 0 0 14px;
+    }
+
+    /* ── Section ── */
+    .resume-section { margin-bottom: 18px; }
+    .resume-section-title {
+      font-size: 11pt; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.5px; color: #1e3a5f;
+      border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; margin-bottom: 10px;
+    }
+    .resume-summary {
+      font-size: 10.5pt; color: #374151; line-height: 1.7;
+    }
+
+    /* ── Experience ── */
+    .exp-item { margin-bottom: 14px; }
+    .exp-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 4px; }
+    .exp-title { font-weight: 700; font-size: 11pt; color: #111; }
+    .exp-dates { font-size: 9.5pt; color: #6b7280; white-space: nowrap; }
+    .exp-company { font-size: 10pt; color: #3b82f6; margin-bottom: 4px; }
+    .exp-location { font-size: 9.5pt; color: #6b7280; }
+    .exp-bullets { margin: 6px 0 0 16px; padding: 0; }
+    .exp-bullets li { font-size: 10pt; color: #374151; margin-bottom: 3px; }
+
+    /* ── Education ── */
+    .edu-item { margin-bottom: 10px; }
+    .edu-degree { font-weight: 700; font-size: 11pt; }
+    .edu-school { font-size: 10pt; color: #3b82f6; }
+    .edu-dates { font-size: 9.5pt; color: #6b7280; }
+
+    /* ── Skills ── */
+    .skills-grid { display: flex; flex-direction: column; gap: 6px; }
+    .skill-row { display: flex; gap: 8px; align-items: baseline; font-size: 10pt; }
+    .skill-cat { font-weight: 700; color: #1e3a5f; min-width: 140px; font-size: 9.5pt; }
+    .skill-list { color: #374151; flex: 1; }
+
+    /* ── Certifications ── */
+    .cert-item { display: flex; justify-content: space-between; font-size: 10pt; margin-bottom: 4px; }
+    .cert-name { color: #374151; }
+    .cert-year { color: #6b7280; font-size: 9.5pt; }
+
+    /* ── Print ── */
+    @media print {
+      .builder-toolbar { display: none !important; }
+      .builder-wrap { margin: 0; background: #fff; padding: 0; display: block; }
+      .resume-paper { box-shadow: none; border-radius: 0; max-width: 100%; padding: 16mm 20mm; }
+      @page { margin: 0; size: letter; }
+    }
+
+    /* ── Loading / Empty ── */
+    .resume-loading { text-align: center; padding: 60px 20px; color: #6b7280; }
+    .resume-loading .spinner { margin: 0 auto 16px; }
+  </style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div class="builder-toolbar">
+  <a href="/dashboard.html" class="logo">← ConsTradeRise</a>
+  <span style="color:#94a3b8;font-size:13px;" id="toolbarName">Loading resume...</span>
+  <div class="toolbar-actions">
+    <button class="toolbar-btn toolbar-btn-ghost" onclick="window.location.href='/dashboard.html'">Edit Profile</button>
+    <button class="toolbar-btn toolbar-btn-primary" onclick="window.print()">⬇ Download / Print PDF</button>
+  </div>
+</div>
+
+<!-- Resume paper -->
+<div class="builder-wrap">
+  <div class="resume-paper" id="resumePaper">
+    <div class="resume-loading">
+      <div class="spinner" style="width:36px;height:36px;border-width:3px;"></div>
+      <p>Building your resume...</p>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (Auth.redirectIfNotAuth()) return;
+
+  const { ok, data } = await apiCall('GET', '/api/profile/me');
+  if (!ok || !data.profile) {
+    document.getElementById('resumePaper').innerHTML = `
+      <div class="resume-loading">
+        <p>No profile found. <a href="/dashboard.html">Complete your profile first.</a></p>
+      </div>`;
+    return;
+  }
+
+  const user = Auth.getUser();
+  const p    = data.profile;
+  renderResume(user, p);
+});
+
+function renderResume(user, p) {
+  const name        = user?.name || p.name || 'Your Name';
+  const headline    = p.headline || '';
+  const phone       = p.phone    || '';
+  const email       = p.email    || user?.email || '';
+  const city        = [p.city, p.province, p.country || 'Canada'].filter(Boolean).join(', ');
+  const linkedin    = p.linkedin  || '';
+  const summary     = p.summary   || '';
+  const experiences = Array.isArray(p.experiences)    ? p.experiences    : [];
+  const educations  = Array.isArray(p.educations)     ? p.educations     : [];
+  const certs       = Array.isArray(p.certifications) ? p.certifications : [];
+  const skillCats   = p.skillCategories || {};
+  const skills      = p.skills || [];
+
+  document.getElementById('toolbarName').textContent = name + ' — Resume';
+
+  // Contact line
+  const contactItems = [
+    phone    ? `📞 ${phone}`    : '',
+    email    ? `✉ ${email}`    : '',
+    city     ? `📍 ${city}`    : '',
+    linkedin ? `🔗 ${linkedin}` : ''
+  ].filter(Boolean);
+
+  // Skills section — use categories if available, else flat list
+  let skillsHtml = '';
+  const catKeys = Object.keys(skillCats).filter(k => skillCats[k]?.length);
+  if (catKeys.length) {
+    skillsHtml = `<div class="skills-grid">` +
+      catKeys.map(cat => `
+        <div class="skill-row">
+          <span class="skill-cat">${escapeHtml(cat)}:</span>
+          <span class="skill-list">${skillCats[cat].map(s => escapeHtml(s)).join(' · ')}</span>
+        </div>`).join('') +
+      `</div>`;
+  } else if (skills.length) {
+    skillsHtml = `<p style="font-size:10pt;color:#374151;">${skills.map(s => escapeHtml(s)).join(' · ')}</p>`;
+  }
+
+  // Experience section
+  const expHtml = experiences.map(exp => `
+    <div class="exp-item">
+      <div class="exp-header">
+        <div class="exp-title">${escapeHtml(exp.title || '')}</div>
+        <div class="exp-dates">${escapeHtml([exp.startDate, exp.endDate || (exp.isCurrent ? 'Present' : '')].filter(Boolean).join(' – '))}</div>
+      </div>
+      <div class="exp-company">${escapeHtml(exp.company || '')}${exp.location ? ' · ' + escapeHtml(exp.location) : ''}</div>
+      ${Array.isArray(exp.bullets) && exp.bullets.length
+        ? `<ul class="exp-bullets">${exp.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>`
+        : ''}
+    </div>`).join('');
+
+  // Education section
+  const eduHtml = educations.map(edu => `
+    <div class="edu-item">
+      <div class="edu-degree">${escapeHtml(edu.degree || '')}</div>
+      <div class="edu-school">${escapeHtml(edu.institution || '')}${edu.location ? ' · ' + escapeHtml(edu.location) : ''}</div>
+      <div class="edu-dates">${escapeHtml([edu.startDate, edu.endDate].filter(Boolean).join(' – '))}</div>
+    </div>`).join('');
+
+  // Certifications section
+  const certHtml = certs.map(c => `
+    <div class="cert-item">
+      <span class="cert-name">${escapeHtml(c.name || '')}${c.issuer ? ' · ' + escapeHtml(c.issuer) : ''}</span>
+      <span class="cert-year">${escapeHtml(c.year || '')}</span>
+    </div>`).join('');
+
+  document.getElementById('resumePaper').innerHTML = `
+
+    <!-- Header -->
+    <div class="resume-name">${escapeHtml(name)}</div>
+    ${headline ? `<div class="resume-headline">${escapeHtml(headline)}</div>` : ''}
+    <div class="resume-contact">
+      ${contactItems.map(c => `<span>${escapeHtml(c)}</span>`).join('')}
+    </div>
+    <hr class="resume-divider" />
+
+    <!-- Summary -->
+    ${summary ? `
+    <div class="resume-section">
+      <div class="resume-section-title">Professional Summary</div>
+      <div class="resume-summary">${escapeHtml(summary)}</div>
+    </div>` : ''}
+
+    <!-- Experience -->
+    ${expHtml ? `
+    <div class="resume-section">
+      <div class="resume-section-title">Work Experience</div>
+      ${expHtml}
+    </div>` : ''}
+
+    <!-- Skills -->
+    ${skillsHtml ? `
+    <div class="resume-section">
+      <div class="resume-section-title">Skills & Competencies</div>
+      ${skillsHtml}
+    </div>` : ''}
+
+    <!-- Education -->
+    ${eduHtml ? `
+    <div class="resume-section">
+      <div class="resume-section-title">Education</div>
+      ${eduHtml}
+    </div>` : ''}
+
+    <!-- Certifications -->
+    ${certHtml ? `
+    <div class="resume-section">
+      <div class="resume-section-title">Certifications & Licences</div>
+      ${certHtml}
+    </div>` : ''}
+
+  `;
+}
+</script>
+</body>
+</html>

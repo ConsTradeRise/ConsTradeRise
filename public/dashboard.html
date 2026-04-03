@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worker Dashboard — ConsTradeRise</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .tab-bar { display:flex; gap:4px; border-bottom:1px solid var(--gray-200); margin-bottom:24px; }
+    .tab-btn { padding:10px 16px; font-size:13px; font-weight:600; color:var(--gray-500); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
+    .tab-btn.active { color:var(--blue); border-bottom-color:var(--blue); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media(max-width:600px){ .profile-grid{grid-template-columns:1fr;} }
+    .skills-input-wrap { display:flex; gap:8px; margin-bottom:10px; }
+    .skills-tags { display:flex; flex-wrap:wrap; gap:6px; }
+    .skill-tag { display:inline-flex; align-items:center; gap:6px; background:var(--blue-light); color:var(--blue); border:1px solid #bfdbfe; font-size:12px; font-weight:600; padding:4px 10px; border-radius:100px; }
+    .skill-tag button { background:none; border:none; cursor:pointer; color:var(--blue); font-size:14px; line-height:1; padding:0; }
+    .app-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--gray-100); gap:12px; flex-wrap:wrap; }
+    .app-row:last-child { border-bottom:none; }
+    .app-info { flex:1; min-width:0; }
+    .app-title { font-size:14px; font-weight:700; color:var(--gray-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .app-company { font-size:12px; color:var(--gray-500); }
+
+    /* Resume upload modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:var(--radius-lg); width:100%; max-width:600px; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow-lg); }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid var(--gray-200); }
+    .modal-header h2 { font-size:18px; font-weight:800; }
+    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--gray-400); line-height:1; }
+    .modal-body { padding:24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--gray-200); display:flex; gap:10px; justify-content:flex-end; }
+    .parsed-section { margin-bottom:20px; }
+    .parsed-section h4 { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--gray-500); margin-bottom:10px; }
+    .upload-progress { text-align:center; padding:40px 20px; }
+    .upload-progress p { color:var(--gray-500); margin-top:12px; font-size:14px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="logo">ConsTradeRise</a>
+    <div class="nav-links" id="navLinks">
+      <a href="/jobs.html">Browse Jobs</a>
+      <a href="#" id="navDashboardLink" style="display:none">Dashboard</a>
+      <a href="#" id="navLogoutBtn" style="display:none" class="btn btn-ghost">Logout</a>
+      <a href="/login.html" id="navLoginBtn" class="btn btn-ghost">Login</a>
+      <a href="/register.html" id="navRegisterBtn" class="btn btn-primary">Get Started</a>
+    </div>
+    <button class="nav-toggle" id="navToggle">&#9776;</button>
+  </div>
+</nav>
+
+<div class="dash-layout">
+
+  <!-- Sidebar -->
+  <aside class="dash-sidebar">
+    <div class="dash-sidebar-item active" data-tab="overview">
+      <span class="dash-sidebar-icon">📊</span> Overview
+    </div>
+    <div class="dash-sidebar-item" data-tab="applications">
+      <span class="dash-sidebar-icon">📋</span> Applications
+    </div>
+    <div class="dash-sidebar-item" data-tab="profile">
+      <span class="dash-sidebar-icon">👤</span> My Profile
+    </div>
+    <div class="dash-sidebar-item" data-tab="resume">
+      <span class="dash-sidebar-icon">📄</span> Resume
+    </div>
+    <div class="dash-sidebar-item" data-tab="messages">
+      <span class="dash-sidebar-icon">💬</span> Messages
+      <span id="msgBadge" style="display:none;background:var(--blue);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
+    </div>
+    <div style="margin-top:auto; padding:20px;">
+      <a href="/jobs.html" class="btn btn-primary btn-full btn-sm">Browse Jobs</a>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="dash-main">
+
+    <!-- Header -->
+    <div class="dash-header">
+      <div>
+        <h1 id="dashWelcome">Welcome back</h1>
+        <p id="dashSubtitle">Here's your job search overview</p>
+      </div>
+      <a href="/jobs.html" class="btn btn-primary">Find Jobs</a>
+    </div>
+
+    <!-- ── OVERVIEW TAB ── -->
+    <div class="tab-panel active" id="tab-overview">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-card-num" id="statApplied">—</div>
+          <div class="stat-card-label">Applications Sent</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-num" id="statShortlisted">—</div>
+          <div class="stat-card-label">Shortlisted</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-num" id="statViewed">—</div>
+          <div class="stat-card-label">Profile Views</div>
+        </div>
+        <div class="stat-card" onclick="window.location.href='/jobs.html'" style="cursor:pointer;">
+          <div class="stat-card-num" id="statSaved">—</div>
+          <div class="stat-card-label">Saved Jobs</div>
+        </div>
+      </div>
+
+      <!-- Profile completion -->
+      <div class="card" id="profileCompletionCard" style="display:none;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="card-title" style="margin:0;">Profile Completion</div>
+          <span id="profilePct" style="font-size:18px;font-weight:800;color:var(--blue);">0%</span>
+        </div>
+        <div style="background:var(--gray-100);border-radius:100px;height:8px;overflow:hidden;margin-bottom:10px;">
+          <div id="profileBar" style="height:100%;background:var(--blue);border-radius:100px;transition:width .5s ease;width:0%;"></div>
+        </div>
+        <div id="profileMissing" style="font-size:12px;color:var(--gray-500);"></div>
+      </div>
+
+      <!-- ATS tip -->
+      <div class="card" style="background:var(--blue-light); border-color:#bfdbfe;">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <span style="font-size:28px;">🤖</span>
+          <div>
+            <div class="card-title" style="color:var(--blue-dark);">Boost Your ATS Score</div>
+            <p style="font-size:14px;color:var(--blue-dark);opacity:.8;margin-bottom:12px;">
+              Upload your resume and get an AI match score on every job. Workers with resumes get <strong>3x more interviews</strong>.
+            </p>
+            <button class="btn btn-primary btn-sm" onclick="switchTab('resume')">Upload Resume</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommended Jobs -->
+      <div class="card mt-2" id="recommendedCard" style="display:none;">
+        <div class="flex-between mb-2">
+          <div class="card-title" style="margin-bottom:0;">Recommended for You</div>
+          <a href="/jobs.html" class="btn btn-ghost btn-sm">Browse All →</a>
+        </div>
+        <div id="recommendedJobs"></div>
+      </div>
+
+      <!-- Recent applications -->
+      <div class="card mt-2">
+        <div class="flex-between mb-2">
+          <div class="card-title" style="margin-bottom:0">Recent Applications</div>
+          <button class="btn btn-ghost btn-sm" onclick="switchTab('applications')">View All</button>
+        </div>
+        <div id="recentApps">
+          <div style="text-align:center;padding:20px"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── APPLICATIONS TAB ── -->
+    <div class="tab-panel" id="tab-applications">
+      <div class="card">
+        <div class="card-title">My Applications</div>
+        <div id="allApps">
+          <div style="text-align:center;padding:20px"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROFILE TAB ── -->
+    <div class="tab-panel" id="tab-profile">
+      <div class="card">
+        <div class="card-title">My Profile</div>
+        <div id="profileSuccess" class="alert alert-success hidden">Profile saved successfully!</div>
+        <form id="profileForm">
+
+          <!-- Contact -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-400);margin-bottom:12px;">Contact Details</div>
+          <div class="profile-grid">
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input class="form-input" id="profPhone" type="tel" placeholder="e.g. 647-555-1234" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Email</label>
+              <input class="form-input" id="profEmail" type="email" placeholder="your@email.com" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">City</label>
+              <input class="form-input" id="profCity" type="text" placeholder="e.g. Toronto" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Province</label>
+              <select class="form-select" id="profProvince">
+                <option value="">Select province</option>
+                <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
+                <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
+                <option>Nova Scotia</option><option>New Brunswick</option><option>PEI</option>
+                <option>Newfoundland</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label class="form-label">LinkedIn URL</label>
+              <input class="form-input" id="profLinkedin" type="url" placeholder="https://linkedin.com/in/yourname" />
+            </div>
+          </div>
+
+          <!-- Professional -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-400);margin:20px 0 12px;">Professional Details</div>
+          <div class="form-group">
+            <label class="form-label">Headline</label>
+            <input class="form-input" id="profHeadline" placeholder="e.g. Construction Estimator | Project Coordinator | ICI & Residential" />
+          </div>
+          <div class="profile-grid">
+            <div class="form-group">
+              <label class="form-label">Years of Experience</label>
+              <input class="form-input" id="profYears" type="number" min="0" max="50" placeholder="e.g. 8" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Availability</label>
+              <select class="form-select" id="profAvailability">
+                <option value="">Select availability</option>
+                <option>Immediate</option><option>Full-time</option>
+                <option>Part-time</option><option>Contract</option><option>Seasonal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Driver's Licence</label>
+              <select class="form-select" id="profDrivers">
+                <option value="">None / Not specified</option>
+                <option>G1</option><option>G2</option><option>G</option>
+                <option>AZ</option><option>DZ</option>
+              </select>
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:28px;">
+              <input type="checkbox" id="profRelocation" style="width:16px;height:16px;" />
+              <label for="profRelocation" class="form-label" style="margin:0;cursor:pointer;">Open to Relocation</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Professional Summary <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
+            <textarea class="form-textarea" id="profSummary" placeholder="Brief overview of your construction career and key strengths..."></textarea>
+          </div>
+
+          <!-- Skills -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-400);margin:20px 0 12px;">Skills</div>
+          <div class="form-group">
+            <div class="skills-input-wrap">
+              <input class="form-input" id="skillInput" type="text" placeholder="e.g. Bluebeam, Procore, AutoCAD..." />
+              <button type="button" class="btn btn-outline" id="addSkillBtn">Add</button>
+            </div>
+            <div class="skills-tags" id="skillsTags"></div>
+          </div>
+
+          <!-- Preferences -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-400);margin:20px 0 12px;">Preferences</div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <input type="checkbox" id="profVisible" checked style="width:16px;height:16px;" />
+              <span>Visible to employers (allow job matching)</span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save Profile</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── RESUME TAB ── -->
+    <div class="tab-panel" id="tab-resume">
+
+      <!-- Build from profile -->
+      <div class="card" style="background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;border:none;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <span style="font-size:36px;">📄</span>
+          <div style="flex:1;">
+            <div style="font-size:16px;font-weight:800;margin-bottom:4px;">Build Your Resume</div>
+            <p style="font-size:13px;opacity:.85;margin-bottom:12px;">Instantly generate a professional formatted resume from your profile — download as PDF, free.</p>
+            <a href="/resume-builder.html" target="_blank" class="btn" style="background:#fff;color:#1e3a5f;font-weight:700;">Build & Download PDF →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload resume -->
+      <div class="card">
+        <div class="card-title">Upload Resume</div>
+        <p style="font-size:14px;color:var(--gray-500);margin-bottom:16px;">Upload a PDF or Word file to automatically fill your profile with your resume details.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="document.getElementById('resumeFile').click()">Upload Resume (PDF / Word)</button>
+        </div>
+        <p class="form-hint mt-1">Accepted: PDF, Word (.docx) — max 5MB</p>
+        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" />
+      </div>
+    </div>
+
+    <!-- ── MESSAGES TAB ── -->
+    <div class="tab-panel" id="tab-messages">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="display:grid;grid-template-columns:260px 1fr;height:500px;">
+          <!-- Conversation list -->
+          <div style="border-right:1px solid var(--gray-200);display:flex;flex-direction:column;">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:14px;">Conversations</div>
+            <div id="dashConvList" style="flex:1;overflow-y:auto;">
+              <div style="padding:20px;text-align:center;"><div class="spinner"></div></div>
+            </div>
+          </div>
+          <!-- Chat area -->
+          <div style="display:flex;flex-direction:column;">
+            <div id="dashChatEmpty" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:14px;text-align:center;padding:20px;">
+              <div><div style="font-size:36px;margin-bottom:8px;">💬</div>Select a conversation</div>
+            </div>
+            <div id="dashChatArea" style="display:none;flex-direction:column;flex:1;">
+              <div style="padding:12px 16px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:14px;" id="dashChatHeader"></div>
+              <div id="dashChatBody" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--gray-50);"></div>
+              <div style="padding:12px 16px;border-top:1px solid var(--gray-200);display:flex;gap:8px;">
+                <input class="form-input" id="dashMsgInput" placeholder="Type a message..." style="flex:1;" />
+                <button class="btn btn-primary btn-sm" onclick="dashSendMsg()">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── RESUME PARSE MODAL ── -->
+<div class="modal-overlay" id="resumeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Reading your resume...</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <div class="upload-progress">
+        <div class="spinner" style="width:36px;height:36px;border-width:3px;"></div>
+        <p>AI is reading your resume...<br/>This takes about 10 seconds.</p>
+      </div>
+    </div>
+    <div class="modal-footer hidden" id="modalFooter">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="applyToProfileBtn">Yes — Save to My Profile</button>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+// Auth guard
+document.addEventListener('DOMContentLoaded', () => {
+  if (Auth.redirectIfNotAuth()) return;
+  const user = Auth.getUser();
+  if (user?.role === 'EMPLOYER') { window.location.href = '/employer.html'; return; }
+
+  document.getElementById('dashWelcome').textContent = `Welcome back, ${user?.name?.split(' ')[0] || 'there'}`;
+  loadDashboard();
+  loadProfile();
+});
+
+// Tab switching
+document.querySelectorAll('.dash-sidebar-item').forEach(item => {
+  item.addEventListener('click', () => switchTab(item.dataset.tab));
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.dash-sidebar-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
+  if (tab === 'applications') loadAllApplications();
+  if (tab === 'messages')     dashLoadInbox();
+}
+
+// Recommended jobs based on profile skills
+async function loadRecommendedJobs(profile) {
+  if (!profile?.skills?.length && !profile?.headline) return;
+  const search = profile.headline?.split(' ')[0] || profile.skills?.[0] || '';
+  if (!search) return;
+  const { ok, data } = await apiCall('GET', `/api/jobs?search=${encodeURIComponent(search)}&limit=3`);
+  if (!ok || !data.jobs?.length) return;
+  const card = document.getElementById('recommendedCard');
+  const el   = document.getElementById('recommendedJobs');
+  card.style.display = 'block';
+  el.innerHTML = data.jobs.map(j => `
+    <a href="/job.html?id=${j.id}" style="text-decoration:none;">
+      <div class="app-row" style="border-bottom:1px solid var(--gray-100);">
+        <div class="app-info">
+          <div class="app-title">${escapeHtml(j.title)}</div>
+          <div class="app-company">${escapeHtml(j.companyName||'')} · ${escapeHtml(j.city||j.location||'')}</div>
+        </div>
+        <span class="btn btn-sm btn-outline" style="flex-shrink:0;">View →</span>
+      </div>
+    </a>`).join('');
+}
+
+// Load dashboard data
+async function loadDashboard() {
+  const { ok, data } = await apiCall('GET', '/api/applications/mine');
+  if (!ok) return;
+
+  const apps = data.applications || [];
+  document.getElementById('statApplied').textContent     = apps.length;
+  document.getElementById('statShortlisted').textContent = apps.filter(a => a.status === 'SHORTLISTED').length;
+  document.getElementById('statViewed').textContent      = apps.filter(a => a.status === 'VIEWED').length;
+  try {
+    const saved = JSON.parse(localStorage.getItem('ctr_saved') || '[]');
+    document.getElementById('statSaved').textContent = saved.length;
+  } catch { document.getElementById('statSaved').textContent = '0'; }
+
+  const recentEl = document.getElementById('recentApps');
+  const recent   = apps.slice(0, 5);
+
+  if (!recent.length) {
+    recentEl.innerHTML = `<div class="empty-state" style="padding:20px;"><p class="text-gray">No applications yet. <a href="/jobs.html" style="color:var(--blue);">Browse jobs →</a></p></div>`;
+    return;
+  }
+
+  recentEl.innerHTML = recent.map(a => appRow(a)).join('');
+}
+
+async function loadAllApplications() {
+  const el = document.getElementById('allApps');
+  el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
+  const { ok, data } = await apiCall('GET', '/api/applications/mine');
+  if (!ok) { el.innerHTML = `<p class="text-gray">${data.error}</p>`; return; }
+  const apps = data.applications || [];
+  if (!apps.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No applications yet</h3><p>Start applying for jobs</p><a href="/jobs.html" class="btn btn-primary">Browse Jobs</a></div>`;
+    return;
+  }
+  el.innerHTML = apps.map(a => appRow(a)).join('');
+}
+
+function appRow(a) {
+  const statusColors = { APPLIED:'badge-blue', VIEWED:'badge-yellow', SHORTLISTED:'badge-green', REJECTED:'badge-red' };
+  const statusLabel  = { APPLIED:'Applied', VIEWED:'Viewed', SHORTLISTED:'Shortlisted', REJECTED:'Rejected' };
+  const statusIcon   = { APPLIED:'📨', VIEWED:'👀', SHORTLISTED:'⭐', REJECTED:'✗' };
+  const s = a.status || 'APPLIED';
+  return `<div class="app-row">
+    <div style="font-size:22px;flex-shrink:0;">${statusIcon[s] || '📨'}</div>
+    <div class="app-info">
+      <div class="app-title">${escapeHtml(a.job?.title || 'Job')}</div>
+      <div class="app-company">${escapeHtml(a.job?.companyName || 'Company')}${a.job?.location ? ' · ' + escapeHtml(a.job.location) : ''}</div>
+      <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Applied ${formatDate(a.appliedAt)} · ${escapeHtml(a.job?.jobType || '')}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <span class="badge ${statusColors[s] || 'badge-gray'}">${statusLabel[s] || s}</span>
+      ${a.job?.isActive === false ? `<div style="font-size:11px;color:var(--gray-400);margin-top:4px;">Job closed</div>` : ''}
+    </div>
+  </div>`;
+}
+
+// Profile
+let userSkills = [];
+
+async function loadProfile() {
+  const { ok, data } = await apiCall('GET', '/api/profile/me');
+  if (!ok) return;
+  const p = data.profile;
+  if (!p) return;
+
+  document.getElementById('profPhone').value        = p.phone          || '';
+  document.getElementById('profEmail').value        = p.email          || '';
+  document.getElementById('profLinkedin').value     = p.linkedin       || '';
+  document.getElementById('profCity').value         = p.city           || '';
+  document.getElementById('profProvince').value     = p.province       || '';
+  document.getElementById('profHeadline').value     = p.headline       || '';
+  document.getElementById('profYears').value        = p.yearsExperience|| '';
+  document.getElementById('profAvailability').value = p.availability   || '';
+  document.getElementById('profDrivers').value      = p.driversLicence || '';
+  document.getElementById('profRelocation').checked = p.openToRelocation || false;
+  document.getElementById('profSummary').value      = p.summary        || '';
+  document.getElementById('profVisible').checked    = p.visibleToEmployers !== false;
+
+  userSkills = p.skills || [];
+  renderSkills();
+  renderProfileCompletion(p);
+  loadRecommendedJobs(p);
+}
+
+function renderProfileCompletion(p) {
+  const checks = [
+    { label: 'Phone',       done: !!p.phone },
+    { label: 'City',        done: !!p.city },
+    { label: 'Headline',    done: !!p.headline },
+    { label: 'Skills',      done: p.skills?.length > 0 },
+    { label: 'Experience',  done: Array.isArray(p.experiences) && p.experiences.length > 0 },
+    { label: 'Education',   done: Array.isArray(p.educations)  && p.educations.length  > 0 },
+    { label: 'LinkedIn',    done: !!p.linkedin },
+    { label: 'Summary',     done: !!p.summary },
+    { label: 'Availability',done: !!p.availability },
+    { label: 'Years exp',   done: !!p.yearsExperience }
+  ];
+  const done = checks.filter(c => c.done).length;
+  const pct  = Math.round((done / checks.length) * 100);
+  const missing = checks.filter(c => !c.done).map(c => c.label);
+
+  document.getElementById('profileCompletionCard').style.display = 'block';
+  document.getElementById('profilePct').textContent  = pct + '%';
+  document.getElementById('profileBar').style.width  = pct + '%';
+  document.getElementById('profileBar').style.background =
+    pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--blue)' : 'var(--orange)';
+  document.getElementById('profileMissing').innerHTML = missing.length
+    ? `Missing: ${missing.map(m => `<span style="background:var(--gray-100);padding:1px 8px;border-radius:4px;margin-right:4px;">${m}</span>`).join('')}
+       <button class="btn btn-sm btn-ghost" style="padding:2px 8px;margin-left:4px;" onclick="switchTab('profile')">Complete →</button>`
+    : `<span style="color:var(--green);font-weight:600;">✓ Profile complete!</span>`;
+}
+
+function renderSkills() {
+  document.getElementById('skillsTags').innerHTML = userSkills.map((s, i) =>
+    `<span class="skill-tag">${escapeHtml(s)} <button onclick="removeSkill(${i})">×</button></span>`
+  ).join('');
+}
+
+function removeSkill(i) { userSkills.splice(i, 1); renderSkills(); }
+
+document.getElementById('addSkillBtn').addEventListener('click', () => {
+  const input = document.getElementById('skillInput');
+  const val   = input.value.trim();
+  if (val && !userSkills.includes(val)) { userSkills.push(val); renderSkills(); }
+  input.value = '';
+});
+
+document.getElementById('skillInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addSkillBtn').click(); }
+});
+
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type=submit]');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const { ok, data } = await apiCall('PUT', '/api/profile/me', {
+    phone:             document.getElementById('profPhone').value,
+    email:             document.getElementById('profEmail').value,
+    linkedin:          document.getElementById('profLinkedin').value,
+    city:              document.getElementById('profCity').value,
+    province:          document.getElementById('profProvince').value,
+    headline:          document.getElementById('profHeadline').value,
+    yearsExperience:   document.getElementById('profYears').value,
+    availability:      document.getElementById('profAvailability').value,
+    driversLicence:    document.getElementById('profDrivers').value,
+    openToRelocation:  document.getElementById('profRelocation').checked,
+    summary:           document.getElementById('profSummary').value,
+    skills:            userSkills,
+    visibleToEmployers:document.getElementById('profVisible').checked
+  });
+
+  btn.disabled = false; btn.textContent = 'Save Profile';
+  if (ok) {
+    const el = document.getElementById('profileSuccess');
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3000);
+    Toast.success('Profile saved!');
+  } else {
+    Toast.error(data.error || 'Failed to save profile');
+  }
+});
+
+// ── RESUME UPLOAD ──────────────────────────────
+let parsedResumeData = null;
+
+document.getElementById('resumeFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Open modal with loading state
+  openModal('Parsing your resume...');
+
+  const formData = new FormData();
+  formData.append('resume', file);
+
+  try {
+    const token = Auth.getToken();
+    const res   = await fetch('/api/resume/upload', {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      document.getElementById('modalTitle').textContent = 'Upload Failed';
+      document.getElementById('modalBody').innerHTML = `
+        <div class="alert alert-error">${data.error || 'Failed to parse resume. Please try again.'}</div>`;
+      return;
+    }
+
+    parsedResumeData = data.parsed;
+    showParsedModal(data.parsed, file.name);
+
+  } catch (e) {
+    document.getElementById('modalTitle').textContent = 'Error';
+    document.getElementById('modalBody').innerHTML = `<div class="alert alert-error">Network error. Please try again.</div>`;
+  }
+
+  // Reset file input so same file can be re-uploaded
+  e.target.value = '';
+});
+
+function openModal(title) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="upload-progress">
+      <div class="spinner" style="width:36px;height:36px;border-width:3px;"></div>
+      <p>Reading your resume...<br/>Extracting your details automatically.</p>
+    </div>`;
+  document.getElementById('modalFooter').classList.add('hidden');
+  document.getElementById('resumeModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('resumeModal').classList.remove('open');
+  parsedResumeData = null;
+}
+
+function showParsedModal(p, fileName) {
+  document.getElementById('modalTitle').textContent = 'Resume Parsed — Review & Save';
+
+  const skills = Array.isArray(p.skills) ? p.skills : (p.skills || '').split(',').map(s => s.trim()).filter(Boolean);
+  const exps   = Array.isArray(p.experiences)    ? p.experiences    : [];
+  const edus   = Array.isArray(p.educations)     ? p.educations     : [];
+  const certs  = Array.isArray(p.certifications) ? p.certifications : [];
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="alert alert-success" style="margin-bottom:20px;">
+      ✓ <strong>${escapeHtml(fileName)}</strong> read successfully. Review what was found, then click <strong>Save to My Profile</strong>.
+    </div>
+
+    <!-- Contact Details -->
+    <div class="parsed-section">
+      <h4>📋 Contact Details</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
+          <span class="text-gray text-sm">Name</span>
+          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.name || '—')}</div>
+        </div>
+        <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
+          <span class="text-gray text-sm">Phone</span>
+          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.phone || '—')}</div>
+        </div>
+        <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
+          <span class="text-gray text-sm">Email</span>
+          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.email || '—')}</div>
+        </div>
+        <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
+          <span class="text-gray text-sm">Location</span>
+          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.city || '—')}</div>
+        </div>
+        <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
+          <span class="text-gray text-sm">Job Title</span>
+          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.role || '—')}</div>
+        </div>
+        <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
+          <span class="text-gray text-sm">LinkedIn</span>
+          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.linkedin || '—')}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    ${skills.length ? `
+    <div class="parsed-section">
+      <h4>🛠 Skills (${skills.length} found)</h4>
+      <div class="kw-tags">${skills.map(s => `<span class="kw-tag">${escapeHtml(s)}</span>`).join('')}</div>
+    </div>` : ''}
+
+    <!-- Experience -->
+    ${exps.length ? `
+    <div class="parsed-section">
+      <h4>💼 Work Experience (${exps.length} roles)</h4>
+      ${exps.map(exp => `
+        <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
+          <div style="font-weight:700;font-size:14px;">${escapeHtml(exp.title || '')}</div>
+          <div style="font-size:13px;color:var(--gray-600);margin:2px 0;">${escapeHtml(exp.company || '')} ${exp.location ? '· ' + escapeHtml(exp.location) : ''}</div>
+          <div style="font-size:12px;color:var(--gray-400);margin-bottom:6px;">${escapeHtml(exp.dates || '')}</div>
+          ${exp.bullets ? `<div style="font-size:13px;color:var(--gray-600);white-space:pre-line;">${escapeHtml(exp.bullets)}</div>` : ''}
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Education -->
+    ${edus.length ? `
+    <div class="parsed-section">
+      <h4>🎓 Education (${edus.length} found)</h4>
+      ${edus.map(edu => `
+        <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
+          <div style="font-weight:700;font-size:14px;">${escapeHtml(edu.degree || '')}</div>
+          <div style="font-size:13px;color:var(--gray-600);">${escapeHtml(edu.institution || '')} ${edu.location ? '· ' + escapeHtml(edu.location) : ''}</div>
+          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml(edu.year || '')}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Certifications -->
+    ${certs.length ? `
+    <div class="parsed-section">
+      <h4>📜 Certifications (${certs.length} found)</h4>
+      ${certs.map(c => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--gray-200);border-radius:var(--radius);margin-bottom:8px;">
+          <div>
+            <div style="font-weight:600;font-size:13px;">${escapeHtml(c.name || '')}</div>
+            <div style="font-size:12px;color:var(--gray-500);">${escapeHtml(c.issuer || '')}</div>
+          </div>
+          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml(c.date || '')}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Summary -->
+    ${p.summary ? `
+    <div class="parsed-section">
+      <h4>📝 Professional Summary</h4>
+      <p style="font-size:14px;color:var(--gray-600);line-height:1.7;background:var(--gray-50);padding:12px;border-radius:var(--radius);">${escapeHtml(p.summary)}</p>
+    </div>` : ''}
+
+    <div class="alert alert-info mt-2">
+      Click <strong>Yes — Save to My Profile</strong> to save all this information to your profile automatically.
+    </div>
+  `;
+
+  document.getElementById('modalFooter').classList.remove('hidden');
+}
+
+// Apply parsed data to profile — save everything to backend
+document.getElementById('applyToProfileBtn').addEventListener('click', async () => {
+  if (!parsedResumeData) return;
+  const p = parsedResumeData;
+  const btn = document.getElementById('applyToProfileBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const skills = Array.isArray(p.skills) ? p.skills : (p.skills || '').split(',').map(s => s.trim()).filter(Boolean);
+  const city     = (p.city || '').split(',')[0]?.trim() || '';
+  const province = (p.city || '').split(',')[1]?.trim() || '';
+
+  // Only send fields that actually exist in the parsed resume
+  const payload = {};
+  if (p.phone)            payload.phone            = p.phone;
+  if (p.email)            payload.email            = p.email;
+  if (p.linkedin)         payload.linkedin         = p.linkedin;
+  if (p.headline)         payload.headline         = p.headline;
+  if (p.summary)          payload.summary          = p.summary;   // optional — only if found
+  if (p.driversLicence)   payload.driversLicence   = p.driversLicence;
+  if (p.availability)     payload.availability     = p.availability;
+  if (p.yearsExperience)  payload.yearsExperience  = p.yearsExperience;
+  if (p.openToRelocation !== undefined) payload.openToRelocation = p.openToRelocation;
+  if (city)               payload.city             = city;
+  if (province)           payload.province         = province;
+  if (p.city)             payload.location         = p.city;
+  if (p.country)          payload.country          = p.country;
+  if (skills.length)      payload.skills           = skills;
+  if (p.skillCategories)  payload.skillCategories  = p.skillCategories;
+  if (Array.isArray(p.experiences)    && p.experiences.length)    payload.experiences    = p.experiences;
+  if (Array.isArray(p.educations)     && p.educations.length)     payload.educations     = p.educations;
+  if (Array.isArray(p.certifications) && p.certifications.length) payload.certifications = p.certifications;
+
+  const { ok, data } = await apiCall('PUT', '/api/profile/me', payload);
+
+  btn.disabled = false;
+  btn.textContent = 'Yes — Save to My Profile';
+
+  if (ok) {
+    // Update visible form fields
+    if (p.phone)           document.getElementById('profPhone').value        = p.phone;
+    if (p.email)           document.getElementById('profEmail').value        = p.email;
+    if (p.linkedin)        document.getElementById('profLinkedin').value     = p.linkedin;
+    if (city)              document.getElementById('profCity').value         = city;
+    if (province)          document.getElementById('profProvince').value     = province;
+    if (p.headline)        document.getElementById('profHeadline').value     = p.headline;
+    if (p.yearsExperience) document.getElementById('profYears').value        = p.yearsExperience;
+    if (p.availability)    document.getElementById('profAvailability').value = p.availability;
+    if (p.driversLicence)  document.getElementById('profDrivers').value      = p.driversLicence;
+    if (p.summary)         document.getElementById('profSummary').value      = p.summary;
+    if (skills.length)     { userSkills = skills; renderSkills(); }
+
+    closeModal();
+    Toast.success('Profile saved from resume successfully!');
+    switchTab('profile');
+  } else {
+    Toast.error(data.error || 'Failed to save profile');
+  }
+});
+
+// Close modal when clicking outside
+document.getElementById('resumeModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('resumeModal')) closeModal();
+});
+
+// ── MESSAGES (inline) ────────────────────────────────
+let dashActiveConv = null;
+let dashMsgPoll    = null;
+
+async function dashLoadInbox() {
+  const el = document.getElementById('dashConvList');
+  const { ok, data } = await apiCall('GET', '/api/messages/inbox');
+  if (!ok || !data.conversations?.length) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px;">No messages yet.<br/>Apply to jobs to start chatting.</div>`;
+    return;
+  }
+  el.innerHTML = data.conversations.map(c => {
+    const initials = c.user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div onclick="dashOpenConv('${c.user.id}','${escapeHtml(c.user.name)}')"
+      style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--gray-100);${dashActiveConv===c.user.id?'background:var(--blue-light)':''}">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${initials}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;">${escapeHtml(c.user.name)}</div>
+        <div style="font-size:11px;color:var(--gray-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(c.lastMessage||'')}</div>
+      </div>
+      ${c.unread>0?`<span style="background:var(--blue);color:#fff;border-radius:100px;font-size:10px;font-weight:700;padding:1px 6px;">${c.unread}</span>`:''}
+    </div>`;
+  }).join('');
+  updateMsgBadge(data.conversations.reduce((n,c)=>n+c.unread,0));
+}
+
+async function dashOpenConv(userId, name) {
+  dashActiveConv = userId;
+  document.getElementById('dashChatEmpty').style.display = 'none';
+  const area = document.getElementById('dashChatArea');
+  area.style.display = 'flex';
+  document.getElementById('dashChatHeader').textContent = name;
+  await dashFetchMsgs(userId);
+  if (dashMsgPoll) clearInterval(dashMsgPoll);
+  dashMsgPoll = setInterval(() => dashFetchMsgs(userId), 5000);
+  dashLoadInbox();
+}
+
+async function dashFetchMsgs(userId) {
+  const { ok, data } = await apiCall('GET', `/api/messages/${userId}`);
+  if (!ok) return;
+  const me   = Auth.getUser()?.id;
+  const body = document.getElementById('dashChatBody');
+  const atBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 50;
+  body.innerHTML = data.messages.map(m => {
+    const mine = m.senderId === me;
+    return `<div style="display:flex;justify-content:${mine?'flex-end':'flex-start'};">
+      <div style="max-width:70%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;
+        ${mine?'background:var(--blue);color:#fff;':'background:#fff;border:1px solid var(--gray-200);color:var(--gray-800);'}">
+        ${escapeHtml(m.content)}
+      </div>
+    </div>`;
+  }).join('');
+  if (atBottom) body.scrollTop = body.scrollHeight;
+}
+
+async function dashSendMsg() {
+  if (!dashActiveConv) return;
+  const input = document.getElementById('dashMsgInput');
+  const content = input.value.trim();
+  if (!content) return;
+  input.value = '';
+  await apiCall('POST', `/api/messages/${dashActiveConv}`, { content });
+  dashFetchMsgs(dashActiveConv);
+  dashLoadInbox();
+}
+
+document.getElementById('dashMsgInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); dashSendMsg(); }
+});
+
+function updateMsgBadge(count) {
+  const el = document.getElementById('msgBadge');
+  if (!el) return;
+  if (count > 0) { el.textContent = count; el.style.display = 'inline'; }
+  else el.style.display = 'none';
+}
+
+// Poll unread count every 30s
+async function pollUnread() {
+  const { ok, data } = await apiCall('GET', '/api/messages/unread-count');
+  if (ok) updateMsgBadge(data.count);
+}
+pollUnread();
+setInterval(pollUnread, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Details — ConsTradeRise</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .job-detail-layout { display:grid; grid-template-columns:1fr 320px; gap:24px; padding:32px 0; }
+    @media(max-width:768px){ .job-detail-layout{grid-template-columns:1fr;} .job-sidebar{order:-1;} }
+    .job-sidebar { display:flex; flex-direction:column; gap:16px; }
+    .job-sidebar .card { position:sticky; top:80px; }
+    .job-body { font-size:15px; line-height:1.8; color:var(--gray-700); white-space:pre-wrap; }
+    .job-body h3 { font-size:16px; font-weight:700; color:var(--gray-900); margin:20px 0 8px; }
+    .ats-breakdown { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+    .ats-bar-row { display:flex; align-items:center; gap:10px; }
+    .ats-bar-label { font-size:12px; color:var(--gray-600); width:90px; flex-shrink:0; }
+    .ats-bar-track { flex:1; background:var(--gray-100); border-radius:100px; height:8px; overflow:hidden; }
+    .ats-bar-fill  { height:100%; border-radius:100px; background:var(--blue); transition:width .6s ease; }
+    .ats-bar-pct   { font-size:12px; font-weight:700; color:var(--gray-700); width:32px; text-align:right; }
+
+    /* Apply modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:var(--radius-lg); width:100%; max-width:520px; box-shadow:var(--shadow-lg); }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid var(--gray-200); }
+    .modal-header h2 { font-size:18px; font-weight:800; }
+    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--gray-400); }
+    .modal-body   { padding:24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--gray-200); display:flex; gap:10px; justify-content:flex-end; }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="logo">ConsTradeRise</a>
+    <div class="nav-links" id="navLinks">
+      <a href="/jobs.html">Browse Jobs</a>
+      <a href="#" id="navDashboardLink" style="display:none">Dashboard</a>
+      <a href="#" id="navLogoutBtn" style="display:none" class="btn btn-ghost">Logout</a>
+      <a href="/login.html" id="navLoginBtn" class="btn btn-ghost">Login</a>
+      <a href="/register.html" id="navRegisterBtn" class="btn btn-primary">Get Started</a>
+    </div>
+    <button class="nav-toggle" id="navToggle">&#9776;</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div style="padding:16px 0;">
+    <a href="/jobs.html" class="btn btn-ghost btn-sm">← Back to Jobs</a>
+  </div>
+  <div id="jobDetailWrap">
+    <div style="text-align:center;padding:60px"><div class="spinner" style="width:40px;height:40px;border-width:3px;margin:auto;"></div></div>
+  </div>
+</div>
+
+<!-- Apply Modal -->
+<div class="modal-overlay" id="applyModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Apply for <span id="applyJobTitle">this job</span></h2>
+      <button class="modal-close" onclick="closeApplyModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="applyMsg"></div>
+      <div class="form-group">
+        <label class="form-label">Cover Letter <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
+        <textarea class="form-textarea" id="coverLetterInput" style="min-height:140px;"
+          placeholder="Tell the employer why you're a great fit for this role..."></textarea>
+        <p class="form-hint">A cover letter can increase your chances of getting an interview.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeApplyModal()">Cancel</button>
+      <button class="btn btn-primary" id="submitApplyBtn" onclick="submitApplication()">Submit Application</button>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+let currentJob   = null;
+let alreadyApplied = false;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const id = new URLSearchParams(window.location.search).get('id');
+  if (!id) { document.getElementById('jobDetailWrap').innerHTML = '<div class="empty-state"><h3>Job not found</h3><a href="/jobs.html" class="btn btn-primary">Browse Jobs</a></div>'; return; }
+
+  const { ok, data } = await apiCall('GET', `/api/jobs/${id}`);
+  if (!ok) {
+    document.getElementById('jobDetailWrap').innerHTML = `<div class="empty-state"><h3>Job not found</h3><p>${data.error || ''}</p><a href="/jobs.html" class="btn btn-primary">Browse Jobs</a></div>`;
+    return;
+  }
+
+  currentJob = data.job;
+  document.title = `${currentJob.title} — ConsTradeRise`;
+  renderJob(currentJob);
+
+  // Check if already applied
+  if (Auth.isLoggedIn() && Auth.getRole() === 'WORKER') {
+    checkAlreadyApplied(id);
+    loadATSScore(currentJob);
+  }
+});
+
+async function checkAlreadyApplied(jobId) {
+  const { ok, data } = await apiCall('GET', '/api/applications/mine');
+  if (ok) {
+    alreadyApplied = (data.applications || []).some(a => a.jobId === jobId);
+    if (alreadyApplied) {
+      document.getElementById('applyBtnWrap').innerHTML =
+        `<button class="btn btn-success btn-full btn-lg" disabled>✓ Applied</button>`;
+    }
+  }
+}
+
+async function loadATSScore(job) {
+  const { ok: pOk, data: pData } = await apiCall('GET', '/api/profile/me');
+  if (!pOk || !pData.profile) return;
+
+  const p = pData.profile;
+  const resumeText = [
+    p.headline, p.summary,
+    (p.skills || []).join(' '),
+    JSON.stringify(p.experiences || []),
+    JSON.stringify(p.educations || []),
+    JSON.stringify(p.certifications || [])
+  ].filter(Boolean).join('\n');
+
+  if (resumeText.length < 30) return;
+
+  const { ok, data } = await apiCall('POST', '/api/ats/score', {
+    resumeText,
+    jobDescription: job.description + ' ' + (job.skills || []).join(' '),
+    jobId: job.id,
+    userId: Auth.getUser()?.id
+  });
+
+  if (!ok) return;
+  renderATSScore(data.result);
+}
+
+function renderATSScore(r) {
+  const el = document.getElementById('atsScoreWrap');
+  if (!el) return;
+  const color = r.score >= 80 ? '#16a34a' : r.score >= 60 ? '#2563eb' : r.score >= 40 ? '#ca8a04' : '#dc2626';
+  el.innerHTML = `
+    <div style="text-align:center;margin-bottom:12px;">
+      <div style="font-size:42px;font-weight:800;color:${color};">${r.score}%</div>
+      <div style="font-size:13px;font-weight:700;color:${color};">${r.matchStrength} Match</div>
+    </div>
+    <div class="ats-breakdown">
+      ${bar('Keywords', r.keywordScore)}
+      ${bar('Skills', r.skillsScore)}
+      ${bar('Job Title', r.titleScore)}
+      ${bar('Format', r.formatScore)}
+    </div>
+    ${r.matchedKeywords?.length ? `
+    <div style="margin-top:12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--gray-500);margin-bottom:6px;">MATCHED</div>
+      <div class="kw-tags">${r.matchedKeywords.slice(0,6).map(k=>`<span class="kw-tag" style="background:#f0fdf4;color:#16a34a;">${escapeHtml(k)}</span>`).join('')}</div>
+    </div>` : ''}
+    ${r.missingKeywords?.length ? `
+    <div style="margin-top:10px;">
+      <div style="font-size:11px;font-weight:700;color:var(--gray-500);margin-bottom:6px;">ADD TO RESUME</div>
+      <div class="kw-tags">${r.missingKeywords.slice(0,5).map(k=>`<span class="kw-tag" style="background:#fef2f2;color:#dc2626;">${escapeHtml(k)}</span>`).join('')}</div>
+    </div>` : ''}
+    ${r.suggestions?.length ? `
+    <div style="margin-top:12px;border-top:1px solid var(--gray-100);padding-top:10px;">
+      ${r.suggestions.map(s=>`<div style="font-size:12px;color:var(--gray-600);margin-bottom:4px;">💡 ${escapeHtml(s)}</div>`).join('')}
+    </div>` : ''}
+  `;
+}
+
+function bar(label, val) {
+  val = val || 0;
+  return `<div class="ats-bar-row">
+    <span class="ats-bar-label">${label}</span>
+    <div class="ats-bar-track"><div class="ats-bar-fill" style="width:${val}%"></div></div>
+    <span class="ats-bar-pct">${val}%</span>
+  </div>`;
+}
+
+function renderJob(job) {
+  const isLoggedIn = Auth.isLoggedIn();
+  const isWorker   = Auth.getRole() === 'WORKER';
+  const isExternal = !!job.externalUrl;
+
+  document.getElementById('jobDetailWrap').innerHTML = `
+    <div class="job-detail-layout">
+
+      <!-- Main content -->
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+            <div>
+              <h1 style="font-size:22px;font-weight:800;color:var(--gray-900);margin-bottom:4px;">${escapeHtml(job.title)}</h1>
+              <div style="font-size:15px;font-weight:600;color:var(--blue);">${escapeHtml(job.companyName || job.employer?.name || 'Company')}</div>
+            </div>
+            ${job.isFeatured ? `<span class="badge badge-yellow">⭐ Featured</span>` : ''}
+          </div>
+
+          <div class="job-meta" style="margin-bottom:16px;">
+            ${job.city || job.location ? `<span class="job-tag">📍 ${escapeHtml(job.city || job.location)}</span>` : ''}
+            ${job.jobType ? `<span class="job-tag">🕐 ${escapeHtml(job.jobType)}</span>` : ''}
+            ${job.salary  ? `<span class="job-tag">💰 ${escapeHtml(job.salary)}</span>`  : ''}
+            ${isExternal  ? `<span class="job-tag" style="background:#f0fdf4;color:#16a34a;">🌐 External Listing</span>` : ''}
+            <span class="job-tag">📅 ${formatDate(job.postedAt)}</span>
+          </div>
+
+          ${job.skills?.length ? `
+          <div style="margin-bottom:16px;">
+            <div style="font-size:12px;font-weight:700;color:var(--gray-500);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Required Skills</div>
+            <div class="kw-tags">${job.skills.map(s=>`<span class="kw-tag">${escapeHtml(s)}</span>`).join('')}</div>
+          </div>` : ''}
+        </div>
+
+        <div class="card">
+          <div class="card-title">Job Description</div>
+          <div class="job-body">${escapeHtml(job.description)}</div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="job-sidebar">
+        <div class="card">
+          <div id="applyBtnWrap">
+            ${!isLoggedIn ? `
+              <a href="/login.html?next=/job.html?id=${job.id}" class="btn btn-primary btn-full btn-lg">Login to Apply</a>
+              <p style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:8px;">New? <a href="/register.html" style="color:var(--blue);">Create free account</a></p>
+            ` : isWorker ? `
+              ${isExternal ? `
+                <a href="${escapeHtml(job.externalUrl)}" target="_blank" rel="noopener" class="btn btn-primary btn-full btn-lg">Apply on ${escapeHtml(job.source || 'Job Site')} →</a>
+                <p style="font-size:12px;color:var(--gray-400);text-align:center;margin-top:8px;">Opens external site</p>
+              ` : `
+                <button class="btn btn-primary btn-full btn-lg" onclick="openApplyModal()">Apply Now</button>
+              `}
+            ` : `
+              <div style="text-align:center;color:var(--gray-500);font-size:13px;">Employer account</div>
+            `}
+          </div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100);">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+              <span style="color:var(--gray-500);">Location</span>
+              <span style="font-weight:600;">${escapeHtml(job.city || job.location || '—')}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+              <span style="color:var(--gray-500);">Type</span>
+              <span style="font-weight:600;">${escapeHtml(job.jobType || '—')}</span>
+            </div>
+            ${job.salary ? `
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+              <span style="color:var(--gray-500);">Salary</span>
+              <span style="font-weight:600;">${escapeHtml(job.salary)}</span>
+            </div>` : ''}
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:var(--gray-500);">Posted</span>
+              <span style="font-weight:600;">${formatDate(job.postedAt)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ATS Score (workers only) -->
+        ${isWorker ? `
+        <div class="card">
+          <div class="card-title" style="margin-bottom:8px;">Your Match Score</div>
+          <div id="atsScoreWrap">
+            <div style="text-align:center;padding:20px;color:var(--gray-400);font-size:13px;">
+              <div class="spinner" style="margin:0 auto 8px;width:24px;height:24px;border-width:2px;"></div>
+              Calculating match...
+            </div>
+          </div>
+        </div>` : ''}
+
+        <a href="/jobs.html" class="btn btn-ghost btn-full">← More Jobs</a>
+      </div>
+    </div>
+  `;
+}
+
+function openApplyModal() {
+  if (!Auth.isLoggedIn()) { window.location.href = '/login.html'; return; }
+  document.getElementById('applyJobTitle').textContent = currentJob?.title || 'this job';
+  document.getElementById('applyMsg').innerHTML = '';
+  document.getElementById('coverLetterInput').value = '';
+  document.getElementById('applyModal').classList.add('open');
+}
+
+function closeApplyModal() {
+  document.getElementById('applyModal').classList.remove('open');
+}
+
+async function submitApplication() {
+  if (!currentJob) return;
+  const btn = document.getElementById('submitApplyBtn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const coverLetter = document.getElementById('coverLetterInput').value.trim();
+  const { ok, data } = await apiCall('POST', '/api/applications', {
+    jobId: currentJob.id,
+    coverLetter: coverLetter || null
+  });
+
+  btn.disabled = false; btn.textContent = 'Submit Application';
+
+  if (ok) {
+    closeApplyModal();
+    alreadyApplied = true;
+    document.getElementById('applyBtnWrap').innerHTML =
+      `<button class="btn btn-success btn-full btn-lg" disabled>✓ Application Sent!</button>`;
+    Toast.success('Application submitted successfully!');
+  } else if (data.error?.includes('already applied')) {
+    document.getElementById('applyMsg').innerHTML = `<div class="alert alert-error" style="margin-bottom:12px;">You have already applied for this job.</div>`;
+  } else {
+    document.getElementById('applyMsg').innerHTML = `<div class="alert alert-error" style="margin-bottom:12px;">${data.error || 'Failed to submit. Please try again.'}</div>`;
+  }
+}
+
+document.getElementById('applyModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('applyModal')) closeApplyModal();
+});
+</script>
+</body>
+</html>

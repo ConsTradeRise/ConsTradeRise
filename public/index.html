@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ConsTradeRise — AI-Powered Construction Jobs in Canada</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<!-- ─── NAVBAR ─────────────────────────────── -->
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="logo">ConsTradeRise</a>
+    <div class="nav-links" id="navLinks">
+      <a href="/jobs.html">Browse Jobs</a>
+      <a href="#" id="navDashboardLink" style="display:none">Dashboard</a>
+      <a href="#" id="navLogoutBtn" style="display:none" class="btn btn-ghost">Logout</a>
+      <a href="/login.html" id="navLoginBtn" class="btn btn-ghost">Login</a>
+      <a href="/register.html" id="navRegisterBtn" class="btn btn-primary">Get Started</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu">&#9776;</button>
+  </div>
+</nav>
+
+<!-- ─── HERO ──────────────────────────────── -->
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-badge">Canada's #1 Construction Job Platform</div>
+    <h1 class="hero-title">
+      Find Your Next<br/>
+      <span class="highlight">Construction Job</span><br/>
+      With AI
+    </h1>
+    <p class="hero-sub">
+      Get your ATS match score for every job. AI builds your resume.
+      Thousands of trades, construction &amp; civil engineering jobs across Canada.
+    </p>
+    <!-- Quick search -->
+    <div style="display:flex;gap:8px;max-width:580px;margin:0 auto 24px;flex-wrap:wrap;">
+      <input id="heroSearch" type="text" placeholder="Job title or keyword..." class="form-input" style="flex:1;min-width:200px;background:rgba(255,255,255,.95);" />
+      <button onclick="heroSearch()" class="btn btn-primary btn-lg" style="background:#fff;color:var(--blue);font-weight:700;">Search Jobs</button>
+    </div>
+    <div class="hero-actions">
+      <a href="/register.html?role=worker" class="btn btn-primary btn-lg">Get Started — Free</a>
+      <a href="/register.html?role=employer" class="btn btn-outline btn-lg">Post a Job</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num" id="statJobs">—</span><span class="stat-label">Jobs Available</span></div>
+      <div class="stat"><span class="stat-num">AI</span><span class="stat-label">ATS Scoring</span></div>
+      <div class="stat"><span class="stat-num">Free</span><span class="stat-label">For Workers</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ATS FEATURE HIGHLIGHT ─────────────── -->
+<section class="section-alt">
+  <div class="container">
+    <div class="feature-banner">
+      <div class="feature-banner-text">
+        <div class="section-badge">Core Feature</div>
+        <h2>Know Your Match Score Before You Apply</h2>
+        <p>
+          ConsTradeRise's AI reads every job description and scores your resume against it —
+          so you know exactly where you stand before hitting Apply.
+        </p>
+        <ul class="feature-list">
+          <li><span class="check">✓</span> ATS match score 0–100 on every job</li>
+          <li><span class="check">✓</span> See missing keywords instantly</li>
+          <li><span class="check">✓</span> AI suggests exactly what to add</li>
+          <li><span class="check">✓</span> Tailor your resume to any job in seconds</li>
+        </ul>
+        <a href="/register.html" class="btn btn-primary">Get Your Score Free</a>
+      </div>
+      <div class="feature-banner-card">
+        <div class="ats-demo-card">
+          <div class="ats-demo-header">
+            <span class="ats-demo-job">Senior Estimator — PCL Construction</span>
+            <span class="ats-score-badge score-good">82%</span>
+          </div>
+          <div class="ats-progress-bar">
+            <div class="ats-progress-fill" style="width:82%"></div>
+          </div>
+          <p class="ats-strength">Good Match</p>
+          <div class="ats-keywords">
+            <div class="keyword-section">
+              <span class="kw-label match">✓ Matched</span>
+              <div class="kw-tags">
+                <span class="kw-tag">HeavyBid</span>
+                <span class="kw-tag">Bluebeam</span>
+                <span class="kw-tag">ICI</span>
+                <span class="kw-tag">Estimating</span>
+              </div>
+            </div>
+            <div class="keyword-section">
+              <span class="kw-label missing">✗ Missing</span>
+              <div class="kw-tags">
+                <span class="kw-tag missing">Procore</span>
+                <span class="kw-tag missing">P6</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ──────────────────────── -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">How It Works</div>
+      <h2>Hired Faster — 3 Steps</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Upload or Build Resume</h3>
+        <p>Upload your existing resume or let AI build one from your experience. Takes 2 minutes.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Browse &amp; Score Jobs</h3>
+        <p>See your ATS match score on every job. Know which ones you'll get interviews for.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Apply with Confidence</h3>
+        <p>Tailor your resume, attach a cover letter, and apply directly on the platform.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── JOB CATEGORIES ────────────────────── -->
+<section class="section-alt">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Categories</div>
+      <h2>Jobs for Every Trade</h2>
+    </div>
+    <div class="categories-grid">
+      <a href="/jobs.html?search=estimator" class="category-card">
+        <span class="cat-icon">📐</span>
+        <span class="cat-name">Estimators</span>
+      </a>
+      <a href="/jobs.html?search=project+manager" class="category-card">
+        <span class="cat-icon">📋</span>
+        <span class="cat-name">Project Managers</span>
+      </a>
+      <a href="/jobs.html?search=electrician" class="category-card">
+        <span class="cat-icon">⚡</span>
+        <span class="cat-name">Electricians</span>
+      </a>
+      <a href="/jobs.html?search=carpenter" class="category-card">
+        <span class="cat-icon">🔨</span>
+        <span class="cat-name">Carpenters</span>
+      </a>
+      <a href="/jobs.html?search=civil+engineer" class="category-card">
+        <span class="cat-icon">🏗️</span>
+        <span class="cat-name">Civil Engineers</span>
+      </a>
+      <a href="/jobs.html?search=site+supervisor" class="category-card">
+        <span class="cat-icon">🦺</span>
+        <span class="cat-name">Site Supervisors</span>
+      </a>
+      <a href="/jobs.html?search=plumber" class="category-card">
+        <span class="cat-icon">🔧</span>
+        <span class="cat-name">Plumbers</span>
+      </a>
+      <a href="/jobs.html?search=labourer" class="category-card">
+        <span class="cat-icon">👷</span>
+        <span class="cat-name">Labourers</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOR EMPLOYERS ─────────────────────── -->
+<section class="section employer-section">
+  <div class="container">
+    <div class="employer-split">
+      <div class="employer-text">
+        <div class="section-badge">For Employers</div>
+        <h2>Hire Faster. See Ranked Candidates.</h2>
+        <p>Post your job and get AI-ranked candidates instantly. See ATS scores so you spend time only on the best fits.</p>
+        <ul class="feature-list">
+          <li><span class="check">✓</span> Post jobs in minutes</li>
+          <li><span class="check">✓</span> Candidates ranked by match score</li>
+          <li><span class="check">✓</span> Filter by skills, experience, location</li>
+          <li><span class="check">✓</span> Message candidates directly</li>
+        </ul>
+        <a href="/register.html?role=employer" class="btn btn-primary">Post a Job — Get Started</a>
+      </div>
+      <div class="employer-card">
+        <div class="emp-demo">
+          <div class="emp-demo-header">Applicants — Senior Estimator</div>
+          <div class="emp-candidate">
+            <div class="emp-cand-info">
+              <span class="emp-cand-name">J. Smith</span>
+              <span class="emp-cand-loc">Toronto, ON · 8 yrs exp</span>
+            </div>
+            <span class="ats-score-badge score-great">94%</span>
+          </div>
+          <div class="emp-candidate">
+            <div class="emp-cand-info">
+              <span class="emp-cand-name">M. Patel</span>
+              <span class="emp-cand-loc">Mississauga, ON · 5 yrs exp</span>
+            </div>
+            <span class="ats-score-badge score-good">78%</span>
+          </div>
+          <div class="emp-candidate">
+            <div class="emp-cand-info">
+              <span class="emp-cand-name">R. Chen</span>
+              <span class="emp-cand-loc">Brampton, ON · 3 yrs exp</span>
+            </div>
+            <span class="ats-score-badge score-fair">61%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ───────────────────────────────── -->
+<section class="section cta-section">
+  <div class="container cta-inner">
+    <h2>Ready to Find Your Next Job?</h2>
+    <p>Join construction workers across Ontario using ConsTradeRise to get hired faster.</p>
+    <div class="cta-actions">
+      <a href="/register.html?role=worker" class="btn btn-primary btn-lg">Create Free Account</a>
+      <a href="/jobs.html" class="btn btn-ghost btn-lg">Browse Jobs</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────── -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <a href="/" class="logo">ConsTradeRise</a>
+      <p>AI-powered construction jobs platform. Built for Canadian trades professionals.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>For Workers</h4>
+        <a href="/jobs.html">Browse Jobs</a>
+        <a href="/register.html">Create Account</a>
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/resume-builder.html">Resume Builder</a>
+        <a href="/messages.html">Messages</a>
+      </div>
+      <div class="footer-col">
+        <h4>For Employers</h4>
+        <a href="/register.html?role=employer">Post a Job</a>
+        <a href="/employer.html">Employer Dashboard</a>
+        <a href="/messages.html">Messages</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/terms.html">Terms of Service</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      <p>&copy; 2026 ConsTradeRise. All rights reserved. PIPEDA compliant. Ontario, Canada.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/app.js"></script>
+<script>
+function heroSearch() {
+  const q = document.getElementById('heroSearch').value.trim();
+  if (q) window.location.href = '/jobs.html?search=' + encodeURIComponent(q);
+  else window.location.href = '/jobs.html';
+}
+document.getElementById('heroSearch').addEventListener('keydown', e => {
+  if (e.key === 'Enter') heroSearch();
+});
+</script>
+</body>
+</html>
