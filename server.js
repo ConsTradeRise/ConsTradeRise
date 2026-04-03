@@ -21,6 +21,9 @@ const { PrismaClient } = require('@prisma/client');
 const { parseResume } = require('./utils/resumeParser');
 const { scoreATS }    = require('./utils/atsScorer');
 
+// Auth middleware
+const { requireAuth } = require('./middleware/auth');
+
 // Route handlers
 const authRoutes          = require('./routes/auth');
 const jobRoutes           = require('./routes/jobs');
@@ -192,8 +195,65 @@ async function searchJobsWithAdzuna(role, location) {
   }
 }
 
+// ─── Jooble API (free, no credits needed) ────
+// Sign up free at: https://jooble.org/api/employer
+// Add to .env: JOOBLE_API_KEY=xxx
+async function searchJobsWithJooble(keywords, location) {
+  const key = process.env.JOOBLE_API_KEY;
+  if (!key) return [];
+
+  return new Promise((resolve) => {
+    const body = JSON.stringify({ keywords, location, page: 1 });
+    const options = {
+      hostname: 'jooble.org',
+      path: `/api/${encodeURIComponent(key)}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body)
+      }
+    };
+    const req = https.request(options, (jRes) => {
+      let data = '';
+      jRes.on('data', chunk => data += chunk);
+      jRes.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          const jobs = (json.jobs || []).slice(0, 10).map(j => ({
+            title:    j.title   || '',
+            company:  j.company || 'Company',
+            location: j.location || location,
+            salary:   j.salary  || null,
+            type:     'Full-time',
+            source:   'Jooble',
+            posted:   j.updated,
+            url:      j.link    || null,
+            summary:  j.snippet ? j.snippet.substring(0, 300) : ''
+          }));
+          resolve(jobs.filter(j => j.title));
+        } catch { resolve([]); }
+      });
+    });
+    req.on('error', () => resolve([]));
+    req.write(body);
+    req.end();
+  });
+}
+
+// Combined search — Adzuna + Jooble (runs in parallel)
+async function searchAllSources(role, location) {
+  const [adzunaJobs, joobleJobs] = await Promise.allSettled([
+    searchJobsWithAdzuna(role, location),
+    searchJobsWithJooble(role, location)
+  ]);
+  return [
+    ...(adzunaJobs.status === 'fulfilled' ? adzunaJobs.value : []),
+    ...(joobleJobs.status  === 'fulfilled' ? joobleJobs.value  : [])
+  ];
+}
+
 // Alias used by auto-search
-const searchJobsWithAI = searchJobsWithAdzuna;
+const searchJobsWithAI = searchAllSources;
 
 async function runAutoSearch() {
   if (isSearching) return;
@@ -309,7 +369,7 @@ const upload = multer({
   }
 });
 
-app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
+app.post('/api/resume/upload', requireAuth, upload.single('resume'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   try {
@@ -332,7 +392,57 @@ app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
 
     // ── Free rule-based parsing — zero API credits ────────
     const parsed = parseResume(text);
-    res.json({ parsed, rawText: text.substring(0, 3000) });
+
+    // ── Auto-save parsed data to user profile ─────────────
+    let profileSaved = false;
+    try {
+      const skills = Array.isArray(parsed.skills) ? parsed.skills : [];
+      const rawCity = parsed.city || '';
+      const cityParts = rawCity.split(',');
+      const city     = cityParts[0]?.trim() || '';
+      const province = cityParts[1]?.trim() || '';
+
+      const profileData = {};
+      if (parsed.phone)           profileData.phone           = parsed.phone;
+      if (parsed.email)           profileData.email           = parsed.email;
+      if (parsed.linkedin)        profileData.linkedin        = parsed.linkedin;
+      if (parsed.headline)        profileData.headline        = parsed.headline;
+      if (parsed.summary)         profileData.summary         = parsed.summary;
+      if (parsed.yearsExperience) profileData.yearsExperience = parsed.yearsExperience;
+      if (parsed.availability)    profileData.availability    = parsed.availability;
+      if (parsed.driversLicence)  profileData.driversLicence  = parsed.driversLicence;
+      if (parsed.openToRelocation !== undefined) profileData.openToRelocation = parsed.openToRelocation;
+      if (city)     profileData.city     = city;
+      if (province) profileData.province = province;
+      if (rawCity)  profileData.location = rawCity;
+      if (skills.length)          profileData.skills          = skills;
+      if (parsed.skillCategories) profileData.skillCategories = parsed.skillCategories;
+      if (Array.isArray(parsed.experiences)    && parsed.experiences.length)    profileData.experiences    = parsed.experiences;
+      if (Array.isArray(parsed.educations)     && parsed.educations.length)     profileData.educations     = parsed.educations;
+      if (Array.isArray(parsed.certifications) && parsed.certifications.length) profileData.certifications = parsed.certifications;
+
+      await prisma.profile.upsert({
+        where:  { userId: req.user.id },
+        update: profileData,
+        create: { userId: req.user.id, ...profileData }
+      });
+
+      // Store resume record (keep last 5 per user)
+      await prisma.resume.create({
+        data: {
+          userId:      req.user.id,
+          name:        req.file.originalname,
+          content:     text.substring(0, 10000),
+          aiGenerated: false
+        }
+      });
+
+      profileSaved = true;
+    } catch (dbErr) {
+      console.warn('[resume/upload] profile save failed:', dbErr.message);
+    }
+
+    res.json({ parsed, rawText: text.substring(0, 3000), profileSaved });
 
   } catch (e) {
     console.error('[resume/upload]', e.message);
@@ -341,7 +451,7 @@ app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
 });
 
 // Resume parsing (text-based, free)
-app.post('/api/parse-resume', async (req, res) => {
+app.post('/api/parse-resume', requireAuth, async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: 'text required' });
   try {
@@ -351,7 +461,7 @@ app.post('/api/parse-resume', async (req, res) => {
 });
 
 // ATS scoring — free keyword matching, no API credits
-app.post('/api/ats/score', async (req, res) => {
+app.post('/api/ats/score', requireAuth, async (req, res) => {
   const { resumeText, jobDescription, userId, jobId, resumeId } = req.body;
   if (!resumeText || !jobDescription) {
     return res.status(400).json({ error: 'resumeText and jobDescription required' });

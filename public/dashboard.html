@@ -590,7 +590,9 @@ document.getElementById('resumeFile').addEventListener('change', async (e) => {
     }
 
     parsedResumeData = data.parsed;
-    showParsedModal(data.parsed, file.name);
+    showParsedModal(data.parsed, file.name, data.profileSaved);
+    // Refresh profile form fields if auto-saved
+    if (data.profileSaved) loadProfile();
 
   } catch (e) {
     document.getElementById('modalTitle').textContent = 'Error';
@@ -606,7 +608,7 @@ function openModal(title) {
   document.getElementById('modalBody').innerHTML = `
     <div class="upload-progress">
       <div class="spinner" style="width:36px;height:36px;border-width:3px;"></div>
-      <p>Reading your resume...<br/>Extracting your details automatically.</p>
+      <p>Reading resume and saving to your profile…<br/>This takes a few seconds.</p>
     </div>`;
   document.getElementById('modalFooter').classList.add('hidden');
   document.getElementById('resumeModal').classList.add('open');
@@ -617,8 +619,8 @@ function closeModal() {
   parsedResumeData = null;
 }
 
-function showParsedModal(p, fileName) {
-  document.getElementById('modalTitle').textContent = 'Resume Parsed — Review & Save';
+function showParsedModal(p, fileName, profileSaved) {
+  document.getElementById('modalTitle').textContent = profileSaved ? '✅ Profile Updated from Resume' : 'Resume Parsed — Review & Save';
 
   const skills = Array.isArray(p.skills) ? p.skills : (p.skills || '').split(',').map(s => s.trim()).filter(Boolean);
   const exps   = Array.isArray(p.experiences)    ? p.experiences    : [];
@@ -627,7 +629,10 @@ function showParsedModal(p, fileName) {
 
   document.getElementById('modalBody').innerHTML = `
     <div class="alert alert-success" style="margin-bottom:20px;">
-      ✓ <strong>${escapeHtml(fileName)}</strong> read successfully. Review what was found, then click <strong>Save to My Profile</strong>.
+      ${profileSaved
+        ? `✅ <strong>Profile saved automatically</strong> from <strong>${escapeHtml(fileName)}</strong>. Review what was imported below.`
+        : `✓ <strong>${escapeHtml(fileName)}</strong> read successfully. Review what was found, then click <strong>Save to My Profile</strong>.`
+      }
     </div>
 
     <!-- Contact Details -->
@@ -714,17 +719,27 @@ function showParsedModal(p, fileName) {
       <p style="font-size:14px;color:var(--gray-600);line-height:1.7;background:var(--gray-50);padding:12px;border-radius:var(--radius);">${escapeHtml(p.summary)}</p>
     </div>` : ''}
 
-    <div class="alert alert-info mt-2">
-      Click <strong>Yes — Save to My Profile</strong> to save all this information to your profile automatically.
-    </div>
+    ${!profileSaved ? `<div class="alert alert-info mt-2">
+      Click <strong>Save to My Profile</strong> to save all this information to your profile.
+    </div>` : ''}
   `;
 
-  document.getElementById('modalFooter').classList.remove('hidden');
+  const footer = document.getElementById('modalFooter');
+  footer.classList.remove('hidden');
+  if (profileSaved) {
+    document.getElementById('applyToProfileBtn').textContent = 'View My Profile →';
+    document.getElementById('applyToProfileBtn').onclick = () => { closeModal(); switchTab('profile'); };
+  } else {
+    document.getElementById('applyToProfileBtn').textContent = 'Yes — Save to My Profile';
+    document.getElementById('applyToProfileBtn').onclick = null;
+  }
 }
 
-// Apply parsed data to profile — save everything to backend
+// Fallback: manual save (only runs when auto-save failed)
 document.getElementById('applyToProfileBtn').addEventListener('click', async () => {
   if (!parsedResumeData) return;
+  // If auto-saved, button was reassigned to "View Profile" — skip save logic
+  if (document.getElementById('applyToProfileBtn').textContent.includes('View')) return;
   const p = parsedResumeData;
   const btn = document.getElementById('applyToProfileBtn');
   btn.disabled = true;
