@@ -28,6 +28,7 @@ const profileRoutes       = require('./routes/profile');
 const applicationRoutes   = require('./routes/applications');
 const messageRoutes       = require('./routes/messages');
 const notificationRoutes  = require('./routes/notifications');
+const adminRoutes         = require('./routes/admin');
 
 const app    = express();
 const prisma = new PrismaClient();
@@ -85,6 +86,7 @@ app.use('/api/profile',       profileRoutes);
 app.use('/api/applications',  applicationRoutes);
 app.use('/api/messages',      messageRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin',         adminRoutes);
 
 // ============================================================
 //  DEDUPLICATION STORE (legacy job cache)

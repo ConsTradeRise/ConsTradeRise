@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — ConsTradeRise</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body { background: var(--gray-50); }
+    .admin-layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .admin-sidebar {
+      width: 220px; background: var(--gray-900); color: #fff;
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .admin-sidebar-logo {
+      padding: 20px 16px; font-size: 16px; font-weight: 800;
+      color: #fff; border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .admin-sidebar-logo span { color: var(--blue); }
+    .admin-nav { padding: 12px 0; flex: 1; }
+    .admin-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; font-size: 13px; color: rgba(255,255,255,.7);
+      cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+      transition: all .15s;
+    }
+    .admin-nav-item:hover, .admin-nav-item.active {
+      background: rgba(255,255,255,.08); color: #fff;
+    }
+    .admin-nav-item .nav-icon { font-size: 16px; width: 20px; }
+    .admin-sidebar-footer {
+      padding: 12px 16px; border-top: 1px solid rgba(255,255,255,.1);
+      font-size: 12px; color: rgba(255,255,255,.4);
+    }
+
+    /* Main */
+    .admin-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .admin-topbar {
+      background: #fff; border-bottom: 1px solid var(--gray-200);
+      padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .admin-topbar-title { font-size: 16px; font-weight: 700; color: var(--gray-900); }
+    .admin-content { flex: 1; padding: 24px; overflow-y: auto; }
+
+    /* Tabs */
+    .admin-tab { display: none; }
+    .admin-tab.active { display: block; }
+
+    /* Stat cards */
+    .stat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+      padding: 20px; text-align: center;
+    }
+    .stat-card .stat-num { font-size: 32px; font-weight: 800; color: var(--blue); }
+    .stat-card .stat-label { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+    /* Table */
+    .admin-table-wrap {
+      background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .admin-table-toolbar {
+      padding: 14px 16px; border-bottom: 1px solid var(--gray-200);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .admin-table-toolbar input {
+      flex: 1; min-width: 180px; padding: 7px 12px; border: 1px solid var(--gray-300);
+      border-radius: var(--radius); font-size: 13px;
+    }
+    .admin-table-toolbar select {
+      padding: 7px 10px; border: 1px solid var(--gray-300);
+      border-radius: var(--radius); font-size: 13px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--gray-50); color: var(--gray-500); font-weight: 600;
+         padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--gray-200); }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-50); }
+
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 99px;
+      font-size: 11px; font-weight: 600;
+    }
+    .badge-blue   { background: var(--blue-light); color: var(--blue); }
+    .badge-green  { background: var(--green-light); color: var(--green); }
+    .badge-orange { background: #fff7ed; color: var(--orange); }
+    .badge-red    { background: #fef2f2; color: var(--red); }
+    .badge-gray   { background: var(--gray-100); color: var(--gray-500); }
+
+    .btn-sm {
+      padding: 4px 10px; border-radius: var(--radius); border: none; cursor: pointer;
+      font-size: 12px; font-weight: 600;
+    }
+    .btn-ban  { background: #fff7ed; color: var(--orange); }
+    .btn-unban{ background: var(--green-light); color: var(--green); }
+    .btn-del  { background: #fef2f2; color: var(--red); }
+    .btn-toggle-on  { background: var(--green-light); color: var(--green); }
+    .btn-toggle-off { background: var(--gray-100); color: var(--gray-500); }
+
+    .pagination {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; border-top: 1px solid var(--gray-200); font-size: 13px; color: var(--gray-500);
+    }
+    .pagination button {
+      padding: 4px 10px; border: 1px solid var(--gray-300); border-radius: var(--radius);
+      background: #fff; cursor: pointer; font-size: 12px;
+    }
+    .pagination button:disabled { opacity: .4; cursor: default; }
+  </style>
+</head>
+<body>
+
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <div class="admin-sidebar">
+    <div class="admin-sidebar-logo">Cons<span>Trade</span>Rise<br><small style="font-size:10px;font-weight:400;opacity:.5;">Admin Panel</small></div>
+    <nav class="admin-nav">
+      <button class="admin-nav-item active" onclick="showTab('dashboard')"><span class="nav-icon">📊</span> Dashboard</button>
+      <button class="admin-nav-item" onclick="showTab('users')"><span class="nav-icon">👥</span> Users</button>
+      <button class="admin-nav-item" onclick="showTab('jobs')"><span class="nav-icon">💼</span> Jobs</button>
+      <button class="admin-nav-item" onclick="showTab('applications')"><span class="nav-icon">📋</span> Applications</button>
+    </nav>
+    <div class="admin-sidebar-footer" id="adminName">Admin</div>
+  </div>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar-title" id="tabTitle">Dashboard</div>
+      <button class="btn-sm btn-del" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="admin-content">
+
+      <!-- Dashboard Tab -->
+      <div class="admin-tab active" id="tab-dashboard">
+        <div class="stat-grid" id="statsGrid">
+          <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">Total Users</div></div>
+          <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">Job Seekers</div></div>
+          <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">Employers</div></div>
+          <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">Total Jobs</div></div>
+          <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">Active Jobs</div></div>
+          <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">Applications</div></div>
+          <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">Messages</div></div>
+        </div>
+        <p style="font-size:13px;color:var(--gray-400);">Last refreshed: <span id="statsRefreshed">—</span>
+          &nbsp;<button onclick="loadStats()" style="font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer;">Refresh</button>
+        </p>
+      </div>
+
+      <!-- Users Tab -->
+      <div class="admin-tab" id="tab-users">
+        <div class="admin-table-wrap">
+          <div class="admin-table-toolbar">
+            <input type="text" id="userSearch" placeholder="Search name or email…" oninput="debounce(loadUsers, 400)()" />
+            <select id="userRoleFilter" onchange="loadUsers()">
+              <option value="">All roles</option>
+              <option value="WORKER">Job Seekers</option>
+              <option value="EMPLOYER">Employers</option>
+              <option value="ADMIN">Admins</option>
+            </select>
+            <span id="userTotal" style="font-size:12px;color:var(--gray-400);margin-left:auto;"></span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th><th>Email</th><th>Role</th>
+                <th>Applied</th><th>Jobs Posted</th><th>Joined</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody"><tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray-400);">Loading…</td></tr></tbody>
+          </table>
+          <div class="pagination" id="userPagination"></div>
+        </div>
+      </div>
+
+      <!-- Jobs Tab -->
+      <div class="admin-tab" id="tab-jobs">
+        <div class="admin-table-wrap">
+          <div class="admin-table-toolbar">
+            <input type="text" id="jobSearch" placeholder="Search title or location…" oninput="debounce(loadJobs, 400)()" />
+            <span id="jobTotal" style="font-size:12px;color:var(--gray-400);margin-left:auto;"></span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th><th>Company</th><th>Location</th><th>Source</th>
+                <th>Applications</th><th>Status</th><th>Posted</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="jobsBody"><tr><td colspan="8" style="text-align:center;padding:30px;color:var(--gray-400);">Loading…</td></tr></tbody>
+          </table>
+          <div class="pagination" id="jobPagination"></div>
+        </div>
+      </div>
+
+      <!-- Applications Tab -->
+      <div class="admin-tab" id="tab-applications">
+        <div class="admin-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Applicant</th><th>Job</th><th>Company</th><th>Status</th><th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="appsBody"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--gray-400);">Loading…</td></tr></tbody>
+          </table>
+          <div class="pagination" id="appPagination"></div>
+        </div>
+      </div>
+
+    </div><!-- /admin-content -->
+  </div><!-- /admin-main -->
+</div><!-- /admin-layout -->
+
+<script src="/app.js"></script>
+<script>
+// ── Auth guard ──────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const user = Auth.getUser();
+  if (!Auth.isLoggedIn() || user?.role !== 'ADMIN') {
+    window.location.href = '/login.html';
+    return;
+  }
+  document.getElementById('adminName').textContent = user.name || 'Admin';
+  loadStats();
+});
+
+const TITLES = { dashboard: 'Dashboard', users: 'User Management', jobs: 'Job Moderation', applications: 'Applications' };
+
+function showTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.admin-nav-item').forEach(b => {
+    if (b.textContent.toLowerCase().includes(tab === 'dashboard' ? 'dash' : tab.slice(0, 4))) b.classList.add('active');
+  });
+  document.getElementById('tabTitle').textContent = TITLES[tab];
+  if (tab === 'users')        loadUsers();
+  if (tab === 'jobs')         loadJobs();
+  if (tab === 'applications') loadApps();
+}
+
+// ── Debounce ────────────────────────────────────
+function debounce(fn, delay) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+}
+
+// ── Stats ───────────────────────────────────────
+async function loadStats() {
+  const { ok, data } = await apiCall('GET', '/api/admin/stats');
+  if (!ok) return;
+  const keys = ['users','workers','employers','jobs','activeJobs','applications','messages'];
+  const cards = document.querySelectorAll('#statsGrid .stat-card .stat-num');
+  keys.forEach((k, i) => { if (cards[i]) cards[i].textContent = data[k] ?? 0; });
+  document.getElementById('statsRefreshed').textContent = new Date().toLocaleTimeString();
+}
+
+// ── Users ───────────────────────────────────────
+let userPage = 1;
+
+async function loadUsers(page = 1) {
+  userPage = page;
+  const search = document.getElementById('userSearch').value;
+  const role   = document.getElementById('userRoleFilter').value;
+  const q = new URLSearchParams({ page, search, role }).toString();
+  const { ok, data } = await apiCall('GET', '/api/admin/users?' + q);
+  if (!ok) return;
+
+  document.getElementById('userTotal').textContent = `${data.total} users`;
+
+  const STATUS_COLORS = { WORKER: 'badge-blue', EMPLOYER: 'badge-orange', ADMIN: 'badge-red' };
+  const tbody = document.getElementById('usersBody');
+  if (!data.users.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray-400);">No users found</td></tr>'; return; }
+
+  tbody.innerHTML = data.users.map(u => {
+    const banned = u.name.startsWith('[BANNED] ');
+    return `<tr>
+      <td><strong>${esc(u.name)}</strong>${banned ? ' <span class="badge badge-red">BANNED</span>' : ''}</td>
+      <td style="color:var(--gray-500)">${esc(u.email)}</td>
+      <td><span class="badge ${STATUS_COLORS[u.role] || 'badge-gray'}">${u.role}</span></td>
+      <td>${u._count.applications}</td>
+      <td>${u._count.postedJobs}</td>
+      <td>${fmtDate(u.createdAt)}</td>
+      <td style="display:flex;gap:6px;">
+        ${u.role !== 'ADMIN' ? `<button class="btn-sm ${banned ? 'btn-unban' : 'btn-ban'}" onclick="banUser('${u.id}', this)">${banned ? 'Unban' : 'Ban'}</button>` : ''}
+        ${u.role !== 'ADMIN' ? `<button class="btn-sm btn-del" onclick="deleteUser('${u.id}', this)">Delete</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination('userPagination', page, data.pages, p => loadUsers(p));
+}
+
+async function banUser(id, btn) {
+  if (!confirm('Toggle ban for this user?')) return;
+  const { ok, data } = await apiCall('PUT', `/api/admin/users/${id}/ban`);
+  if (ok) { Toast.success(data.banned ? 'User banned.' : 'User unbanned.'); loadUsers(userPage); }
+}
+
+async function deleteUser(id, btn) {
+  if (!confirm('Permanently delete this user and all their data?')) return;
+  const { ok } = await apiCall('DELETE', `/api/admin/users/${id}`);
+  if (ok) { Toast.success('User deleted.'); loadUsers(userPage); }
+}
+
+// ── Jobs ────────────────────────────────────────
+let jobPage = 1;
+
+async function loadJobs(page = 1) {
+  jobPage = page;
+  const search = document.getElementById('jobSearch').value;
+  const q = new URLSearchParams({ page, search }).toString();
+  const { ok, data } = await apiCall('GET', '/api/admin/jobs?' + q);
+  if (!ok) return;
+
+  document.getElementById('jobTotal').textContent = `${data.total} jobs`;
+
+  const tbody = document.getElementById('jobsBody');
+  if (!data.jobs.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--gray-400);">No jobs found</td></tr>'; return; }
+
+  tbody.innerHTML = data.jobs.map(j => `<tr>
+    <td><strong>${esc(j.title)}</strong></td>
+    <td>${esc(j.companyName || j.employer?.name || '—')}</td>
+    <td>${esc(j.location)}</td>
+    <td><span class="badge ${j.source === 'API' ? 'badge-blue' : 'badge-green'}">${j.source}</span></td>
+    <td>${j._count.applications}</td>
+    <td><span class="badge ${j.isActive ? 'badge-green' : 'badge-gray'}">${j.isActive ? 'Active' : 'Hidden'}</span></td>
+    <td>${fmtDate(j.postedAt)}</td>
+    <td style="display:flex;gap:6px;">
+      <button class="btn-sm ${j.isActive ? 'btn-toggle-on' : 'btn-toggle-off'}" onclick="toggleJob('${j.id}', this)">${j.isActive ? 'Hide' : 'Show'}</button>
+      <button class="btn-sm btn-del" onclick="deleteJob('${j.id}', this)">Delete</button>
+    </td>
+  </tr>`).join('');
+
+  renderPagination('jobPagination', page, data.pages, p => loadJobs(p));
+}
+
+async function toggleJob(id, btn) {
+  const { ok, data } = await apiCall('PUT', `/api/admin/jobs/${id}/toggle`);
+  if (ok) { Toast.success(data.isActive ? 'Job activated.' : 'Job hidden.'); loadJobs(jobPage); }
+}
+
+async function deleteJob(id, btn) {
+  if (!confirm('Permanently delete this job?')) return;
+  const { ok } = await apiCall('DELETE', `/api/admin/jobs/${id}`);
+  if (ok) { Toast.success('Job deleted.'); loadJobs(jobPage); }
+}
+
+// ── Applications ────────────────────────────────
+let appPage = 1;
+
+async function loadApps(page = 1) {
+  appPage = page;
+  const { ok, data } = await apiCall('GET', `/api/admin/applications?page=${page}`);
+  if (!ok) return;
+
+  const STATUS_COLORS = { APPLIED: 'badge-blue', VIEWED: 'badge-orange', SHORTLISTED: 'badge-green', REJECTED: 'badge-red' };
+  const tbody = document.getElementById('appsBody');
+  if (!data.applications.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--gray-400);">No applications</td></tr>'; return; }
+
+  tbody.innerHTML = data.applications.map(a => `<tr>
+    <td><strong>${esc(a.user.name)}</strong><br><small style="color:var(--gray-400)">${esc(a.user.email)}</small></td>
+    <td>${esc(a.job.title)}</td>
+    <td>${esc(a.job.companyName || '—')}</td>
+    <td><span class="badge ${STATUS_COLORS[a.status] || 'badge-gray'}">${a.status}</span></td>
+    <td>${fmtDate(a.appliedAt)}</td>
+  </tr>`).join('');
+
+  renderPagination('appPagination', page, data.pages, p => loadApps(p));
+}
+
+// ── Helpers ─────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fmtDate(d) {
+  return d ? new Date(d).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' }) : '—';
+}
+
+function renderPagination(elId, current, total, onClick) {
+  const el = document.getElementById(elId);
+  if (total <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <button onclick="(${onClick.toString()})(${current - 1})" ${current <= 1 ? 'disabled' : ''}>← Prev</button>
+    <span>Page ${current} of ${total}</span>
+    <button onclick="(${onClick.toString()})(${current + 1})" ${current >= total ? 'disabled' : ''}>Next →</button>
+  `;
+}
+
+function logout() {
+  Auth.clear();
+  window.location.href = '/login.html';
+}
+</script>
+</body>
+</html>
