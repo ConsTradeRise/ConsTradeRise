@@ -114,6 +114,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    if (user.name.startsWith('[BANNED] ')) {
+      return res.status(403).json({ error: 'Your account has been suspended. Contact support.' });
+    }
+
     // Verify password
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) {
@@ -162,6 +166,18 @@ router.get('/me', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('[auth/me]', e.message);
     res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+// ─── DELETE ACCOUNT (PIPEDA) ─────────────────
+// DELETE /api/auth/account
+router.delete('/account', requireAuth, async (req, res) => {
+  try {
+    await prisma.user.delete({ where: { id: req.user.id } }); // cascades via schema
+    res.json({ message: 'Account and all data deleted.' });
+  } catch (e) {
+    console.error('[auth/delete]', e.message);
+    res.status(500).json({ error: 'Failed to delete account' });
   }
 });
 

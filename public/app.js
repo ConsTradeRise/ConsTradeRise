@@ -403,3 +403,24 @@ document.addEventListener('DOMContentLoaded', () => {
   initJobsPage();
   initHomepage();
 });
+
+// ─── COOKIE CONSENT (PIPEDA) ─────────────────
+(function() {
+  if (localStorage.getItem('ctr_consent')) return;
+  const bar = document.createElement('div');
+  bar.id = 'cookieBar';
+  bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1e3a5f;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;z-index:9999;font-size:13px;';
+  bar.innerHTML = `
+    <span>We use cookies to improve your experience. By using ConsTradeRise you agree to our <a href="/privacy.html" style="color:#93c5fd;">Privacy Policy</a> (PIPEDA compliant).</span>
+    <div style="display:flex;gap:8px;flex-shrink:0;">
+      <button onclick="setCookieConsent('essential')" style="padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer;font-size:12px;">Essential Only</button>
+      <button onclick="setCookieConsent('all')" style="padding:6px 14px;border-radius:6px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-size:12px;font-weight:700;">Accept All</button>
+    </div>`;
+  document.body.appendChild(bar);
+})();
+
+function setCookieConsent(type) {
+  localStorage.setItem('ctr_consent', type);
+  const bar = document.getElementById('cookieBar');
+  if (bar) bar.remove();
+}

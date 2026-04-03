@@ -126,4 +126,26 @@ router.get('/:userId', requireAuth, async (req, res) => {
   }
 });
 
+// ─── RESUME VERSIONS ─────────────────────────
+router.get('/resumes', requireAuth, async (req, res) => {
+  try {
+    const resumes = await prisma.resume.findMany({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, createdAt: true }
+    });
+    res.json({ resumes });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/resumes/:id', requireAuth, async (req, res) => {
+  try {
+    const resume = await prisma.resume.findUnique({ where: { id: req.params.id } });
+    if (!resume || resume.userId !== req.user.id)
+      return res.status(404).json({ error: 'Resume not found' });
+    await prisma.resume.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

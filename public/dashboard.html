@@ -285,13 +285,21 @@
 
       <!-- Upload resume -->
       <div class="card">
-        <div class="card-title">Upload Resume</div>
-        <p style="font-size:14px;color:var(--gray-500);margin-bottom:16px;">Upload a PDF or Word file to automatically fill your profile with your resume details.</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="document.getElementById('resumeFile').click()">Upload Resume (PDF / Word)</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">Upload Resume</div>
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('resumeFile').click()">+ Upload New</button>
         </div>
-        <p class="form-hint mt-1">Accepted: PDF, Word (.docx) — max 5MB</p>
+        <p style="font-size:14px;color:var(--gray-500);margin-bottom:12px;">Upload a PDF or Word file — your profile is updated automatically.</p>
+        <p class="form-hint">Accepted: PDF, Word (.docx) — max 5MB</p>
         <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" />
+        <div id="resumeVersionsList" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- Delete account -->
+      <div class="card" style="border-color:var(--red);margin-top:16px;">
+        <div class="card-title" style="color:var(--red);">Danger Zone</div>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px;">Permanently delete your account and all data (PIPEDA right to erasure).</p>
+        <button class="btn btn-sm" style="background:#fef2f2;color:var(--red);border:1px solid #fecaca;" onclick="deleteAccount()">Delete My Account</button>
       </div>
     </div>
 
@@ -370,6 +378,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
   if (tab === 'applications') loadAllApplications();
   if (tab === 'messages')     dashLoadInbox();
+  if (tab === 'resume')       loadResumeVersions();
 }
 
 // Recommended jobs based on profile skills
@@ -889,6 +898,39 @@ async function pollUnread() {
 }
 pollUnread();
 setInterval(pollUnread, 30000);
+
+// ── RESUME VERSIONS ──────────────────────────
+async function loadResumeVersions() {
+  const el = document.getElementById('resumeVersionsList');
+  if (!el) return;
+  const { ok, data } = await apiCall('GET', '/api/profile/resumes');
+  if (!ok || !data.resumes?.length) {
+    el.innerHTML = '<p style="font-size:13px;color:var(--gray-400);">No resumes uploaded yet.</p>';
+    return;
+  }
+  el.innerHTML = data.resumes.map(r => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--gray-200);border-radius:var(--radius);margin-bottom:8px;">
+      <div>
+        <div style="font-size:13px;font-weight:600;">📄 ${escapeHtml(r.name)}</div>
+        <div style="font-size:11px;color:var(--gray-400);">${formatDate(r.createdAt)}</div>
+      </div>
+      <button onclick="deleteResume('${r.id}')" style="font-size:12px;background:#fef2f2;color:var(--red);border:1px solid #fecaca;border-radius:var(--radius);padding:3px 10px;cursor:pointer;">Remove</button>
+    </div>`).join('');
+}
+
+async function deleteResume(id) {
+  if (!confirm('Remove this resume?')) return;
+  const { ok } = await apiCall('DELETE', `/api/profile/resumes/${id}`);
+  if (ok) { Toast.success('Resume removed.'); loadResumeVersions(); }
+}
+
+// ── DELETE ACCOUNT ────────────────────────────
+async function deleteAccount() {
+  if (!confirm('This will permanently delete your account and ALL data. This cannot be undone.\n\nType OK to confirm.')) return;
+  const { ok, data } = await apiCall('DELETE', '/api/auth/account');
+  if (ok) { Auth.clear(); window.location.href = '/'; }
+  else Toast.error(data?.error || 'Failed to delete account');
+}
 </script>
 </body>
 </html>
