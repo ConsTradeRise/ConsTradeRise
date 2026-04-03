@@ -19,11 +19,18 @@ const prisma = new PrismaClient();
 // GET /api/jobs?search=&location=&type=&page=
 router.get('/', async (req, res) => {
   try {
-    const { search, location, type, province, sort, page = 1, limit = 20 } = req.query;
+    const { search, location, type, province, sector, datePosted, sort, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // datePosted filter
+    let postedAfter = null;
+    if (datePosted === '24h')  postedAfter = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    if (datePosted === '7d')   postedAfter = new Date(Date.now() - 7  * 24 * 60 * 60 * 1000);
+    if (datePosted === '30d')  postedAfter = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     const where = {
       isActive: true,
+      ...(postedAfter && { postedAt: { gte: postedAfter } }),
       ...(search && {
         OR: [
           { title:       { contains: search, mode: 'insensitive' } },
@@ -40,7 +47,14 @@ router.get('/', async (req, res) => {
         ]
       }),
       ...(province && { province: { contains: province, mode: 'insensitive' } }),
-      ...(type && { jobType: type })
+      ...(type && { jobType: type }),
+      ...(sector && {
+        OR: [
+          { title:       { contains: sector, mode: 'insensitive' } },
+          { description: { contains: sector, mode: 'insensitive' } },
+          { skills:      { has: sector } }
+        ]
+      })
     };
 
     const orderBy = sort === 'newest'

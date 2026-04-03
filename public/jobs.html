@@ -7,7 +7,9 @@
   <link rel="stylesheet" href="/style.css" />
   <style>
     .jobs-layout { display:grid; grid-template-columns:260px 1fr; gap:24px; padding:32px 0; }
-    @media(max-width:768px){ .jobs-layout{grid-template-columns:1fr;} .filters-panel{display:none;} }
+    @media(max-width:768px){ .jobs-layout{grid-template-columns:1fr;} .filters-panel{display:none;} .filters-panel.open{display:block;} }
+    .filter-toggle { display:none; }
+    @media(max-width:768px){ .filter-toggle{display:inline-flex;align-items:center;gap:6px;} }
     .filters-panel { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:20px; height:fit-content; position:sticky; top:80px; }
     .filters-panel h3 { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--gray-500); margin-bottom:14px; }
     .filter-group { margin-bottom:18px; }
@@ -95,10 +97,54 @@
       </div>
 
       <div class="filter-group">
+        <label>Trade / Sector</label>
+        <select class="form-select" id="jobSector">
+          <option value="">All Sectors</option>
+          <optgroup label="Management">
+            <option value="Estimator">Estimating</option>
+            <option value="Project Manager">Project Management</option>
+            <option value="Coordinator">Coordination</option>
+            <option value="Superintendent">Superintendent</option>
+          </optgroup>
+          <optgroup label="Engineering">
+            <option value="Civil Engineer">Civil Engineering</option>
+            <option value="Structural">Structural</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="BIM">BIM / Drafting</option>
+            <option value="Quantity Surveyor">Quantity Surveying</option>
+          </optgroup>
+          <optgroup label="Skilled Trades">
+            <option value="Carpenter">Carpentry</option>
+            <option value="Electrician">Electrical</option>
+            <option value="Plumber">Plumbing</option>
+            <option value="HVAC">HVAC</option>
+            <option value="Welder">Welding</option>
+            <option value="Ironworker">Ironwork</option>
+            <option value="Heavy Equipment">Heavy Equipment</option>
+            <option value="Crane">Crane Operation</option>
+          </optgroup>
+          <optgroup label="Other">
+            <option value="Safety">Safety / Health</option>
+            <option value="Labourer">General Labour</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Posted Within</label>
+        <select class="form-select" id="jobDatePosted">
+          <option value="">Any Time</option>
+          <option value="24h">Last 24 Hours</option>
+          <option value="7d">Last 7 Days</option>
+          <option value="30d">Last 30 Days</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
         <label>Source</label>
         <select class="form-select" id="jobSource">
           <option value="">All Jobs</option>
-          <option value="live">Live (Adzuna)</option>
+          <option value="live">Live (API)</option>
           <option value="posted">Posted Here</option>
         </select>
       </div>
@@ -110,15 +156,18 @@
     <div>
       <div class="jobs-header">
         <span class="jobs-count" id="jobsCount">Loading jobs...</span>
-        <select class="form-select" style="width:auto;font-size:13px;" id="sortJobs" onchange="loadJobs(1)">
-          <option value="newest">Newest First</option>
-          <option value="featured">Featured First</option>
-        </select>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-ghost btn-sm filter-toggle" onclick="document.querySelector('.filters-panel').classList.toggle('open')">⚙ Filters</button>
+          <select class="form-select" style="width:auto;font-size:13px;" id="sortJobs" onchange="loadJobs(1)">
+            <option value="newest">Newest First</option>
+            <option value="featured">Featured First</option>
+          </select>
+        </div>
       </div>
 
       <!-- Live jobs banner -->
       <div id="liveJobsBanner" style="display:none;background:var(--green-light);border:1px solid #bbf7d0;border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;font-size:13px;color:#166534;display:flex;align-items:center;gap:8px;">
-        <span>🌐</span> <span id="liveJobsText">Loading live jobs from Adzuna...</span>
+        <span>🌐</span> <span id="liveJobsText">Loading live construction jobs...</span>
       </div>
 
       <div id="jobsList"></div>
@@ -138,11 +187,13 @@ function quickSearch(term) {
 }
 
 document.getElementById('clearFilters').addEventListener('click', () => {
-  document.getElementById('jobSearch').value   = '';
-  document.getElementById('jobLocation').value = '';
-  document.getElementById('jobType').value     = '';
-  document.getElementById('jobProvince').value = '';
-  document.getElementById('jobSource').value   = '';
+  document.getElementById('jobSearch').value      = '';
+  document.getElementById('jobLocation').value    = '';
+  document.getElementById('jobType').value        = '';
+  document.getElementById('jobProvince').value    = '';
+  document.getElementById('jobSector').value      = '';
+  document.getElementById('jobDatePosted').value  = '';
+  document.getElementById('jobSource').value      = '';
   loadJobs(1);
 });
 
@@ -155,19 +206,23 @@ async function loadJobs(page = 1) {
   const pagWrap   = document.getElementById('paginationWrap');
   container.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner"></div></div>';
 
-  const search   = document.getElementById('jobSearch').value.trim();
-  const location = document.getElementById('jobLocation').value.trim();
-  const type     = document.getElementById('jobType').value;
-  const province = document.getElementById('jobProvince').value;
-  const source   = document.getElementById('jobSource').value;
-  const sort     = document.getElementById('sortJobs').value;
+  const search     = document.getElementById('jobSearch').value.trim();
+  const location   = document.getElementById('jobLocation').value.trim();
+  const type       = document.getElementById('jobType').value;
+  const province   = document.getElementById('jobProvince').value;
+  const sector     = document.getElementById('jobSector').value;
+  const datePosted = document.getElementById('jobDatePosted').value;
+  const source     = document.getElementById('jobSource').value;
+  const sort       = document.getElementById('sortJobs').value;
 
   const query = new URLSearchParams({ page, limit: 20 });
-  if (search)   query.set('search', search);
-  if (location) query.set('location', location);
-  if (type)     query.set('type', type);
-  if (province) query.set('province', province);
-  if (sort)     query.set('sort', sort);
+  if (search)     query.set('search', search);
+  if (location)   query.set('location', location);
+  if (type)       query.set('type', type);
+  if (province)   query.set('province', province);
+  if (sector)     query.set('sector', sector);
+  if (datePosted) query.set('datePosted', datePosted);
+  if (sort)       query.set('sort', sort);
 
   const { ok, data } = await apiCall('GET', `/api/jobs?${query}`);
   if (!ok) {
@@ -177,23 +232,25 @@ async function loadJobs(page = 1) {
 
   let jobs = data.jobs || [];
 
-  // Merge live jobs if source=live or no source filter
+  // Merge / filter live jobs
   if (source !== 'posted' && liveJobs.length) {
-    const searchLower = search.toLowerCase();
+    const sl = search.toLowerCase();
+    const tl = type.toLowerCase();
+    const pl = province.toLowerCase();
+    const sel = sector.toLowerCase();
     let filtered = liveJobs;
-    if (search) filtered = filtered.filter(j =>
-      j.title?.toLowerCase().includes(searchLower) ||
-      j.company?.toLowerCase().includes(searchLower) ||
-      j.summary?.toLowerCase().includes(searchLower)
-    );
-    if (source === 'live') {
-      jobs = filtered;
-    } else {
-      // Merge — live jobs go to top
-      jobs = [...filtered, ...jobs];
+    if (search)   filtered = filtered.filter(j => j.title?.toLowerCase().includes(sl) || j.company?.toLowerCase().includes(sl) || j.summary?.toLowerCase().includes(sl));
+    if (type)     filtered = filtered.filter(j => j.type?.toLowerCase().includes(tl));
+    if (province) filtered = filtered.filter(j => j.location?.toLowerCase().includes(pl));
+    if (sector)   filtered = filtered.filter(j => j.title?.toLowerCase().includes(sel) || j.summary?.toLowerCase().includes(sel));
+    if (datePosted) {
+      const cutoff = datePosted === '24h' ? 1 : datePosted === '7d' ? 7 : 30;
+      const since = new Date(Date.now() - cutoff * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(j => j.posted && new Date(j.posted) >= since);
     }
+    jobs = source === 'live' ? filtered : [...filtered, ...jobs];
   } else if (source === 'live') {
-    jobs = liveJobs;
+    jobs = [];
   }
 
   if (countEl) countEl.textContent = `${(data.pagination?.total || jobs.length).toLocaleString()} jobs found`;
@@ -280,7 +337,7 @@ async function loadLiveJobs() {
   if (ok && data.jobs?.length) {
     liveJobs = data.jobs;
     document.getElementById('liveJobsText').textContent =
-      `${data.jobs.length} live jobs from Adzuna · Last updated ${formatDate(data.lastSearched)}`;
+      `${data.jobs.length} live construction jobs · Last updated ${formatDate(data.lastSearched)}`;
   } else {
     banner.style.display = 'none';
   }

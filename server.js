@@ -136,7 +136,20 @@ function makeFingerprint(job) {
 let cachedJobs  = [];
 let isSearching = false;
 let searchPrefs = {
-  roles:              ['Construction Estimator', 'Project Coordinator', 'Site Supervisor', 'Civil Engineer'],
+  roles: [
+    // Management & Coordination
+    'Construction Estimator', 'Project Coordinator', 'Project Manager', 'Construction Manager',
+    'Site Supervisor', 'Site Superintendent', 'Field Superintendent',
+    // Engineering & Design
+    'Civil Engineer', 'Structural Engineer', 'Mechanical Engineer', 'BIM Coordinator', 'Quantity Surveyor',
+    // Skilled Trades
+    'Carpenter', 'Electrician', 'Plumber', 'HVAC Technician', 'Welder',
+    'Ironworker', 'Heavy Equipment Operator', 'Crane Operator', 'Pipefitter',
+    // Safety & Compliance
+    'Construction Safety Officer', 'Health and Safety Coordinator',
+    // Labour
+    'General Labourer', 'Construction Worker'
+  ],
   location:           'Ontario, Canada',
   autoSearchInterval: 4,
   lastSearched:       null
