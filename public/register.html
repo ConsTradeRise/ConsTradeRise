@@ -5,58 +5,249 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Create Account — ConsTradeRise</title>
   <link rel="stylesheet" href="/style.css" />
+  <style>
+    body { background: var(--gray-50); }
+
+    .reg-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .reg-logo {
+      font-size: 22px; font-weight: 800; color: var(--blue);
+      text-decoration: none; margin-bottom: 28px; display: block; text-align: center;
+    }
+
+    /* Role chooser */
+    .role-chooser {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 20px;
+    }
+    .role-choice {
+      border: 2px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 18px 14px;
+      text-align: center;
+      cursor: pointer;
+      background: #fff;
+      transition: all .2s;
+    }
+    .role-choice:hover { border-color: var(--blue); background: var(--blue-light); }
+    .role-choice.active.worker   { border-color: var(--blue); background: var(--blue-light); }
+    .role-choice.active.employer { border-color: #1e3a5f; background: #f0f4ff; }
+    .role-choice-icon  { font-size: 32px; margin-bottom: 6px; }
+    .role-choice-title { font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 2px; }
+    .role-choice-sub   { font-size: 11px; color: var(--gray-500); }
+
+    /* Card */
+    .reg-card {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: var(--shadow-md);
+    }
+    .reg-card-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .reg-card-icon  { font-size: 28px; }
+    .reg-card-title { font-size: 18px; font-weight: 800; color: var(--gray-900); }
+    .reg-card-sub   { font-size: 13px; color: var(--gray-500); }
+
+    .reg-benefits {
+      background: var(--gray-50); border-radius: var(--radius);
+      padding: 12px 14px; margin-bottom: 20px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .reg-benefit { font-size: 12px; color: var(--gray-600); display: flex; align-items: center; gap: 6px; }
+    .reg-benefit span:first-child { color: var(--green); font-weight: 700; }
+
+    /* Employer-specific fields */
+    #employerFields { display: none; }
+  </style>
 </head>
 <body>
-<nav class="navbar">
-  <div class="container nav-inner">
-    <a href="/" class="logo">ConsTradeRise</a>
+
+<div class="reg-page">
+  <a href="/" class="reg-logo">ConsTradeRise</a>
+
+  <!-- Step 1: Choose role -->
+  <div style="text-align:center;margin-bottom:16px;">
+    <div style="font-size:14px;font-weight:700;color:var(--gray-700);margin-bottom:4px;">Create your account</div>
+    <div style="font-size:12px;color:var(--gray-400);">Choose your account type to get started</div>
   </div>
-</nav>
 
-<div class="auth-page">
-  <div class="auth-card">
-    <h1>Create your account</h1>
-    <p class="subtitle">Free for workers. Start finding jobs today.</p>
+  <div class="role-chooser">
+    <div class="role-choice worker active" id="choiceWorker" onclick="selectRole('worker')">
+      <div class="role-choice-icon">👷</div>
+      <div class="role-choice-title">Job Seeker</div>
+      <div class="role-choice-sub">Find construction jobs</div>
+    </div>
+    <div class="role-choice employer" id="choiceEmployer" onclick="selectRole('employer')">
+      <div class="role-choice-icon">🏢</div>
+      <div class="role-choice-title">Employer</div>
+      <div class="role-choice-sub">Post jobs & hire talent</div>
+    </div>
+  </div>
 
-    <div class="role-tabs">
-      <div class="role-tab active" data-role="WORKER">
-        <span class="role-tab-icon">👷</span>
-        <span class="role-tab-label">I'm a Worker</span>
+  <!-- Registration card -->
+  <div class="reg-card">
+
+    <div class="reg-card-header">
+      <div class="reg-card-icon" id="cardIcon">👷</div>
+      <div>
+        <div class="reg-card-title" id="cardTitle">Job Seeker Account</div>
+        <div class="reg-card-sub"  id="cardSub">Free forever — start finding jobs today</div>
       </div>
-      <div class="role-tab" data-role="EMPLOYER">
-        <span class="role-tab-icon">🏢</span>
-        <span class="role-tab-label">I'm an Employer</span>
-      </div>
+    </div>
+
+    <div class="reg-benefits" id="benefitsStrip">
+      <div class="reg-benefit"><span>✓</span> Browse thousands of construction jobs across Canada</div>
+      <div class="reg-benefit"><span>✓</span> Get ATS match score before applying</div>
+      <div class="reg-benefit"><span>✓</span> Build & download your resume as PDF — free</div>
     </div>
 
     <div id="registerError" class="alert alert-error hidden"></div>
 
     <form id="registerForm">
+      <input type="hidden" id="regRole" value="WORKER" />
+
       <div class="form-group">
-        <label class="form-label" for="regName">Full Name</label>
+        <label class="form-label" for="regName" id="nameLabel">Full Name</label>
         <input class="form-input" id="regName" type="text" placeholder="John Smith" autocomplete="name" required />
       </div>
+
+      <!-- Employer-only: company name -->
+      <div class="form-group" id="employerFields">
+        <label class="form-label" for="regCompany">Company Name</label>
+        <input class="form-input" id="regCompany" type="text" placeholder="ABC Construction Ltd." autocomplete="organization" />
+      </div>
+
       <div class="form-group">
         <label class="form-label" for="regEmail">Email Address</label>
         <input class="form-input" id="regEmail" type="email" placeholder="you@example.com" autocomplete="email" required />
       </div>
       <div class="form-group">
         <label class="form-label" for="regPassword">Password</label>
-        <input class="form-input" id="regPassword" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required />
+        <div style="position:relative;">
+          <input class="form-input" id="regPassword" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required style="padding-right:44px;" />
+          <button type="button" onclick="togglePwd()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:16px;" id="pwdToggle">👁</button>
+        </div>
         <p class="form-hint">At least 8 characters</p>
       </div>
+
       <p class="form-hint mb-2">
         By creating an account you agree to our
         <a href="/terms.html" style="color:var(--blue)">Terms of Service</a> and
         <a href="/privacy.html" style="color:var(--blue)">Privacy Policy</a> (PIPEDA compliant).
       </p>
-      <button type="submit" class="btn btn-primary btn-full">Create Account — Free</button>
+
+      <button type="submit" class="btn btn-full mt-2" id="regBtn" style="background:var(--blue);color:#fff;font-size:15px;padding:13px;">
+        Create Free Account →
+      </button>
     </form>
 
-    <p class="auth-link">Already have an account? <a href="/login.html">Login</a></p>
+    <div style="display:flex;align-items:center;gap:12px;margin:20px 0;">
+      <div style="flex:1;height:1px;background:var(--gray-200);"></div>
+      <span style="font-size:12px;color:var(--gray-400);">OR</span>
+      <div style="flex:1;height:1px;background:var(--gray-200);"></div>
+    </div>
+
+    <p style="text-align:center;font-size:13px;color:var(--gray-500);">
+      Already have an account?
+      <a href="/login.html" id="loginLink" style="color:var(--blue);font-weight:700;">Login →</a>
+    </p>
+    <p style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:8px;">
+      <a href="/login.html?role=employer" id="switchRoleLink" style="color:var(--gray-400);">Register as Employer instead</a>
+    </p>
   </div>
+
+  <p style="margin-top:20px;font-size:11px;color:var(--gray-400);text-align:center;">
+    Protected by PIPEDA · <a href="/privacy.html" style="color:var(--gray-400);">Privacy Policy</a>
+  </p>
 </div>
 
 <script src="/app.js"></script>
+<script>
+let selectedRole = 'worker';
+
+const ROLE_CONFIG = {
+  worker: {
+    icon: '👷', title: 'Job Seeker Account', sub: 'Free forever — start finding jobs today',
+    btnText: 'Create Free Account →', btnColor: 'var(--blue)',
+    roleValue: 'WORKER',
+    nameLabel: 'Full Name',
+    showCompany: false,
+    benefits: [
+      'Browse thousands of construction jobs across Canada',
+      'Get ATS match score before applying',
+      'Build & download your resume as PDF — free'
+    ],
+    loginLink: '/login.html',
+    switchText: 'Already an Employer? Register here →',
+    switchLink: '/register.html?role=employer'
+  },
+  employer: {
+    icon: '🏢', title: 'Employer Account', sub: 'Start hiring skilled tradespeople today',
+    btnText: 'Create Employer Account →', btnColor: '#1e3a5f',
+    roleValue: 'EMPLOYER',
+    nameLabel: 'Your Full Name',
+    showCompany: true,
+    benefits: [
+      'Post unlimited jobs and receive applications',
+      'Candidates ranked by ATS match score automatically',
+      'Message workers directly from the platform'
+    ],
+    loginLink: '/login.html?role=employer',
+    switchText: 'Looking for a job? Register as Job Seeker →',
+    switchLink: '/register.html'
+  }
+};
+
+function selectRole(role) {
+  selectedRole = role;
+  const cfg = ROLE_CONFIG[role];
+
+  document.getElementById('choiceWorker').classList.toggle('active', role === 'worker');
+  document.getElementById('choiceEmployer').classList.toggle('active', role === 'employer');
+
+  document.getElementById('cardIcon').textContent  = cfg.icon;
+  document.getElementById('cardTitle').textContent = cfg.title;
+  document.getElementById('cardSub').textContent   = cfg.sub;
+  document.getElementById('regBtn').textContent    = cfg.btnText;
+  document.getElementById('regBtn').style.background = cfg.btnColor;
+  document.getElementById('regRole').value         = cfg.roleValue;
+  document.getElementById('nameLabel').textContent = cfg.nameLabel;
+  document.getElementById('loginLink').href        = cfg.loginLink;
+  document.getElementById('switchRoleLink').textContent = cfg.switchText;
+  document.getElementById('switchRoleLink').href   = cfg.switchLink;
+  document.getElementById('employerFields').style.display = cfg.showCompany ? 'block' : 'none';
+
+  document.getElementById('benefitsStrip').innerHTML = cfg.benefits
+    .map(b => `<div class="reg-benefit"><span>✓</span> ${b}</div>`).join('');
+}
+
+function togglePwd() {
+  const inp = document.getElementById('regPassword');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('role') === 'employer') selectRole('employer');
+});
+</script>
 </body>
 </html>

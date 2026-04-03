@@ -195,43 +195,33 @@ function initRegisterPage() {
   const form = document.getElementById('registerForm');
   if (!form) return;
 
-  // Pre-select role from URL param
-  const params = new URLSearchParams(window.location.search);
-  const roleParam = params.get('role');
-  if (roleParam === 'employer') {
-    document.querySelectorAll('.role-tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.role === 'EMPLOYER');
-    });
-  }
-
-  // Role tab switching
-  document.querySelectorAll('.role-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-    });
-  });
-
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = form.querySelector('[type=submit]');
+    const btn    = document.getElementById('regBtn');
     const errorEl = document.getElementById('registerError');
 
-    const activeTab = document.querySelector('.role-tab.active');
-    const role = activeTab?.dataset.role || 'WORKER';
-    const name     = document.getElementById('regName').value.trim();
-    const email    = document.getElementById('regEmail').value.trim();
+    const role    = document.getElementById('regRole')?.value || 'WORKER';
+    const name    = document.getElementById('regName').value.trim();
+    const email   = document.getElementById('regEmail').value.trim();
     const password = document.getElementById('regPassword').value;
+    const company = document.getElementById('regCompany')?.value.trim() || '';
 
     if (!name || !email || !password) {
       if (errorEl) { errorEl.textContent = 'All fields are required'; errorEl.classList.remove('hidden'); }
+      return;
+    }
+    if (password.length < 8) {
+      if (errorEl) { errorEl.textContent = 'Password must be at least 8 characters'; errorEl.classList.remove('hidden'); }
       return;
     }
 
     btn.disabled = true;
     btn.textContent = 'Creating account...';
 
-    const { ok, data } = await apiCall('POST', '/api/auth/register', { name, email, password, role });
+    const payload = { name, email, password, role };
+    if (role === 'EMPLOYER' && company) payload.company = company;
+
+    const { ok, data } = await apiCall('POST', '/api/auth/register', payload);
 
     if (ok) {
       Auth.save(data.token, data.user);
