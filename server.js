@@ -717,6 +717,21 @@ if (require.main === module) {
 
   const INTERVAL_MS = (searchPrefs.autoSearchInterval || 4) * 60 * 60 * 1000;
   setInterval(runAutoSearch, INTERVAL_MS);
+
+  // Auto-expire: deactivate jobs past their expiresAt (runs every 6 hours)
+  async function expireOldJobs() {
+    try {
+      const { count } = await prisma.job.updateMany({
+        where: { isActive: true, expiresAt: { lt: new Date() } },
+        data: { isActive: false }
+      });
+      if (count > 0) console.log(`[expire] Deactivated ${count} expired job(s).`);
+    } catch (e) {
+      console.error('[expire] Error:', e.message);
+    }
+  }
+  setTimeout(expireOldJobs, 10000);
+  setInterval(expireOldJobs, 6 * 60 * 60 * 1000);
 }
 
 module.exports = app;

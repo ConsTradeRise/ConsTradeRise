@@ -161,4 +161,34 @@ router.delete('/resumes/:id', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── PROFILE COMPLETENESS ─────────────────────
+// GET /api/profile/completeness
+router.get('/completeness', requireAuth, async (req, res) => {
+  try {
+    const profile = await prisma.profile.findUnique({ where: { userId: req.user.id } });
+    if (!profile) return res.json({ score: 0, missing: ['Create your profile to get started'] });
+
+    const checks = [
+      { field: 'headline',        label: 'Professional headline',  weight: 10, ok: !!profile.headline },
+      { field: 'summary',         label: 'Professional summary',   weight: 10, ok: !!profile.summary },
+      { field: 'phone',           label: 'Phone number',           weight: 5,  ok: !!profile.phone },
+      { field: 'city',            label: 'City',                   weight: 5,  ok: !!profile.city },
+      { field: 'province',        label: 'Province',               weight: 5,  ok: !!profile.province },
+      { field: 'yearsExperience', label: 'Years of experience',    weight: 10, ok: !!profile.yearsExperience },
+      { field: 'availability',    label: 'Availability',           weight: 5,  ok: !!profile.availability },
+      { field: 'skills',          label: 'Skills (min 3)',         weight: 15, ok: Array.isArray(profile.skills) && profile.skills.length >= 3 },
+      { field: 'experiences',     label: 'Work experience',        weight: 20, ok: Array.isArray(profile.experiences) && profile.experiences.length > 0 },
+      { field: 'educations',      label: 'Education',              weight: 10, ok: Array.isArray(profile.educations) && profile.educations.length > 0 },
+      { field: 'certifications',  label: 'Certifications',         weight: 5,  ok: Array.isArray(profile.certifications) && profile.certifications.length > 0 },
+    ];
+
+    const score   = checks.filter(c => c.ok).reduce((sum, c) => sum + c.weight, 0);
+    const missing = checks.filter(c => !c.ok).map(c => c.label);
+
+    res.json({ score, missing });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

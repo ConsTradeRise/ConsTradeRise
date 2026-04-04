@@ -87,7 +87,7 @@ router.get('/', async (req, res) => {
           isFeatured: true,
           postedAt: true,
           employer: {
-            select: { name: true, profile: { select: { companyName: true } } }
+            select: { name: true, isVerified: true, profile: { select: { companyName: true } } }
           }
         }
       }),
@@ -180,6 +180,8 @@ router.post('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res)
       select: { companyName: true }
     });
 
+    const expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // 60 days
+
     const job = await prisma.job.create({
       data: {
         title: title.trim(),
@@ -192,7 +194,8 @@ router.post('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res)
         skills: Array.isArray(skills) ? skills : [],
         source: 'MANUAL',
         employerId: req.user.id,
-        companyName: profile?.companyName || req.user.name
+        companyName: profile?.companyName || req.user.name,
+        expiresAt
       }
     });
 
@@ -266,6 +269,37 @@ router.delete('/:id', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req,
   } catch (e) {
     console.error('[jobs/delete]', e.message);
     res.status(500).json({ error: 'Failed to delete job' });
+  }
+});
+
+// ─── REPORT JOB ───────────────────────────────
+// POST /api/jobs/:id/report (auth required)
+router.post('/:id/report', requireAuth, async (req, res) => {
+  try {
+    const { reason, details } = req.body;
+    const validReasons = ['scam', 'spam', 'inappropriate', 'duplicate', 'other'];
+    if (!reason || !validReasons.includes(reason)) {
+      return res.status(400).json({ error: 'Valid reason required: scam, spam, inappropriate, duplicate, other' });
+    }
+
+    const job = await prisma.job.findUnique({ where: { id: req.params.id }, select: { id: true } });
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    await prisma.jobReport.upsert({
+      where: { jobId_userId: { jobId: req.params.id, userId: req.user.id } },
+      create: {
+        jobId: req.params.id,
+        userId: req.user.id,
+        reason,
+        details: details?.substring(0, 500) || null
+      },
+      update: { reason, details: details?.substring(0, 500) || null }
+    });
+
+    res.json({ message: 'Report submitted. Thank you for keeping ConsTradeHire safe.' });
+  } catch (e) {
+    console.error('[jobs/report]', e.message);
+    res.status(500).json({ error: 'Failed to submit report' });
   }
 });
 

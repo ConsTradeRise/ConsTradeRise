@@ -92,6 +92,23 @@ router.put('/users/:id/ban', async (req, res) => {
   }
 });
 
+// Verify / unverify employer (trust badge)
+router.put('/users/:id/verify', async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.role !== 'EMPLOYER') return res.status(400).json({ error: 'Only employers can be verified' });
+
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { isVerified: !user.isVerified }
+    });
+    res.json({ isVerified: updated.isVerified });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.delete('/users/:id', async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.params.id } });
@@ -159,6 +176,42 @@ router.delete('/jobs/:id', async (req, res) => {
   try {
     await prisma.job.delete({ where: { id: req.params.id } });
     res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── JOB REPORTS ──────────────────────────────
+router.get('/reports', async (req, res) => {
+  try {
+    const { page = 1, resolved = '' } = req.query;
+    const take = 20;
+    const skip = (Number(page) - 1) * take;
+    const where = resolved === 'true' ? { resolved: true } : resolved === 'false' ? { resolved: false } : {};
+
+    const [reports, total] = await Promise.all([
+      prisma.jobReport.findMany({
+        where, skip, take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { id: true, name: true, email: true } }
+        }
+      }),
+      prisma.jobReport.count({ where })
+    ]);
+    res.json({ reports, total, pages: Math.ceil(total / take) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.put('/reports/:id/resolve', async (req, res) => {
+  try {
+    const updated = await prisma.jobReport.update({
+      where: { id: req.params.id },
+      data: { resolved: true }
+    });
+    res.json({ resolved: updated.resolved });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

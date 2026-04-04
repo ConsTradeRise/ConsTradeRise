@@ -45,6 +45,7 @@ model User {
   passwordHash  String
   role          Role     @default(WORKER)
   emailVerified Boolean  @default(false)
+  isVerified    Boolean  @default(false)  // employer trust badge (admin-set)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -57,6 +58,7 @@ model User {
   receivedMessages Message[]   @relation("ReceivedMessages")
   notifications Notification[]
   atsResults    AtsResult[]
+  jobReports    JobReport[]
 
   @@map("users")
 }
@@ -320,4 +322,24 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+//  JOB REPORTS (Trust & Safety)
+// ─────────────────────────────────────────────
+
+model JobReport {
+  id        String   @id @default(uuid())
+  jobId     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  reason    String   // "scam", "spam", "inappropriate", "duplicate", "other"
+  details   String?
+  resolved  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([jobId, userId]) // one report per user per job
+  @@map("job_reports")
 }
