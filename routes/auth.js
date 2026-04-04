@@ -32,9 +32,17 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Invalid email address' });
     }
 
-    // Validate password strength
+    // Validate name length
+    if (name.trim().length > 100) {
+      return res.status(400).json({ error: 'Name must be under 100 characters' });
+    }
+
+    // Validate password strength (min 8 chars, must have letter + number)
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain at least one letter and one number' });
     }
 
     // Validate role
@@ -114,14 +122,18 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    if (user.name.startsWith('[BANNED] ')) {
-      return res.status(403).json({ error: 'Your account has been suspended. Contact support.' });
-    }
+    // Check ban AFTER password verify to avoid account enumeration via timing
+    const isBanned = user.name.startsWith('[BANNED] ');
 
     // Verify password
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Reject banned users AFTER password check (prevents account enumeration)
+    if (isBanned) {
+      return res.status(403).json({ error: 'Your account has been suspended. Contact support.' });
     }
 
     // Return token (exclude passwordHash)

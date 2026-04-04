@@ -174,12 +174,20 @@ async function loadNotifications() {
     el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px;">No notifications yet.</div>`;
     return;
   }
-  el.innerHTML = data.notifications.map(n => `
-    <div onclick="${n.link ? `window.location.href='${n.link}'` : ''}" style="padding:12px 16px;border-bottom:1px solid var(--gray-100);cursor:${n.link?'pointer':'default'};background:${n.read?'#fff':'var(--blue-light)'};">
+  const notifEls = data.notifications.map(n => {
+    // Whitelist links to relative paths only — prevents XSS via href injection
+    const safeLink = n.link && /^\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(n.link) ? n.link : '';
+    const div = document.createElement('div');
+    div.style.cssText = `padding:12px 16px;border-bottom:1px solid var(--gray-100);cursor:${safeLink?'pointer':'default'};background:${n.read?'#fff':'var(--blue-light)'}`;
+    if (safeLink) div.addEventListener('click', () => { window.location.href = safeLink; });
+    div.innerHTML = `
       <div style="font-size:13px;font-weight:${n.read?'400':'700'};color:var(--gray-900);">${escapeHtml(n.title)}</div>
       <div style="font-size:12px;color:var(--gray-500);margin-top:2px;">${escapeHtml(n.body)}</div>
-      <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">${formatDate(n.createdAt)}</div>
-    </div>`).join('');
+      <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">${formatDate(n.createdAt)}</div>`;
+    return div;
+  });
+  el.innerHTML = '';
+  notifEls.forEach(d => el.appendChild(d));
   fetchNotifCount();
 }
 

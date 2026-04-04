@@ -10,6 +10,7 @@ require('dotenv').config();
 
 const express      = require('express');
 const cors         = require('cors');
+const helmet       = require('helmet');
 const rateLimit    = require('express-rate-limit');
 const https        = require('https');
 const fs           = require('fs');
@@ -52,15 +53,41 @@ try {
 // ============================================================
 //  MIDDLEWARE
 // ============================================================
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+
+// Trust Vercel's proxy (required for rate limiting to work correctly)
+app.set('trust proxy', 1);
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false, // disabled — frontend uses inline scripts
+  crossOriginEmbedderPolicy: false
+}));
+
+// CORS — whitelist production domain + localhost dev
+const allowedOrigins = [
+  'https://constradehire.com',
+  'https://www.constradehire.com',
+  'https://constradehire.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3001'
+];
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow requests with no origin (mobile apps, curl, Vercel SSR)
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error('CORS policy: origin not allowed'));
+  },
+  credentials: true
+}));
+
+app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rate limiting — auth routes (strict)
+// Rate limiting — auth routes (strict: 5 attempts / 15 min)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,
-  message: { error: 'Too many requests. Please try again in 15 minutes.' },
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -572,8 +599,8 @@ Requirements: Under 150 words, professional tone, reiterate interest, clear call
 // ============================================================
 //  PREFERENCES
 // ============================================================
-app.get('/api/preferences', (req, res) => res.json(searchPrefs));
-app.post('/api/preferences', (req, res) => {
+app.get('/api/preferences', apiLimiter, (req, res) => res.json(searchPrefs));
+app.post('/api/preferences', apiLimiter, requireAuth, (req, res) => {
   const { roles, location, autoSearchInterval } = req.body;
   if (Array.isArray(roles))   searchPrefs.roles = roles;
   if (location)               searchPrefs.location = location;

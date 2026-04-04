@@ -5,11 +5,15 @@
 'use strict';
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_in_production';
+// Crash at startup if secret is missing — never fall back to a default
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('[FATAL] JWT_SECRET environment variable is not set. Refusing to start.');
+  process.exit(1);
+}
 
 /**
  * Verify JWT and attach user to req.user
- * Usage: router.get('/protected', requireAuth, handler)
  */
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -31,7 +35,6 @@ function requireAuth(req, res, next) {
 
 /**
  * Require a specific role
- * Usage: router.get('/employer-only', requireAuth, requireRole('EMPLOYER'), handler)
  */
 function requireRole(...roles) {
   return (req, res, next) => {
@@ -46,13 +49,13 @@ function requireRole(...roles) {
 }
 
 /**
- * Generate a JWT token
+ * Generate a JWT token — 24h expiry
  */
 function generateToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role, name: user.name },
     JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
   );
 }
 

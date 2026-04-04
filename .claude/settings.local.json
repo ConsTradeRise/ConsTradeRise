@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e//**)",
+      "Bash(npm install:*)",
+      "Read(//usr/local/bin/**)",
+      "Read(//c/Users/subas/.nvm/versions/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Read(//c/Users/subas/AppData/Roaming/**)",
+      "Bash(cmd.exe /c \"node --version && npm --version\")",
+      "Bash(cmd.exe /c \"node --version\")",
+      "Bash(cmd.exe /c \"npm --version\")",
+      "Bash(cmd.exe /c \"cd /d \"\"E:\\\\My Project 2026\"\" && npm install\")",
+      "Bash(powershell.exe -Command \"npm --version\")",
+      "Bash(powershell.exe -Command \"Get-Command node -ErrorAction SilentlyContinue | Select-Object Source; Get-Command npm -ErrorAction SilentlyContinue | Select-Object Source; ls ''C:\\\\Program Files\\\\nodejs\\\\'' 2>$null; ls ''C:\\\\Program Files\\\\nodejs\\\\npm.cmd'' 2>$null\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Program Files\\\\nodejs\\\\'' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"& ''C:\\\\Program Files\\\\nodejs\\\\npm.cmd'' install --prefix ''E:\\\\My Project 2026''\")",
+      "WebSearch",
+      "Bash(vercel logs:*)"
+    ]
+  }
+}

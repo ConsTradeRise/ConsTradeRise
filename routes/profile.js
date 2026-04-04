@@ -50,6 +50,16 @@ router.put('/me', requireAuth, async (req, res) => {
       companyName, companySize, industry, website
     } = req.body;
 
+    // Input length guards
+    if (headline  && headline.length  > 200)  return res.status(400).json({ error: 'Headline too long (max 200)' });
+    if (summary   && summary.length   > 3000) return res.status(400).json({ error: 'Summary too long (max 3,000)' });
+    if (phone     && phone.length     > 20)   return res.status(400).json({ error: 'Invalid phone' });
+    if (linkedin  && linkedin.length  > 200)  return res.status(400).json({ error: 'LinkedIn URL too long' });
+    if (Array.isArray(skills) && skills.length > 50) return res.status(400).json({ error: 'Too many skills (max 50)' });
+    if (Array.isArray(experiences)    && experiences.length    > 20) return res.status(400).json({ error: 'Too many experience entries' });
+    if (Array.isArray(educations)     && educations.length     > 10) return res.status(400).json({ error: 'Too many education entries' });
+    if (Array.isArray(certifications) && certifications.length > 20) return res.status(400).json({ error: 'Too many certification entries' });
+
     const data = {
       ...(phone       !== undefined && { phone }),
       ...(email       !== undefined && { email }),
@@ -107,14 +117,17 @@ router.get('/:userId', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    // If employer is requesting a worker profile, respect visibility
-    if (req.user.role === 'EMPLOYER' && !profile.visibleToEmployers) {
-      return res.status(403).json({ error: 'This candidate has restricted their profile visibility' });
+    // Workers can only view their own profile; employers can view workers (if visible); admins see all
+    if (req.user.role === 'WORKER' && profile.user.id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Return limited data to employers (no phone for privacy)
     if (req.user.role === 'EMPLOYER') {
-      const { phone, ...publicProfile } = profile;
+      if (!profile.visibleToEmployers) {
+        return res.status(403).json({ error: 'This candidate has restricted their profile visibility' });
+      }
+      // Strip phone from employer view
+      const { phone, email: _e, ...publicProfile } = profile;
       return res.json({ profile: publicProfile });
     }
 

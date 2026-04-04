@@ -101,6 +101,7 @@ router.post('/:userId', requireAuth, async (req, res) => {
   try {
     const { content } = req.body;
     if (!content?.trim()) return res.status(400).json({ error: 'Message cannot be empty' });
+    if (content.length > 2000) return res.status(400).json({ error: 'Message too long (max 2,000 characters)' });
     if (req.params.userId === req.user.id) return res.status(400).json({ error: 'Cannot message yourself' });
 
     // Verify receiver exists

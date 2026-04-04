@@ -19,8 +19,15 @@ const prisma = new PrismaClient();
 // GET /api/jobs?search=&location=&type=&page=
 router.get('/', async (req, res) => {
   try {
-    const { search, location, type, province, sector, datePosted, sort, page = 1, limit = 20 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const { search, location, type, province, sector, datePosted, sort } = req.query;
+    const pageNum  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    // Cap search string length to prevent ReDoS / oversized queries
+    const safeSearch  = (search  || '').substring(0, 100);
+    const safeLocation= (location|| '').substring(0, 100);
+    const safeSector  = (sector  || '').substring(0, 100);
 
     // datePosted filter
     let postedAfter = null;
@@ -31,28 +38,28 @@ router.get('/', async (req, res) => {
     const where = {
       isActive: true,
       ...(postedAfter && { postedAt: { gte: postedAfter } }),
-      ...(search && {
+      ...(safeSearch && {
         OR: [
-          { title:       { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-          { companyName: { contains: search, mode: 'insensitive' } },
-          { skills:      { has: search } }
+          { title:       { contains: safeSearch, mode: 'insensitive' } },
+          { description: { contains: safeSearch, mode: 'insensitive' } },
+          { companyName: { contains: safeSearch, mode: 'insensitive' } },
+          { skills:      { has: safeSearch } }
         ]
       }),
-      ...(location && {
+      ...(safeLocation && {
         OR: [
-          { city:     { contains: location, mode: 'insensitive' } },
-          { province: { contains: location, mode: 'insensitive' } },
-          { location: { contains: location, mode: 'insensitive' } }
+          { city:     { contains: safeLocation, mode: 'insensitive' } },
+          { province: { contains: safeLocation, mode: 'insensitive' } },
+          { location: { contains: safeLocation, mode: 'insensitive' } }
         ]
       }),
-      ...(province && { province: { contains: province, mode: 'insensitive' } }),
+      ...(province && { province: { contains: province.substring(0, 50), mode: 'insensitive' } }),
       ...(type && { jobType: type }),
-      ...(sector && {
+      ...(safeSector && {
         OR: [
-          { title:       { contains: sector, mode: 'insensitive' } },
-          { description: { contains: sector, mode: 'insensitive' } },
-          { skills:      { has: sector } }
+          { title:       { contains: safeSector, mode: 'insensitive' } },
+          { description: { contains: safeSector, mode: 'insensitive' } },
+          { skills:      { has: safeSector } }
         ]
       })
     };
@@ -65,7 +72,7 @@ router.get('/', async (req, res) => {
       prisma.job.findMany({
         where,
         skip,
-        take: parseInt(limit),
+        take: limitNum,
         orderBy,
         select: {
           id: true,
@@ -92,10 +99,10 @@ router.get('/', async (req, res) => {
     res.json({
       jobs,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / limitNum)
       }
     });
 
@@ -165,6 +172,9 @@ router.post('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res)
     if (!title || !description || !location) {
       return res.status(400).json({ error: 'Title, description, and location are required' });
     }
+    if (title.length > 200)       return res.status(400).json({ error: 'Title too long (max 200 chars)' });
+    if (description.length > 10000) return res.status(400).json({ error: 'Description too long (max 10,000 chars)' });
+    if (Array.isArray(skills) && skills.length > 30) return res.status(400).json({ error: 'Too many skills (max 30)' });
 
     // Get company name from employer profile
     const profile = await prisma.profile.findUnique({
