@@ -11,6 +11,8 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
+// Lazy-load to avoid circular dependency (server.js requires this file)
+function getApp() { try { return require('../server'); } catch { return null; } }
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -217,6 +219,9 @@ router.post('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res)
 
     invalidateJobsCache();
     res.status(201).json({ message: 'Job posted successfully', job });
+
+    // Fire-and-forget: notify workers whose alerts match this job
+    setImmediate(() => { try { getApp()?.triggerJobAlerts?.(job); } catch {} });
 
   } catch (e) {
     console.error('[jobs/post]', e.message);

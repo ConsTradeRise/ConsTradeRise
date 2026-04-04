@@ -59,6 +59,7 @@ model User {
   notifications Notification[]
   atsResults    AtsResult[]
   jobReports    JobReport[]
+  jobAlerts     JobAlert[]
 
   @@map("users")
 }
@@ -342,4 +343,23 @@ model JobReport {
 
   @@unique([jobId, userId]) // one report per user per job
   @@map("job_reports")
+}
+
+// ─────────────────────────────────────────────
+//  JOB ALERTS (email + in-app when new jobs match)
+// ─────────────────────────────────────────────
+
+model JobAlert {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  keywords  String   // comma-separated search terms
+  province  String?  // e.g. "Ontario"
+  jobType   String?  // e.g. "Full-time"
+  active    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@map("job_alerts")
 }

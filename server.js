@@ -36,7 +36,8 @@ const notificationRoutes  = require('./routes/notifications');
 const adminRoutes         = require('./routes/admin');
 const coverLetterRoutes   = require('./routes/coverLetter');
 const externalRoutes      = require('./routes/external');
-const { sendJobDigest }   = require('./utils/email');
+const alertRoutes         = require('./routes/alerts');
+const { sendJobDigest, sendEmail, baseTemplate } = require('./utils/email');
 
 const app    = express();
 const prisma = new PrismaClient();
@@ -152,6 +153,7 @@ app.use('/api/messages',      messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin',         adminRoutes);
 app.use('/api/cover-letter', coverLetterRoutes);
+app.use('/api/alerts',      alertRoutes);
 app.use('/api',             externalRoutes);
 
 // ============================================================
@@ -828,5 +830,68 @@ if (require.main === module) {
   setTimeout(expireOldJobs, 10000);
   setInterval(expireOldJobs, 6 * 60 * 60 * 1000);
 }
+
+// ─── JOB ALERTS ──────────────────────────────────────────────
+// Called after a new DB job is created (from POST /api/jobs)
+// Finds matching active alerts, creates Notifications + sends emails
+async function triggerJobAlerts(job) {
+  try {
+    const alerts = await prisma.jobAlert.findMany({
+      where: { active: true },
+      include: { user: { select: { id: true, name: true, email: true } } }
+    });
+
+    for (const alert of alerts) {
+      // Skip if the alert belongs to the job poster
+      if (alert.userId === job.employerId) continue;
+
+      // Keyword match (any keyword in title/description)
+      const keywords = alert.keywords.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+      const haystack = `${job.title} ${job.description || ''} ${job.companyName || ''}`.toLowerCase();
+      const matches  = keywords.some(kw => haystack.includes(kw));
+      if (!matches) continue;
+
+      // Province match (if set)
+      if (alert.province && job.city && !`${job.city} ${job.location || ''}`.toLowerCase().includes(alert.province.toLowerCase())) continue;
+
+      // JobType match (if set)
+      if (alert.jobType && job.jobType && !job.jobType.toLowerCase().includes(alert.jobType.toLowerCase())) continue;
+
+      // Create in-app notification
+      await prisma.notification.create({
+        data: {
+          userId: alert.user.id,
+          type:   'new_job',
+          title:  `New job match: ${job.title}`,
+          body:   `${job.companyName || 'A company'} is hiring in ${job.city || job.location || 'Canada'}`,
+          link:   `/job.html?id=${job.id}`,
+          read:   false
+        }
+      }).catch(() => {});
+
+      // Send email (fire-and-forget)
+      if (alert.user.email) {
+        const html = baseTemplate('New Job Match', `
+          <p>Hi ${alert.user.name || 'there'},</p>
+          <p>A new job matching your alert <strong>"${alert.keywords}"</strong> has been posted:</p>
+          <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+            <tr><td style="padding:8px;font-weight:bold;color:#374151;width:100px;">Role</td><td style="padding:8px;">${job.title}</td></tr>
+            <tr style="background:#f9fafb;"><td style="padding:8px;font-weight:bold;color:#374151;">Company</td><td style="padding:8px;">${job.companyName || 'Company'}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;color:#374151;">Location</td><td style="padding:8px;">${job.city || job.location || 'Canada'}</td></tr>
+            ${job.salary ? `<tr style="background:#f9fafb;"><td style="padding:8px;font-weight:bold;color:#374151;">Salary</td><td style="padding:8px;">${job.salary}</td></tr>` : ''}
+          </table>
+          <a href="https://constradehire.com/job.html?id=${job.id}" style="display:inline-block;background:#f97316;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin-top:8px;">View Job →</a>
+          <p style="margin-top:20px;font-size:12px;color:#9ca3af;">Manage your job alerts in your <a href="https://constradehire.com/dashboard.html" style="color:#f97316;">dashboard</a>.</p>
+        `);
+        sendEmail({ to: alert.user.email, subject: `Job Alert: ${job.title} at ${job.companyName || 'Company'}`, html }).catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.warn('[job-alerts] trigger error:', e.message);
+  }
+}
+
+// Attach to app so routes/jobs.js can call app.triggerJobAlerts(job)
+app.triggerJobAlerts = triggerJobAlerts;
 
 module.exports = app;

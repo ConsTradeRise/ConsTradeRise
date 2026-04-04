@@ -40,6 +40,30 @@
     .parsed-section h4 { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--gray-500); margin-bottom:10px; }
     .upload-progress { text-align:center; padding:40px 20px; }
     .upload-progress p { color:var(--gray-500); margin-top:12px; font-size:14px; }
+
+    /* ── Visual Profile Card ── */
+    .prof-banner { background:#0f172a; border-radius:12px; padding:28px; color:#fff; display:flex; align-items:flex-start; gap:20px; margin-bottom:16px; flex-wrap:wrap; }
+    .prof-avatar { width:68px; height:68px; border-radius:50%; background:#f59e0b; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:#1a1a1a; flex-shrink:0; letter-spacing:-.5px; }
+    .prof-banner-body { flex:1; min-width:200px; }
+    .prof-name { font-size:22px; font-weight:800; letter-spacing:-.3px; margin-bottom:3px; }
+    .prof-headline { color:#f97316; font-size:13px; font-weight:600; margin-bottom:8px; line-height:1.4; }
+    .prof-contact-row { font-size:12px; color:#94a3b8; display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; align-items:center; }
+    .prof-tag { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:700; letter-spacing:.3px; background:rgba(255,255,255,.1); color:#e2e8f0; }
+    .prof-tag-avail { background:rgba(22,163,74,.25); color:#4ade80; }
+    .prof-section-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gray-500); }
+    .prof-item { padding:10px 0; border-bottom:1px solid var(--gray-100); }
+    .prof-item:last-child { border-bottom:none; }
+    .prof-item-title { font-size:14px; font-weight:700; color:var(--gray-900); }
+    .prof-item-sub { font-size:12px; color:#f97316; font-weight:600; margin:2px 0; }
+    .prof-item-dates { font-size:11px; color:var(--gray-400); margin-top:1px; }
+    .prof-item-actions { display:flex; gap:4px; margin-left:auto; flex-shrink:0; }
+    .prof-stat-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--gray-100); font-size:13px; }
+    .prof-stat-row:last-child { border-bottom:none; }
+    .prof-stat-label { color:var(--gray-500); }
+    .prof-stat-val { font-weight:700; color:var(--gray-900); }
+    .prof-edit-btn { background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.2); font-size:12px; padding:6px 14px; border-radius:8px; cursor:pointer; flex-shrink:0; align-self:flex-start; }
+    .prof-edit-btn:hover { background:rgba(255,255,255,.2); }
+    @media(max-width:768px){ .prof-3col{grid-template-columns:1fr!important;} .prof-2col{grid-template-columns:1fr!important;} }
   </style>
 </head>
 <body>
@@ -77,6 +101,9 @@
     <div class="dash-sidebar-item" data-tab="saved">
       <span class="dash-sidebar-icon">❤️</span> Saved Jobs
       <span id="savedBadge" style="display:none;background:var(--orange);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
+    </div>
+    <div class="dash-sidebar-item" data-tab="alerts">
+      <span class="dash-sidebar-icon">🔔</span> Job Alerts
     </div>
     <div class="dash-sidebar-item" data-tab="messages">
       <span class="dash-sidebar-icon">💬</span> Messages
@@ -201,101 +228,72 @@
 
     <!-- ── PROFILE TAB ── -->
     <div class="tab-panel" id="tab-profile">
-      <div class="card">
-        <div class="card-title">My Profile</div>
-        <div id="profileSuccess" class="alert alert-success hidden">Profile saved successfully!</div>
-        <form id="profileForm">
 
-          <!-- Contact -->
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-400);margin-bottom:12px;">Contact Details</div>
-          <div class="profile-grid">
-            <div class="form-group">
-              <label class="form-label">Phone</label>
-              <input class="form-input" id="profPhone" type="tel" placeholder="e.g. 647-555-1234" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Contact Email</label>
-              <input class="form-input" id="profEmail" type="email" placeholder="your@email.com" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">City</label>
-              <input class="form-input" id="profCity" type="text" placeholder="e.g. Toronto" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Province</label>
-              <select class="form-select" id="profProvince">
-                <option value="">Select province</option>
-                <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
-                <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
-                <option>Nova Scotia</option><option>New Brunswick</option><option>PEI</option>
-                <option>Newfoundland</option>
-              </select>
-            </div>
-            <div class="form-group" style="grid-column:1/-1;">
-              <label class="form-label">LinkedIn URL</label>
-              <input class="form-input" id="profLinkedin" type="url" placeholder="https://linkedin.com/in/yourname" />
-            </div>
-          </div>
-
-          <!-- Professional -->
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-400);margin:20px 0 12px;">Professional Details</div>
-          <div class="form-group">
-            <label class="form-label">Headline</label>
-            <input class="form-input" id="profHeadline" placeholder="e.g. Construction Estimator | Project Coordinator | ICI & Residential" />
-          </div>
-          <div class="profile-grid">
-            <div class="form-group">
-              <label class="form-label">Years of Experience</label>
-              <input class="form-input" id="profYears" type="number" min="0" max="50" placeholder="e.g. 8" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Availability</label>
-              <select class="form-select" id="profAvailability">
-                <option value="">Select availability</option>
-                <option>Immediate</option><option>Full-time</option>
-                <option>Part-time</option><option>Contract</option><option>Seasonal</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Driver's Licence</label>
-              <select class="form-select" id="profDrivers">
-                <option value="">None / Not specified</option>
-                <option>G1</option><option>G2</option><option>G</option>
-                <option>AZ</option><option>DZ</option>
-              </select>
-            </div>
-            <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:28px;">
-              <input type="checkbox" id="profRelocation" style="width:16px;height:16px;" />
-              <label for="profRelocation" class="form-label" style="margin:0;cursor:pointer;">Open to Relocation</label>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Professional Summary <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
-            <textarea class="form-textarea" id="profSummary" placeholder="Brief overview of your construction career and key strengths..."></textarea>
-          </div>
-
-          <!-- Skills -->
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-400);margin:20px 0 12px;">Skills</div>
-          <div class="form-group">
-            <div class="skills-input-wrap">
-              <input class="form-input" id="skillInput" type="text" placeholder="e.g. Bluebeam, Procore, AutoCAD..." />
-              <button type="button" class="btn btn-outline" id="addSkillBtn">Add</button>
-            </div>
-            <div class="skills-tags" id="skillsTags"></div>
-          </div>
-
-          <!-- Preferences -->
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-400);margin:20px 0 12px;">Preferences</div>
-          <div class="form-group">
-            <label class="form-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-              <input type="checkbox" id="profVisible" checked style="width:16px;height:16px;" />
-              <span>Visible to employers (allow job matching)</span>
-            </label>
-          </div>
-
-          <button type="submit" class="btn btn-primary">Save Profile</button>
-        </form>
+      <!-- Banner -->
+      <div class="prof-banner">
+        <div class="prof-avatar" id="profAvatarEl">?</div>
+        <div class="prof-banner-body">
+          <div class="prof-name" id="profNameEl">—</div>
+          <div class="prof-headline" id="profHeadlineEl"></div>
+          <div class="prof-contact-row" id="profContactEl"></div>
+          <div id="profTagsEl" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+        </div>
+        <button class="prof-edit-btn" onclick="openProfileModal('contact')">✏ Edit Profile</button>
       </div>
+
+      <!-- Skills + Activity -->
+      <div style="display:grid;grid-template-columns:1fr 260px;gap:16px;margin-bottom:16px;" class="prof-2col">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <span class="prof-section-label">Skills &amp; Competencies</span>
+            <button class="btn btn-sm btn-ghost" onclick="openProfileModal('skills')">Edit</button>
+          </div>
+          <div id="profSkillsView"><em style="color:var(--gray-400);font-size:13px;">No skills added yet.</em></div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;">
+          <div class="prof-section-label" style="margin-bottom:14px;">Activity</div>
+          <div id="profActivityView" style="flex:1;"></div>
+          <a href="/resume-builder.html" target="_blank" class="btn btn-primary" style="text-align:center;margin-top:14px;">Tailor a Resume</a>
+        </div>
+      </div>
+
+      <!-- Experience + Education + Certs -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;" class="prof-3col">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span class="prof-section-label">Experience</span>
+            <button class="btn btn-sm btn-ghost" onclick="openItemModal('exp',null)">+ Add</button>
+          </div>
+          <div id="profExpView"><em style="color:var(--gray-400);font-size:13px;">No experience added.</em></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span class="prof-section-label">Education</span>
+            <button class="btn btn-sm btn-ghost" onclick="openItemModal('edu',null)">+ Add</button>
+          </div>
+          <div id="profEduView"><em style="color:var(--gray-400);font-size:13px;">No education added.</em></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span class="prof-section-label">Certifications</span>
+            <button class="btn btn-sm btn-ghost" onclick="openItemModal('cert',null)">+ Add</button>
+          </div>
+          <div id="profCertView"><em style="color:var(--gray-400);font-size:13px;">No certifications added.</em></div>
+        </div>
+      </div>
+
+      <!-- Hidden form fields (still used by save logic) -->
+      <form id="profileForm" style="display:none;">
+        <input id="profPhone" /><input id="profEmail" /><input id="profLinkedin" />
+        <input id="profCity" /><select id="profProvince"></select>
+        <input id="profHeadline" /><input id="profYears" type="number" />
+        <select id="profAvailability"></select><select id="profDrivers"></select>
+        <input type="checkbox" id="profRelocation" /><textarea id="profSummary"></textarea>
+        <input type="checkbox" id="profVisible" checked />
+        <input id="skillInput" /><button type="button" id="addSkillBtn"></button>
+        <div id="skillsTags"></div>
+        <button type="submit"></button>
+      </form>
     </div>
 
     <!-- ── RESUME TAB ── -->
@@ -333,6 +331,41 @@
       </div>
     </div>
 
+    <!-- ── JOB ALERTS TAB ── -->
+    <div class="tab-panel" id="tab-alerts">
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title" style="margin-bottom:16px;">Create Job Alert</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;">
+          <div>
+            <label class="form-label">Keywords</label>
+            <input class="form-input" id="alertKeywords" placeholder="e.g. estimator, carpenter" />
+          </div>
+          <div>
+            <label class="form-label">Province</label>
+            <select class="form-input" id="alertProvince">
+              <option value="">Any Province</option>
+              <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
+              <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
+              <option>Nova Scotia</option><option>New Brunswick</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Job Type</label>
+            <select class="form-input" id="alertJobType">
+              <option value="">Any Type</option>
+              <option>Full-time</option><option>Contract</option><option>Part-time</option><option>Seasonal</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="createAlert()" style="white-space:nowrap;">+ Add Alert</button>
+        </div>
+        <p class="form-hint" style="margin-top:8px;">You'll get an email + in-app notification when a matching job is posted. Max 10 alerts.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">My Alerts</div>
+        <div id="alertsList"><div style="text-align:center;padding:20px;"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
     <!-- ── MESSAGES TAB ── -->
     <div class="tab-panel" id="tab-messages">
       <div class="card" style="padding:0;overflow:hidden;">
@@ -363,6 +396,36 @@
     </div>
 
   </main>
+</div>
+
+<!-- ── PROFILE EDIT MODAL ── -->
+<div class="modal-overlay" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <h2 id="profileModalTitle">Edit Profile</h2>
+      <button class="modal-close" onclick="closeProfileModal()">×</button>
+    </div>
+    <div class="modal-body" id="profileModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeProfileModal()">Cancel</button>
+      <button class="btn btn-primary" id="profileModalSaveBtn" onclick="saveProfileSection()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ITEM EDIT MODAL (exp / edu / cert) ── -->
+<div class="modal-overlay" id="itemModal" onclick="if(event.target===this)closeItemModal()">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h2 id="itemModalTitle">Add Item</h2>
+      <button class="modal-close" onclick="closeItemModal()">×</button>
+    </div>
+    <div class="modal-body" id="itemModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeItemModal()">Cancel</button>
+      <button class="btn btn-primary" id="itemModalSaveBtn" onclick="saveItemModal()">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── RESUME PARSE MODAL ── -->
@@ -414,6 +477,7 @@ function switchTab(tab) {
   if (tab === 'saved')        loadSavedJobs();
   if (tab === 'messages')     dashLoadInbox();
   if (tab === 'resume')       loadResumeVersions();
+  if (tab === 'alerts')       loadAlerts();
 }
 
 // Recommended jobs based on profile skills
@@ -577,30 +641,132 @@ function filterApplications() {
 
 // Profile
 let userSkills = [];
+let _profData  = {};   // live profile state
+let _itemModalType  = null;   // 'exp' | 'edu' | 'cert'
+let _itemModalIndex = null;   // null = new, number = edit
 
+// ── LOAD & RENDER ─────────────────────────────
 async function loadProfile() {
   const { ok, data } = await apiCall('GET', '/api/profile/me');
   if (!ok) return;
   const p = data.profile;
   if (!p) return;
-
-  document.getElementById('profPhone').value        = p.phone          || '';
-  document.getElementById('profEmail').value        = p.email          || '';
-  document.getElementById('profLinkedin').value     = p.linkedin       || '';
-  document.getElementById('profCity').value         = p.city           || '';
-  document.getElementById('profProvince').value     = p.province       || '';
-  document.getElementById('profHeadline').value     = p.headline       || '';
-  document.getElementById('profYears').value        = p.yearsExperience|| '';
-  document.getElementById('profAvailability').value = p.availability   || '';
-  document.getElementById('profDrivers').value      = p.driversLicence || '';
-  document.getElementById('profRelocation').checked = p.openToRelocation || false;
-  document.getElementById('profSummary').value      = p.summary        || '';
-  document.getElementById('profVisible').checked    = p.visibleToEmployers !== false;
-
+  _profData  = p;
   userSkills = p.skills || [];
-  renderSkills();
+  renderProfileCard(p);
   renderProfileCompletion(p);
   loadRecommendedJobs(p);
+}
+
+function renderProfileCard(p) {
+  const user = Auth.getUser();
+  const name = user?.name || p.name || '—';
+
+  // Avatar initials
+  const initials = name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  document.getElementById('profAvatarEl').textContent = initials || '?';
+  document.getElementById('profNameEl').textContent   = name;
+  document.getElementById('profHeadlineEl').textContent = p.headline || '';
+
+  // Contact row
+  const loc = [p.city, p.province].filter(Boolean).join(', ');
+  const contactParts = [
+    loc      ? `📍 ${loc}`             : '',
+    p.openToRelocation ? 'Open to Relocate' : '',
+    p.phone  ? `📞 ${p.phone}`         : '',
+    p.email  ? `✉ ${p.email}`          : '',
+    p.linkedin ? `🔗 ${p.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//,'linkedin.com/in/')}` : ''
+  ].filter(Boolean);
+  document.getElementById('profContactEl').textContent = contactParts.join('  ·  ');
+
+  // Tags: availability + top skills (up to 4)
+  const tags = [];
+  if (p.availability) tags.push({ label: p.availability.toUpperCase(), avail: true });
+  (p.skills || []).slice(0, 4).forEach(s => tags.push({ label: s, avail: false }));
+  document.getElementById('profTagsEl').innerHTML = tags.map(t =>
+    `<span class="prof-tag${t.avail ? ' prof-tag-avail' : ''}">${escapeHtml(t.label)}</span>`
+  ).join('');
+
+  // Skills section
+  const skillsEl = document.getElementById('profSkillsView');
+  skillsEl.innerHTML = (p.skills || []).length
+    ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">${(p.skills).map(s =>
+        `<span style="background:var(--gray-100);color:var(--gray-700);padding:3px 10px;border-radius:100px;font-size:12px;font-weight:600;">${escapeHtml(s)}</span>`
+      ).join('')}</div>`
+    : `<em style="color:var(--gray-400);font-size:13px;">No skills added yet.</em>`;
+
+  // Activity
+  const saved = getSaved();
+  document.getElementById('profActivityView').innerHTML = `
+    <div class="prof-stat-row"><span class="prof-stat-label">Jobs saved</span><span class="prof-stat-val">${saved.length}</span></div>
+    <div class="prof-stat-row"><span class="prof-stat-label">Applications</span><span class="prof-stat-val" id="profStatApps">—</span></div>
+    <div class="prof-stat-row"><span class="prof-stat-label">Resumes tailored</span><span class="prof-stat-val" id="profStatResumes">—</span></div>
+  `;
+  // Fill app count async
+  apiCall('GET', '/api/applications/mine').then(({ ok, data }) => {
+    const el = document.getElementById('profStatApps');
+    if (el && ok) el.textContent = data.applications?.length ?? 0;
+  });
+  apiCall('GET', '/api/profile/resumes').then(({ ok, data }) => {
+    const el = document.getElementById('profStatResumes');
+    if (el && ok) el.textContent = data.resumes?.length ?? 0;
+  });
+
+  // Experience
+  const exps = Array.isArray(p.experiences) ? p.experiences : [];
+  document.getElementById('profExpView').innerHTML = exps.length
+    ? exps.map((e, i) => `
+      <div class="prof-item">
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div class="prof-item-title">${escapeHtml(e.title || '')}</div>
+            <div class="prof-item-sub">${escapeHtml(e.company || '')}${e.location ? ' · ' + escapeHtml(e.location) : ''}</div>
+            <div class="prof-item-dates">${escapeHtml([e.startDate, e.isCurrent ? 'Present' : e.endDate].filter(Boolean).join(' - '))}</div>
+          </div>
+          <div class="prof-item-actions">
+            <button class="btn btn-sm btn-ghost" style="padding:2px 8px;" onclick="openItemModal('exp',${i})">Edit</button>
+            <button class="btn btn-sm btn-ghost" style="padding:2px 8px;color:var(--red);" onclick="deleteItem('exp',${i})">Del</button>
+          </div>
+        </div>
+      </div>`).join('')
+    : `<em style="color:var(--gray-400);font-size:13px;">No experience added.</em>`;
+
+  // Education
+  const edus = Array.isArray(p.educations) ? p.educations : [];
+  document.getElementById('profEduView').innerHTML = edus.length
+    ? edus.map((e, i) => `
+      <div class="prof-item">
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div class="prof-item-title">${escapeHtml(e.degree || '')}</div>
+            <div class="prof-item-sub">${escapeHtml(e.institution || '')}${e.location ? ' · ' + escapeHtml(e.location) : ''}</div>
+            <div class="prof-item-dates">${escapeHtml([e.startDate, e.endDate].filter(Boolean).join(' - '))}</div>
+          </div>
+          <div class="prof-item-actions">
+            <button class="btn btn-sm btn-ghost" style="padding:2px 8px;" onclick="openItemModal('edu',${i})">Edit</button>
+            <button class="btn btn-sm btn-ghost" style="padding:2px 8px;color:var(--red);" onclick="deleteItem('edu',${i})">Del</button>
+          </div>
+        </div>
+      </div>`).join('')
+    : `<em style="color:var(--gray-400);font-size:13px;">No education added.</em>`;
+
+  // Certifications
+  const certs = Array.isArray(p.certifications) ? p.certifications : [];
+  document.getElementById('profCertView').innerHTML = certs.length
+    ? certs.map((c, i) => `
+      <div class="prof-item">
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div class="prof-item-title">📋 ${escapeHtml(c.name || '')}</div>
+            <div class="prof-item-sub">${escapeHtml(c.issuer || '')}${c.year ? ' (' + escapeHtml(c.year) + ')' : ''}</div>
+          </div>
+          <div class="prof-item-actions">
+            <button class="btn btn-sm btn-ghost" style="padding:2px 8px;" onclick="openItemModal('cert',${i})">Edit</button>
+            <button class="btn btn-sm btn-ghost" style="padding:2px 8px;color:var(--red);" onclick="deleteItem('cert',${i})">Del</button>
+          </div>
+        </div>
+      </div>`).join('')
+    : `<em style="color:var(--gray-400);font-size:13px;">No certifications added.</em>`;
 }
 
 function renderProfileCompletion(p) {
@@ -631,71 +797,263 @@ function renderProfileCompletion(p) {
     : `<span style="color:var(--green);font-weight:600;">✓ Profile complete!</span>`;
 }
 
-function renderSkills() {
-  document.getElementById('skillsTags').innerHTML = userSkills.map((s, i) =>
-    `<span class="skill-tag">${escapeHtml(s)} <button onclick="removeSkill(${i})">×</button></span>`
-  ).join('');
+function renderSkills() { /* legacy — no-op, skills rendered via renderProfileCard */ }
+
+// ── PROFILE EDIT MODAL ────────────────────────
+let _profileModalSection = null;
+
+function openProfileModal(section) {
+  _profileModalSection = section;
+  const p = _profData;
+  const modal = document.getElementById('profileModal');
+  const body  = document.getElementById('profileModalBody');
+
+  if (section === 'contact') {
+    document.getElementById('profileModalTitle').textContent = 'Edit Profile';
+    body.innerHTML = `
+      <div class="profile-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Phone</label>
+          <input class="form-input" id="pm_phone" type="tel" value="${escapeHtml(p.phone||'')}" placeholder="647-555-1234" /></div>
+        <div class="form-group"><label class="form-label">Contact Email</label>
+          <input class="form-input" id="pm_email" type="email" value="${escapeHtml(p.email||'')}" placeholder="your@email.com" /></div>
+        <div class="form-group"><label class="form-label">City</label>
+          <input class="form-input" id="pm_city" value="${escapeHtml(p.city||'')}" placeholder="e.g. Toronto" /></div>
+        <div class="form-group"><label class="form-label">Province</label>
+          <select class="form-select" id="pm_province">
+            <option value="">Select province</option>
+            ${['Ontario','British Columbia','Alberta','Quebec','Manitoba','Saskatchewan','Nova Scotia','New Brunswick','PEI','Newfoundland']
+              .map(pr => `<option${p.province===pr?' selected':''}>${pr}</option>`).join('')}
+          </select></div>
+        <div class="form-group" style="grid-column:1/-1;"><label class="form-label">LinkedIn URL</label>
+          <input class="form-input" id="pm_linkedin" type="url" value="${escapeHtml(p.linkedin||'')}" placeholder="https://linkedin.com/in/yourname" /></div>
+        <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Headline</label>
+          <input class="form-input" id="pm_headline" value="${escapeHtml(p.headline||'')}" placeholder="e.g. Construction Estimator | Project Coordinator" /></div>
+        <div class="form-group"><label class="form-label">Years Experience</label>
+          <input class="form-input" id="pm_years" type="number" min="0" max="50" value="${escapeHtml(String(p.yearsExperience||''))}" placeholder="e.g. 8" /></div>
+        <div class="form-group"><label class="form-label">Availability</label>
+          <select class="form-select" id="pm_availability">
+            <option value="">Select…</option>
+            ${['Immediate','Full-time','Part-time','Contract','Seasonal'].map(a => `<option${p.availability===a?' selected':''}>${a}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label class="form-label">Driver's Licence</label>
+          <select class="form-select" id="pm_drivers">
+            <option value="">None</option>
+            ${['G1','G2','G','AZ','DZ'].map(d => `<option${p.driversLicence===d?' selected':''}>${d}</option>`).join('')}
+          </select></div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:28px;">
+          <input type="checkbox" id="pm_relocation" ${p.openToRelocation?'checked':''} style="width:16px;height:16px;" />
+          <label for="pm_relocation" class="form-label" style="margin:0;cursor:pointer;">Open to Relocate</label>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Professional Summary</label>
+          <textarea class="form-textarea" id="pm_summary" placeholder="Brief overview of your career...">${escapeHtml(p.summary||'')}</textarea></div>
+        <div class="form-group" style="grid-column:1/-1;display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" id="pm_visible" ${p.visibleToEmployers!==false?'checked':''} style="width:16px;height:16px;" />
+          <label for="pm_visible" class="form-label" style="margin:0;cursor:pointer;">Visible to employers</label>
+        </div>
+      </div>`;
+  } else if (section === 'skills') {
+    document.getElementById('profileModalTitle').textContent = 'Edit Skills';
+    body.innerHTML = `
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input class="form-input" id="pm_skillInput" placeholder="e.g. Bluebeam, Procore, AutoCAD…" style="flex:1;" />
+        <button type="button" class="btn btn-outline" onclick="pmAddSkill()">Add</button>
+      </div>
+      <div id="pm_skillsTags" style="display:flex;flex-wrap:wrap;gap:6px;"></div>`;
+    renderPmSkills();
+    document.getElementById('pm_skillInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); pmAddSkill(); }
+    });
+  }
+  modal.classList.add('open');
 }
 
-function removeSkill(i) { userSkills.splice(i, 1); renderSkills(); }
+function renderPmSkills() {
+  const el = document.getElementById('pm_skillsTags');
+  if (!el) return;
+  el.innerHTML = userSkills.map((s, i) =>
+    `<span class="skill-tag">${escapeHtml(s)} <button type="button" onclick="pmRemoveSkill(${i})">×</button></span>`
+  ).join('');
+}
+function pmAddSkill() {
+  const inp = document.getElementById('pm_skillInput');
+  const v = inp.value.trim();
+  if (v && !userSkills.includes(v)) { userSkills.push(v); renderPmSkills(); }
+  inp.value = '';
+}
+function pmRemoveSkill(i) { userSkills.splice(i, 1); renderPmSkills(); }
 
-document.getElementById('addSkillBtn').addEventListener('click', () => {
-  const input = document.getElementById('skillInput');
-  const val   = input.value.trim();
-  if (val && !userSkills.includes(val)) { userSkills.push(val); renderSkills(); }
-  input.value = '';
-});
+function closeProfileModal() {
+  document.getElementById('profileModal').classList.remove('open');
+}
 
-document.getElementById('skillInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addSkillBtn').click(); }
-});
+async function saveProfileSection() {
+  const btn = document.getElementById('profileModalSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  let payload = {};
 
-document.getElementById('profileForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = e.target.querySelector('[type=submit]');
-  btn.disabled = true; btn.textContent = 'Saving...';
-
-  // Numverify phone validation (non-blocking — warn but don't prevent save)
-  const phoneVal = document.getElementById('profPhone').value.trim();
-  if (phoneVal) {
-    try {
-      const pRes  = await fetch('/api/validate/phone', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneVal })
-      });
-      const pData = await pRes.json();
-      if (pData.valid === false) {
-        Toast.warn(pData.reason || 'Phone number may be invalid. Please verify.');
-      }
-    } catch (_) {}
+  if (_profileModalSection === 'contact') {
+    payload = {
+      phone:             document.getElementById('pm_phone').value.trim(),
+      email:             document.getElementById('pm_email').value.trim(),
+      linkedin:          document.getElementById('pm_linkedin').value.trim(),
+      city:              document.getElementById('pm_city').value.trim(),
+      province:          document.getElementById('pm_province').value,
+      headline:          document.getElementById('pm_headline').value.trim(),
+      yearsExperience:   document.getElementById('pm_years').value,
+      availability:      document.getElementById('pm_availability').value,
+      driversLicence:    document.getElementById('pm_drivers').value,
+      openToRelocation:  document.getElementById('pm_relocation').checked,
+      summary:           document.getElementById('pm_summary').value.trim(),
+      visibleToEmployers:document.getElementById('pm_visible').checked,
+      skills: userSkills
+    };
+  } else if (_profileModalSection === 'skills') {
+    payload = { skills: userSkills };
   }
 
-  const { ok, data } = await apiCall('PUT', '/api/profile/me', {
-    phone:             document.getElementById('profPhone').value,
-    email:             document.getElementById('profEmail').value,
-    linkedin:          document.getElementById('profLinkedin').value,
-    city:              document.getElementById('profCity').value,
-    province:          document.getElementById('profProvince').value,
-    headline:          document.getElementById('profHeadline').value,
-    yearsExperience:   document.getElementById('profYears').value,
-    availability:      document.getElementById('profAvailability').value,
-    driversLicence:    document.getElementById('profDrivers').value,
-    openToRelocation:  document.getElementById('profRelocation').checked,
-    summary:           document.getElementById('profSummary').value,
-    skills:            userSkills,
-    visibleToEmployers:document.getElementById('profVisible').checked
-  });
-
-  btn.disabled = false; btn.textContent = 'Save Profile';
+  const { ok, data } = await apiCall('PUT', '/api/profile/me', payload);
+  btn.disabled = false; btn.textContent = 'Save';
   if (ok) {
-    const el = document.getElementById('profileSuccess');
-    el.classList.remove('hidden');
-    setTimeout(() => el.classList.add('hidden'), 3000);
+    Object.assign(_profData, payload);
+    closeProfileModal();
+    renderProfileCard(_profData);
+    renderProfileCompletion(_profData);
     Toast.success('Profile saved!');
   } else {
-    Toast.error(data.error || 'Failed to save profile');
+    Toast.error(data?.error || 'Failed to save');
   }
-});
+}
+
+// ── ITEM MODAL (exp / edu / cert) ────────────
+function openItemModal(type, index) {
+  _itemModalType  = type;
+  _itemModalIndex = index;
+  const isEdit = index !== null;
+  const titles = { exp: 'Experience', edu: 'Education', cert: 'Certification' };
+  document.getElementById('itemModalTitle').textContent = (isEdit ? 'Edit ' : 'Add ') + titles[type];
+
+  let item = {};
+  if (isEdit) {
+    if (type === 'exp')  item = (_profData.experiences    || [])[index] || {};
+    if (type === 'edu')  item = (_profData.educations     || [])[index] || {};
+    if (type === 'cert') item = (_profData.certifications || [])[index] || {};
+  }
+
+  const body = document.getElementById('itemModalBody');
+  if (type === 'exp') {
+    body.innerHTML = `
+      <div class="form-group"><label class="form-label">Job Title</label>
+        <input class="form-input" id="im_title" value="${escapeHtml(item.title||'')}" placeholder="e.g. Estimator" /></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Company</label>
+          <input class="form-input" id="im_company" value="${escapeHtml(item.company||'')}" placeholder="Company name" /></div>
+        <div class="form-group"><label class="form-label">Location</label>
+          <input class="form-input" id="im_location" value="${escapeHtml(item.location||'')}" placeholder="City, ON" /></div>
+        <div class="form-group"><label class="form-label">Start Date</label>
+          <input class="form-input" id="im_startDate" value="${escapeHtml(item.startDate||'')}" placeholder="e.g. Jun 2023" /></div>
+        <div class="form-group"><label class="form-label">End Date</label>
+          <input class="form-input" id="im_endDate" value="${escapeHtml(item.isCurrent?'Present':item.endDate||'')}" placeholder="Present or Jun 2025" /></div>
+      </div>
+      <div class="form-group"><label class="form-label">Key Bullets <span style="font-weight:400;color:var(--gray-400);">(one per line)</span></label>
+        <textarea class="form-textarea" id="im_bullets" rows="4" placeholder="• Managed estimating for ICI projects&#10;• Prepared BOEs using HeavyBid">${escapeHtml(Array.isArray(item.bullets)?item.bullets.join('\n'):(item.bullets||''))}</textarea></div>`;
+  } else if (type === 'edu') {
+    body.innerHTML = `
+      <div class="form-group"><label class="form-label">Degree / Program</label>
+        <input class="form-input" id="im_degree" value="${escapeHtml(item.degree||'')}" placeholder="e.g. Post Graduate Certificate – Construction PM" /></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Institution</label>
+          <input class="form-input" id="im_institution" value="${escapeHtml(item.institution||'')}" placeholder="e.g. Lambton College" /></div>
+        <div class="form-group"><label class="form-label">Location</label>
+          <input class="form-input" id="im_location" value="${escapeHtml(item.location||'')}" placeholder="Toronto, ON" /></div>
+        <div class="form-group"><label class="form-label">Start Date</label>
+          <input class="form-input" id="im_startDate" value="${escapeHtml(item.startDate||'')}" placeholder="Sep 2023" /></div>
+        <div class="form-group"><label class="form-label">End Date</label>
+          <input class="form-input" id="im_endDate" value="${escapeHtml(item.endDate||'')}" placeholder="Apr 2025" /></div>
+      </div>`;
+  } else if (type === 'cert') {
+    body.innerHTML = `
+      <div class="form-group"><label class="form-label">Certificate Name</label>
+        <input class="form-input" id="im_name" value="${escapeHtml(item.name||'')}" placeholder="e.g. Construction Cost Estimating" /></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Issuer</label>
+          <input class="form-input" id="im_issuer" value="${escapeHtml(item.issuer||'')}" placeholder="e.g. Columbia University" /></div>
+        <div class="form-group"><label class="form-label">Year</label>
+          <input class="form-input" id="im_year" value="${escapeHtml(item.year||'')}" placeholder="e.g. Nov 2024" /></div>
+      </div>`;
+  }
+  document.getElementById('itemModal').classList.add('open');
+}
+
+function closeItemModal() {
+  document.getElementById('itemModal').classList.remove('open');
+}
+
+async function saveItemModal() {
+  const btn = document.getElementById('itemModalSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  let newItem = {};
+  const type = _itemModalType;
+
+  if (type === 'exp') {
+    const bulletsRaw = document.getElementById('im_bullets').value.trim();
+    newItem = {
+      title:     document.getElementById('im_title').value.trim(),
+      company:   document.getElementById('im_company').value.trim(),
+      location:  document.getElementById('im_location').value.trim(),
+      startDate: document.getElementById('im_startDate').value.trim(),
+      endDate:   document.getElementById('im_endDate').value.trim(),
+      isCurrent: document.getElementById('im_endDate').value.trim().toLowerCase() === 'present',
+      bullets:   bulletsRaw ? bulletsRaw.split('\n').map(l => l.replace(/^[•\-\s]+/,'').trim()).filter(Boolean) : []
+    };
+  } else if (type === 'edu') {
+    newItem = {
+      degree:      document.getElementById('im_degree').value.trim(),
+      institution: document.getElementById('im_institution').value.trim(),
+      location:    document.getElementById('im_location').value.trim(),
+      startDate:   document.getElementById('im_startDate').value.trim(),
+      endDate:     document.getElementById('im_endDate').value.trim()
+    };
+  } else if (type === 'cert') {
+    newItem = {
+      name:   document.getElementById('im_name').value.trim(),
+      issuer: document.getElementById('im_issuer').value.trim(),
+      year:   document.getElementById('im_year').value.trim()
+    };
+  }
+
+  const keyMap = { exp: 'experiences', edu: 'educations', cert: 'certifications' };
+  const key    = keyMap[type];
+  const arr    = Array.isArray(_profData[key]) ? [..._profData[key]] : [];
+  if (_itemModalIndex !== null) arr[_itemModalIndex] = newItem; else arr.push(newItem);
+
+  const { ok, data } = await apiCall('PUT', '/api/profile/me', { [key]: arr });
+  btn.disabled = false; btn.textContent = 'Save';
+  if (ok) {
+    _profData[key] = arr;
+    closeItemModal();
+    renderProfileCard(_profData);
+    renderProfileCompletion(_profData);
+    Toast.success('Saved!');
+  } else {
+    Toast.error(data?.error || 'Failed to save');
+  }
+}
+
+async function deleteItem(type, index) {
+  if (!confirm('Delete this item?')) return;
+  const keyMap = { exp: 'experiences', edu: 'educations', cert: 'certifications' };
+  const key    = keyMap[type];
+  const arr    = [...(_profData[key] || [])];
+  arr.splice(index, 1);
+  const { ok } = await apiCall('PUT', '/api/profile/me', { [key]: arr });
+  if (ok) {
+    _profData[key] = arr;
+    renderProfileCard(_profData);
+    renderProfileCompletion(_profData);
+    Toast.success('Deleted');
+  }
+}
 
 // ── RESUME UPLOAD ──────────────────────────────
 let parsedResumeData = null;
@@ -913,21 +1271,9 @@ document.getElementById('applyToProfileBtn').addEventListener('click', async () 
   btn.textContent = 'Yes — Save to My Profile';
 
   if (ok) {
-    // Update visible form fields
-    if (p.phone)           document.getElementById('profPhone').value        = p.phone;
-    if (p.email)           document.getElementById('profEmail').value        = p.email;
-    if (p.linkedin)        document.getElementById('profLinkedin').value     = p.linkedin;
-    if (city)              document.getElementById('profCity').value         = city;
-    if (province)          document.getElementById('profProvince').value     = province;
-    if (p.headline)        document.getElementById('profHeadline').value     = p.headline;
-    if (p.yearsExperience) document.getElementById('profYears').value        = p.yearsExperience;
-    if (p.availability)    document.getElementById('profAvailability').value = p.availability;
-    if (p.driversLicence)  document.getElementById('profDrivers').value      = p.driversLicence;
-    if (p.summary)         document.getElementById('profSummary').value      = p.summary;
-    if (skills.length)     { userSkills = skills; renderSkills(); }
-
     closeModal();
     Toast.success('Profile saved from resume successfully!');
+    await loadProfile();   // re-fetch + re-render the profile card
     switchTab('profile');
   } else {
     Toast.error(data.error || 'Failed to save profile');
@@ -1058,6 +1404,59 @@ async function deleteAccount() {
   const { ok, data } = await apiCall('DELETE', '/api/auth/account');
   if (ok) { Auth.clear(); window.location.href = '/'; }
   else Toast.error(data?.error || 'Failed to delete account');
+}
+
+// ── JOB ALERTS ──────────────────────────────────
+async function loadAlerts() {
+  const el = document.getElementById('alertsList');
+  if (!el) return;
+  const { ok, data } = await apiCall('GET', '/api/alerts');
+  if (!ok) { el.innerHTML = `<p style="color:var(--red);">${data.error}</p>`; return; }
+  if (!data.alerts?.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:30px;"><p>No alerts yet. Create one above to get notified about new jobs.</p></div>`;
+    return;
+  }
+  el.innerHTML = data.alerts.map(a => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-100);gap:10px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:14px;color:var(--gray-900);">🔍 ${escapeHtml(a.keywords)}</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-top:2px;">
+          ${a.province ? `📍 ${escapeHtml(a.province)}` : 'All provinces'}
+          ${a.jobType  ? ` · 🕐 ${escapeHtml(a.jobType)}` : ''}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <span style="font-size:12px;color:${a.active?'var(--green)':'var(--gray-400)'};">${a.active ? '● Active' : '○ Paused'}</span>
+        <button onclick="toggleAlert('${a.id}', ${a.active})" class="btn btn-sm btn-ghost" title="${a.active?'Pause':'Activate'}">${a.active ? '⏸' : '▶'}</button>
+        <button onclick="deleteAlert('${a.id}')" class="btn btn-sm btn-ghost" title="Delete" style="color:var(--red);">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+async function createAlert() {
+  const keywords = document.getElementById('alertKeywords').value.trim();
+  const province = document.getElementById('alertProvince').value;
+  const jobType  = document.getElementById('alertJobType').value;
+  if (!keywords) { Toast.error('Please enter keywords'); return; }
+  const { ok, data } = await apiCall('POST', '/api/alerts', { keywords, province, jobType });
+  if (ok) {
+    document.getElementById('alertKeywords').value = '';
+    Toast.success('Alert created!');
+    loadAlerts();
+  } else {
+    Toast.error(data?.error || 'Failed to create alert');
+  }
+}
+
+async function toggleAlert(id, currentlyActive) {
+  const { ok } = await apiCall('PUT', `/api/alerts/${id}`);
+  if (ok) loadAlerts();
+}
+
+async function deleteAlert(id) {
+  if (!confirm('Delete this alert?')) return;
+  const { ok } = await apiCall('DELETE', `/api/alerts/${id}`);
+  if (ok) { Toast.success('Alert deleted'); loadAlerts(); }
 }
 </script>
 </body>
