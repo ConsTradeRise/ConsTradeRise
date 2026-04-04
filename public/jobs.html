@@ -344,7 +344,10 @@ function jobCard(job) {
         <div class="job-card-header">
           <div>
             <div class="job-title">${escapeHtml(job.title)}</div>
-            <div class="job-company">${escapeHtml(job.company || job.companyName || job.employer?.name || 'Company')}</div>
+            <div class="job-company">
+              ${escapeHtml(job.company || job.companyName || job.employer?.name || 'Company')}
+              ${job.employer?.isVerified ? `<span title="Verified Employer" style="color:#16a34a;font-size:12px;font-weight:700;margin-left:4px;">✓ Verified</span>` : ''}
+            </div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
             ${isLive ? `<span class="live-badge">Live</span>` : ''}
@@ -360,7 +363,7 @@ function jobCard(job) {
         ${job.summary||job.description ? `<div class="job-desc">${escapeHtml((job.summary||job.description).substring(0,160))}</div>` : ''}
         ${job.skills?.length ? `<div class="kw-tags" style="margin-bottom:6px;">${job.skills.slice(0,5).map(s=>`<span class="kw-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
         <div class="job-footer">
-          <span></span>
+          ${!isLive && job.id ? `<button onclick="event.preventDefault();event.stopPropagation();openReportModal('${job.id}')" style="background:none;border:none;font-size:11px;color:var(--gray-400);cursor:pointer;padding:0;">🚩 Report</button>` : '<span></span>'}
           <span class="btn btn-sm btn-primary">${isLive ? 'View & Apply →' : 'View Job'}</span>
         </div>
       </div>
@@ -408,6 +411,70 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadLiveJobs();
   loadJobs(1);
 });
+
+// ── Report Modal ──────────────────────────────
+let _reportJobId = null;
+function openReportModal(jobId) {
+  _reportJobId = jobId;
+  document.getElementById('reportReason').value = 'SPAM';
+  document.getElementById('reportDetails').value = '';
+  document.getElementById('reportModal').style.display = 'flex';
+}
+function closeReportModal() {
+  document.getElementById('reportModal').style.display = 'none';
+  _reportJobId = null;
+}
+async function submitReport() {
+  if (!_reportJobId) return;
+  const reason  = document.getElementById('reportReason').value;
+  const details = document.getElementById('reportDetails').value.trim();
+  const btn = document.getElementById('submitReportBtn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  const { ok, data } = await apiCall('POST', `/api/jobs/${_reportJobId}/report`, { reason, details });
+  if (ok) {
+    closeReportModal();
+    showToast('Report submitted. Thank you!');
+  } else {
+    showToast(data?.error || 'Failed to submit report', 'error');
+    btn.disabled = false; btn.textContent = 'Submit Report';
+  }
+}
+function showToast(msg, type = 'success') {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:${type==='error'?'#dc2626':'#16a34a'};color:#fff;
+    padding:10px 20px;border-radius:8px;font-size:14px;z-index:9999;
+    box-shadow:0 4px 12px rgba(0,0,0,.2);`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
 </script>
+
+<!-- Report Modal -->
+<div id="reportModal" onclick="if(event.target===this)closeReportModal()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;font-size:18px;">🚩 Report Job</h3>
+      <button onclick="closeReportModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280;">&times;</button>
+    </div>
+    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Reason</label>
+    <select id="reportReason" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:14px;">
+      <option value="SPAM">Spam or duplicate</option>
+      <option value="SCAM">Scam / fraudulent</option>
+      <option value="MISLEADING">Misleading information</option>
+      <option value="INAPPROPRIATE">Inappropriate content</option>
+      <option value="OTHER">Other</option>
+    </select>
+    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Details (optional)</label>
+    <textarea id="reportDetails" rows="3" placeholder="Add more details…"
+      style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;resize:vertical;box-sizing:border-box;margin-bottom:18px;"></textarea>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeReportModal()" class="btn btn-ghost">Cancel</button>
+      <button id="submitReportBtn" onclick="submitReport()" class="btn btn-primary">Submit Report</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

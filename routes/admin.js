@@ -59,7 +59,7 @@ router.get('/users', async (req, res) => {
         orderBy: { createdAt: 'desc' },
         select: {
           id: true, name: true, email: true, role: true,
-          emailVerified: true, createdAt: true,
+          emailVerified: true, isVerified: true, createdAt: true,
           _count: { select: { applications: true, postedJobs: true } }
         }
       }),

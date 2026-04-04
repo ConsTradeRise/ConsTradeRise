@@ -1,5 +1,5 @@
 // ConsTradeHire Service Worker — Phase 10 PWA
-const CACHE_NAME = 'constradehire-v1';
+const CACHE_NAME = 'constradehire-v2';
 const STATIC_ASSETS = [
   '/',
   '/jobs.html',
@@ -7,7 +7,8 @@ const STATIC_ASSETS = [
   '/register.html',
   '/style.css',
   '/app.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon.svg'
 ];
 
 // Install: cache static shell

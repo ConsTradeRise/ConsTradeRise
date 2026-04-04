@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="24" fill="#f97316"/>
+  <text x="96" y="72" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="56" fill="#fff">CT</text>
+  <text x="96" y="128" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="22" fill="#fff" letter-spacing="1">HIRE</text>
+  <!-- Hard hat icon -->
+  <ellipse cx="96" cy="145" rx="36" ry="8" fill="rgba(255,255,255,0.2)"/>
+</svg>
