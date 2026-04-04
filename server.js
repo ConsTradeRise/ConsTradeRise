@@ -149,6 +149,53 @@ app.use('/api/cover-letter', coverLetterRoutes);
 app.use('/api',             externalRoutes);
 
 // ============================================================
+//  SEO — robots.txt + sitemap.xml
+// ============================================================
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(
+    'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /dashboard.html\nDisallow: /admin.html\n\nSitemap: https://constradehire.com/sitemap.xml'
+  );
+});
+
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const jobs = await prisma.job.findMany({
+      where: { isActive: true },
+      select: { id: true, updatedAt: true },
+      orderBy: { postedAt: 'desc' },
+      take: 1000
+    });
+
+    const base = 'https://constradehire.com';
+    const staticUrls = [
+      { loc: `${base}/`,             changefreq: 'daily',   priority: '1.0' },
+      { loc: `${base}/jobs.html`,    changefreq: 'hourly',  priority: '0.9' },
+      { loc: `${base}/register.html`,changefreq: 'monthly', priority: '0.5' },
+      { loc: `${base}/login.html`,   changefreq: 'monthly', priority: '0.4' },
+    ];
+
+    const jobUrls = jobs.map(j => ({
+      loc:        `${base}/jobs.html?id=${j.id}`,
+      lastmod:    j.updatedAt.toISOString().split('T')[0],
+      changefreq: 'weekly',
+      priority:   '0.7'
+    }));
+
+    const toTag = ({ loc, lastmod, changefreq, priority }) =>
+      `  <url><loc>${loc}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}<changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`;
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...staticUrls, ...jobUrls].map(toTag).join('\n')}\n</urlset>`;
+
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (e) {
+    res.status(500).send('<?xml version="1.0"?><urlset/>');
+  }
+});
+
+// ============================================================
 //  DEDUPLICATION STORE (legacy job cache)
 // ============================================================
 const DATA_DIR   = path.join(__dirname, 'data');

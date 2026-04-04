@@ -3,7 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Browse Jobs — ConsTradeHire</title>
+  <title>Browse Construction Jobs in Canada — ConsTradeHire</title>
+  <meta name="description" content="Browse hundreds of construction jobs across Canada. Search by trade, location, or province. Estimators, Project Managers, Labourers, Electricians and more." />
+  <link rel="canonical" href="https://constradehire.com/jobs.html" />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://constradehire.com/jobs.html" />
+  <meta property="og:title"       content="Browse Construction Jobs in Canada — ConsTradeHire" />
+  <meta property="og:description" content="Hundreds of construction jobs across Canada. Find your next opportunity in the trades." />
+  <meta property="og:image"       content="https://constradehire.com/og-image.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Construction Jobs Canada — ConsTradeHire" />
+  <meta name="twitter:description" content="Browse trade and construction jobs across Canada." />
+  <meta name="twitter:image"       content="https://constradehire.com/og-image.png" />
+
   <link rel="stylesheet" href="/style.css" />
   <style>
     .jobs-layout { display:grid; grid-template-columns:260px 1fr; gap:24px; padding:32px 0; }
@@ -262,6 +278,29 @@ async function loadJobs(page = 1) {
   }
 
   container.innerHTML = jobs.map(job => jobCard(job)).join('');
+
+  // Inject JSON-LD JobPosting structured data for Google Jobs indexing
+  const existing = document.getElementById('jobs-jsonld');
+  if (existing) existing.remove();
+  const dbJobs = jobs.filter(j => j.id && !j.url);
+  if (dbJobs.length) {
+    const listings = dbJobs.slice(0, 20).map(j => ({
+      '@type': 'JobPosting',
+      title: j.title,
+      description: j.summary || j.description || j.title,
+      hiringOrganization: { '@type': 'Organization', name: j.companyName || j.employer?.name || 'Company' },
+      jobLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressCountry: 'CA', addressLocality: j.city || j.location || 'Canada' } },
+      employmentType: j.jobType || 'FULL_TIME',
+      datePosted: (j.postedAt || new Date().toISOString()).split('T')[0],
+      url: `https://constradehire.com/jobs.html?id=${j.id}`,
+      ...(j.salary ? { baseSalary: { '@type': 'MonetaryAmount', currency: 'CAD', value: j.salary } } : {})
+    }));
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'jobs-jsonld';
+    script.textContent = JSON.stringify({ '@context': 'https://schema.org', '@graph': listings });
+    document.head.appendChild(script);
+  }
 
   // Pagination (DB jobs only)
   const pg = data.pagination;
