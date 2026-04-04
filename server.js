@@ -307,7 +307,73 @@ async function searchJobsWithJooble(keywords, location) {
   });
 }
 
-// Combined search — Adzuna + Jooble (runs in parallel)
+// ─── Apify Indeed Canada scraper ─────────────────────────────
+// Add to .env: APIFY_TOKEN=xxx  APIFY_DATASET_ID=xxx
+async function fetchApifyDataset() {
+  const token     = process.env.APIFY_TOKEN;
+  const datasetId = process.env.APIFY_DATASET_ID;
+  if (!token || !datasetId) return [];
+
+  try {
+    const data = await httpGet(
+      `https://api.apify.com/v2/datasets/${datasetId}/items?token=${token}&limit=100&clean=true`
+    );
+    const items = Array.isArray(data) ? data : (data.items || []);
+    return items.map(j => ({
+      title:    j.positionName || j.title || '',
+      company:  j.company      || 'Unknown',
+      location: j.location     || 'Canada',
+      salary:   j.salary       || null,
+      type:     j.jobType      || 'Full-time',
+      source:   'Indeed (CA)',
+      posted:   j.postingDateParsed || j.postedAt || null,
+      url:      j.externalApplyLink || j.url || null,
+      summary:  j.description ? j.description.substring(0, 300) : ''
+    })).filter(j => j.title);
+  } catch (e) {
+    console.error('[search] Apify dataset fetch failed:', e.message);
+    return [];
+  }
+}
+
+async function triggerApifyRun() {
+  const token   = process.env.APIFY_TOKEN;
+  const actorId = process.env.APIFY_ACTOR_ID || 'hMvNSpz3JnHgl5jkh';
+  if (!token) return;
+
+  const body = JSON.stringify({
+    country: 'ca',
+    position: 'construction',
+    location: 'Canada',
+    maxItems: 100
+  });
+
+  const options = {
+    hostname: 'api.apify.com',
+    path: `/v2/acts/${actorId}/runs?token=${token}`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+  };
+
+  return new Promise((resolve) => {
+    const req = https.request(options, (res) => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try {
+          const run = JSON.parse(d);
+          console.log('[apify] New run triggered:', run.data?.id);
+        } catch {}
+        resolve();
+      });
+    });
+    req.on('error', (e) => { console.warn('[apify] Trigger failed:', e.message); resolve(); });
+    req.write(body);
+    req.end();
+  });
+}
+
+// Combined search — Adzuna + Jooble + Apify Indeed (runs in parallel)
 async function searchAllSources(role, location) {
   const [adzunaJobs, joobleJobs] = await Promise.allSettled([
     searchJobsWithAdzuna(role, location),
@@ -332,6 +398,19 @@ async function runAutoSearch() {
   try {
     let newCount = 0;
 
+    // Pull latest Apify Indeed dataset first
+    const apifyJobs = await fetchApifyDataset();
+    for (const job of apifyJobs) {
+      const fp = makeFingerprint(job);
+      job.isNew       = !seenFingerprints.has(fp);
+      job.fingerprint = fp;
+      job.id          = `live-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      job.searchedAt  = new Date().toISOString();
+      if (job.isNew) { seenFingerprints.add(fp); newCount++; }
+      if (!cachedJobs.some(c => c.fingerprint === fp)) cachedJobs.unshift(job);
+    }
+    if (apifyJobs.length) console.log(`[auto-search] Apify: ${apifyJobs.length} jobs pulled.`);
+
     // Search one role at a time with 2s gap to avoid Adzuna 429
     for (const role of searchPrefs.roles) {
       try {
@@ -351,10 +430,13 @@ async function runAutoSearch() {
       await delay(2000); // 2 second pause between requests
     }
 
-    cachedJobs = cachedJobs.slice(0, 150);
+    cachedJobs = cachedJobs.slice(0, 250);
     searchPrefs.lastSearched = new Date().toISOString();
     saveDedupStore();
     console.log(`[auto-search] Done — ${newCount} new, ${cachedJobs.length} cached.`);
+
+    // Trigger fresh Apify run for next cycle (fire-and-forget)
+    triggerApifyRun().catch(() => {});
   } catch (e) {
     console.error('[auto-search] Error:', e.message);
   }
