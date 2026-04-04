@@ -120,12 +120,13 @@
 <div class="admin-layout">
   <!-- Sidebar -->
   <div class="admin-sidebar">
-    <div class="admin-sidebar-logo">Cons<span>Trade</span>Rise<br><small style="font-size:10px;font-weight:400;opacity:.5;">Admin Panel</small></div>
+    <div class="admin-sidebar-logo">Cons<span>Trade</span>Hire<br><small style="font-size:10px;font-weight:400;opacity:.5;">Admin Panel</small></div>
     <nav class="admin-nav">
       <button class="admin-nav-item active" onclick="showTab('dashboard')"><span class="nav-icon">📊</span> Dashboard</button>
       <button class="admin-nav-item" onclick="showTab('users')"><span class="nav-icon">👥</span> Users</button>
       <button class="admin-nav-item" onclick="showTab('jobs')"><span class="nav-icon">💼</span> Jobs</button>
       <button class="admin-nav-item" onclick="showTab('applications')"><span class="nav-icon">📋</span> Applications</button>
+      <button class="admin-nav-item" onclick="showTab('reports')"><span class="nav-icon">🚩</span> Reports</button>
     </nav>
     <div class="admin-sidebar-footer" id="adminName">Admin</div>
   </div>
@@ -201,6 +202,27 @@
         </div>
       </div>
 
+      <!-- Reports Tab -->
+      <div class="admin-tab" id="tab-reports">
+        <div class="admin-table-wrap">
+          <div class="admin-table-toolbar">
+            <select id="reportFilter" onchange="loadReports()">
+              <option value="">All Reports</option>
+              <option value="false">Unresolved</option>
+              <option value="true">Resolved</option>
+            </select>
+            <span id="reportTotal" style="font-size:12px;color:var(--gray-400);margin-left:auto;"></span>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Job ID</th><th>Reported By</th><th>Reason</th><th>Details</th><th>Date</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody id="reportsBody"><tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray-400);">Loading…</td></tr></tbody>
+          </table>
+          <div class="pagination" id="reportPagination"></div>
+        </div>
+      </div>
+
       <!-- Applications Tab -->
       <div class="admin-tab" id="tab-applications">
         <div class="admin-table-wrap">
@@ -233,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadStats();
 });
 
-const TITLES = { dashboard: 'Dashboard', users: 'User Management', jobs: 'Job Moderation', applications: 'Applications' };
+const TITLES = { dashboard: 'Dashboard', users: 'User Management', jobs: 'Job Moderation', applications: 'Applications', reports: 'Job Reports' };
 
 function showTab(tab) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -246,6 +268,7 @@ function showTab(tab) {
   if (tab === 'users')        loadUsers();
   if (tab === 'jobs')         loadJobs();
   if (tab === 'applications') loadApps();
+  if (tab === 'reports')      loadReports();
 }
 
 // ── Debounce ────────────────────────────────────
@@ -290,7 +313,8 @@ async function loadUsers(page = 1) {
       <td>${u._count.applications}</td>
       <td>${u._count.postedJobs}</td>
       <td>${fmtDate(u.createdAt)}</td>
-      <td style="display:flex;gap:6px;">
+      <td style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${u.role === 'EMPLOYER' ? `<button class="btn-sm ${u.isVerified ? 'btn-toggle-on' : 'btn-toggle-off'}" onclick="verifyUser('${u.id}', this)">${u.isVerified ? '✓ Verified' : 'Verify'}</button>` : ''}
         ${u.role !== 'ADMIN' ? `<button class="btn-sm ${banned ? 'btn-unban' : 'btn-ban'}" onclick="banUser('${u.id}', this)">${banned ? 'Unban' : 'Ban'}</button>` : ''}
         ${u.role !== 'ADMIN' ? `<button class="btn-sm btn-del" onclick="deleteUser('${u.id}', this)">Delete</button>` : ''}
       </td>
@@ -298,6 +322,11 @@ async function loadUsers(page = 1) {
   }).join('');
 
   renderPagination('userPagination', page, data.pages, p => loadUsers(p));
+}
+
+async function verifyUser(id, btn) {
+  const { ok, data } = await apiCall('PUT', `/api/admin/users/${id}/verify`);
+  if (ok) { Toast.success(data.isVerified ? 'Employer verified.' : 'Verification removed.'); loadUsers(userPage); }
 }
 
 async function banUser(id, btn) {
@@ -353,6 +382,43 @@ async function deleteJob(id, btn) {
   if (!confirm('Permanently delete this job?')) return;
   const { ok } = await apiCall('DELETE', `/api/admin/jobs/${id}`);
   if (ok) { Toast.success('Job deleted.'); loadJobs(jobPage); }
+}
+
+// ── Reports ─────────────────────────────────────
+let reportPage = 1;
+
+async function loadReports(page = 1) {
+  reportPage = page;
+  const resolved = document.getElementById('reportFilter').value;
+  const q = new URLSearchParams({ page, ...(resolved !== '' && { resolved }) }).toString();
+  const { ok, data } = await apiCall('GET', '/api/admin/reports?' + q);
+  if (!ok) return;
+
+  document.getElementById('reportTotal').textContent = `${data.total} reports`;
+
+  const REASON_COLORS = { scam: 'badge-red', spam: 'badge-orange', inappropriate: 'badge-red', duplicate: 'badge-gray', other: 'badge-gray' };
+  const tbody = document.getElementById('reportsBody');
+  if (!data.reports.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray-400);">No reports</td></tr>'; return; }
+
+  tbody.innerHTML = data.reports.map(r => `<tr>
+    <td style="font-size:11px;color:var(--gray-400)">${r.jobId.slice(0,8)}…</td>
+    <td><strong>${esc(r.user.name)}</strong><br><small style="color:var(--gray-400)">${esc(r.user.email)}</small></td>
+    <td><span class="badge ${REASON_COLORS[r.reason] || 'badge-gray'}">${r.reason}</span></td>
+    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.details || '—')}</td>
+    <td>${fmtDate(r.createdAt)}</td>
+    <td><span class="badge ${r.resolved ? 'badge-green' : 'badge-orange'}">${r.resolved ? 'Resolved' : 'Open'}</span></td>
+    <td style="display:flex;gap:6px;">
+      ${!r.resolved ? `<button class="btn-sm btn-toggle-on" onclick="resolveReport('${r.id}', this)">Resolve</button>` : ''}
+      <a href="/jobs.html" target="_blank" class="btn-sm btn-toggle-off" style="text-decoration:none">View Job</a>
+    </td>
+  </tr>`).join('');
+
+  renderPagination('reportPagination', page, data.pages, p => loadReports(p));
+}
+
+async function resolveReport(id, btn) {
+  const { ok } = await apiCall('PUT', `/api/admin/reports/${id}/resolve`);
+  if (ok) { Toast.success('Report resolved.'); loadReports(reportPage); }
 }
 
 // ── Applications ────────────────────────────────
