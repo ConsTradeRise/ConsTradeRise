@@ -10,6 +10,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { sendNewApplicationAlert, sendApplicationUpdate } = require('../utils/email');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -46,8 +47,11 @@ router.post('/', requireAuth, requireRole('WORKER'), async (req, res) => {
       }
     });
 
-    // Notify employer
+    // Notify employer (in-app + email)
     if (job.employerId) {
+      const employer = await prisma.user.findUnique({
+        where: { id: job.employerId }, select: { email: true, name: true }
+      });
       await prisma.notification.create({
         data: {
           userId: job.employerId,
@@ -57,6 +61,14 @@ router.post('/', requireAuth, requireRole('WORKER'), async (req, res) => {
           link: `/employer/jobs/${jobId}/applicants`
         }
       });
+      if (employer) {
+        sendNewApplicationAlert({
+          to:           employer.email,
+          employerName: employer.name,
+          workerName:   req.user.name,
+          jobTitle:     job.title
+        }).catch(() => {});
+      }
     }
 
     res.status(201).json({ message: 'Application submitted', application });
@@ -192,7 +204,7 @@ router.put('/:id/status', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (
 
     const application = await prisma.application.findUnique({
       where: { id: req.params.id },
-      include: { job: true }
+      include: { job: true, user: { select: { email: true, name: true } } }
     });
 
     if (!application) return res.status(404).json({ error: 'Application not found' });
@@ -207,7 +219,7 @@ router.put('/:id/status', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (
       data: { status }
     });
 
-    // Notify worker of status change
+    // Notify worker (in-app + email)
     await prisma.notification.create({
       data: {
         userId: application.userId,
@@ -217,6 +229,16 @@ router.put('/:id/status', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (
         link: `/dashboard/applications`
       }
     });
+
+    if (status !== 'APPLIED') {
+      sendApplicationUpdate({
+        to:         application.user.email,
+        workerName: application.user.name,
+        jobTitle:   application.job.title,
+        company:    application.job.companyName || 'the employer',
+        status
+      }).catch(() => {});
+    }
 
     res.json({ message: 'Status updated', application: updated });
 

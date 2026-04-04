@@ -35,6 +35,7 @@ const notificationRoutes  = require('./routes/notifications');
 const adminRoutes         = require('./routes/admin');
 const coverLetterRoutes   = require('./routes/coverLetter');
 const externalRoutes      = require('./routes/external');
+const { sendJobDigest }   = require('./utils/email');
 
 const app    = express();
 const prisma = new PrismaClient();
@@ -717,6 +718,47 @@ if (require.main === module) {
 
   const INTERVAL_MS = (searchPrefs.autoSearchInterval || 4) * 60 * 60 * 1000;
   setInterval(runAutoSearch, INTERVAL_MS);
+
+  // Daily job digest — 8 AM every day
+  async function sendDailyDigest() {
+    try {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const newJobs = await prisma.job.findMany({
+        where: { isActive: true, postedAt: { gte: since } },
+        orderBy: { postedAt: 'desc' },
+        take: 5,
+        select: { title: true, companyName: true, location: true, salary: true, externalUrl: true, id: true }
+      });
+      if (newJobs.length === 0) return;
+
+      const workers = await prisma.user.findMany({
+        where: { role: 'WORKER', profile: { openToMatching: true } },
+        select: { email: true, name: true }
+      });
+
+      console.log(`[digest] Sending ${newJobs.length} jobs to ${workers.length} workers`);
+      for (const w of workers) {
+        await sendJobDigest({ to: w.email, workerName: w.name, jobs: newJobs });
+      }
+    } catch (e) {
+      console.error('[digest] Error:', e.message);
+    }
+  }
+
+  // Schedule at 8 AM daily
+  function scheduleDigest() {
+    const now = new Date();
+    const next8AM = new Date(now);
+    next8AM.setHours(8, 0, 0, 0);
+    if (next8AM <= now) next8AM.setDate(next8AM.getDate() + 1);
+    const msUntil = next8AM - now;
+    setTimeout(() => {
+      sendDailyDigest();
+      setInterval(sendDailyDigest, 24 * 60 * 60 * 1000);
+    }, msUntil);
+    console.log(`[digest] Scheduled for ${next8AM.toLocaleTimeString()}`);
+  }
+  scheduleDigest();
 
   // Auto-expire: deactivate jobs past their expiresAt (runs every 6 hours)
   async function expireOldJobs() {

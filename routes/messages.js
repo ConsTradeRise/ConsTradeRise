@@ -2,6 +2,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth } = require('../middleware/auth');
+const { sendNewMessageAlert } = require('../utils/email');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -117,7 +118,7 @@ router.post('/:userId', requireAuth, async (req, res) => {
       include: { sender: { select: { id: true, name: true } } }
     });
 
-    // Notify receiver
+    // Notify receiver (in-app + email)
     await prisma.notification.create({
       data: {
         userId: req.params.userId,
@@ -127,6 +128,14 @@ router.post('/:userId', requireAuth, async (req, res) => {
         link:   `/messages.html?with=${req.user.id}`
       }
     });
+
+    // Email notification (fire-and-forget)
+    sendNewMessageAlert({
+      to:           receiver.email,
+      receiverName: receiver.name,
+      senderName:   req.user.name,
+      preview:      content.trim().substring(0, 120)
+    }).catch(() => {});
 
     res.status(201).json({ message });
   } catch (e) {
