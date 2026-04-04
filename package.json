@@ -1,11 +1,12 @@
 {
-  "name": "tradesup",
+  "name": "constradehire",
   "version": "1.0.0",
   "description": "AI-powered job search platform for Canadian construction & trades professionals",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "build": "prisma generate",
     "db:push": "npx prisma db push",
     "db:studio": "npx prisma studio",
     "db:generate": "npx prisma generate"
