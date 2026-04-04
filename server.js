@@ -63,18 +63,17 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-// CORS — whitelist production domain + localhost dev
-const allowedOrigins = [
-  'https://constradehire.com',
-  'https://www.constradehire.com',
-  'https://constradehire.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:3001'
-];
+// CORS — allow production domains + any vercel.app preview + localhost
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow requests with no origin (mobile apps, curl, Vercel SSR)
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    // Allow same-origin, no-origin (curl/mobile), constradehire.com, vercel previews, localhost
+    if (
+      !origin ||
+      origin === 'https://constradehire.com' ||
+      origin === 'https://www.constradehire.com' ||
+      origin.endsWith('.vercel.app') ||
+      origin.startsWith('http://localhost')
+    ) return cb(null, true);
     cb(new Error('CORS policy: origin not allowed'));
   },
   credentials: true

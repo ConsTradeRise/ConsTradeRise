@@ -35,33 +35,31 @@ router.get('/', async (req, res) => {
     if (datePosted === '7d')   postedAfter = new Date(Date.now() - 7  * 24 * 60 * 60 * 1000);
     if (datePosted === '30d')  postedAfter = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
+    // Build AND conditions — wrap each OR group in an AND so they don't overwrite each other
+    const andConditions = [];
+    if (safeSearch)   andConditions.push({ OR: [
+      { title:       { contains: safeSearch, mode: 'insensitive' } },
+      { description: { contains: safeSearch, mode: 'insensitive' } },
+      { companyName: { contains: safeSearch, mode: 'insensitive' } },
+      { skills:      { has: safeSearch } }
+    ]});
+    if (safeLocation) andConditions.push({ OR: [
+      { city:     { contains: safeLocation, mode: 'insensitive' } },
+      { province: { contains: safeLocation, mode: 'insensitive' } },
+      { location: { contains: safeLocation, mode: 'insensitive' } }
+    ]});
+    if (safeSector)   andConditions.push({ OR: [
+      { title:       { contains: safeSector, mode: 'insensitive' } },
+      { description: { contains: safeSector, mode: 'insensitive' } },
+      { skills:      { has: safeSector } }
+    ]});
+
     const where = {
       isActive: true,
       ...(postedAfter && { postedAt: { gte: postedAfter } }),
-      ...(safeSearch && {
-        OR: [
-          { title:       { contains: safeSearch, mode: 'insensitive' } },
-          { description: { contains: safeSearch, mode: 'insensitive' } },
-          { companyName: { contains: safeSearch, mode: 'insensitive' } },
-          { skills:      { has: safeSearch } }
-        ]
-      }),
-      ...(safeLocation && {
-        OR: [
-          { city:     { contains: safeLocation, mode: 'insensitive' } },
-          { province: { contains: safeLocation, mode: 'insensitive' } },
-          { location: { contains: safeLocation, mode: 'insensitive' } }
-        ]
-      }),
       ...(province && { province: { contains: province.substring(0, 50), mode: 'insensitive' } }),
       ...(type && { jobType: type }),
-      ...(safeSector && {
-        OR: [
-          { title:       { contains: safeSector, mode: 'insensitive' } },
-          { description: { contains: safeSector, mode: 'insensitive' } },
-          { skills:      { has: safeSector } }
-        ]
-      })
+      ...(andConditions.length && { AND: andConditions })
     };
 
     const orderBy = sort === 'newest'
