@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Employer Dashboard — ConsTradeHire</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#f97316" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="ConsTradeHire" />
   <link rel="stylesheet" href="/style.css" />
   <style>
     .tab-bar { display:flex; gap:4px; border-bottom:1px solid var(--gray-200); margin-bottom:24px; }
@@ -33,6 +37,19 @@
     .skill-tag button { background:none; border:none; cursor:pointer; color:var(--blue); font-size:14px; line-height:1; padding:0; }
 
     .status-select { font-size:12px; padding:4px 8px; border:1px solid var(--gray-200); border-radius:var(--radius); background:#fff; cursor:pointer; }
+    .kanban-board { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; align-items:start; }
+    @media(max-width:900px){ .kanban-board{grid-template-columns:repeat(2,1fr);} }
+    @media(max-width:500px){ .kanban-board{grid-template-columns:1fr;} }
+    .kanban-col { background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:12px; }
+    .kanban-col-header { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+    .kanban-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius); padding:12px; margin-bottom:8px; font-size:13px; }
+    .kanban-card:last-child { margin-bottom:0; }
+    .view-toggle { display:flex; gap:6px; }
+    .view-btn { padding:4px 12px; border:1px solid var(--gray-200); border-radius:var(--radius); font-size:12px; font-weight:600; cursor:pointer; background:#fff; color:var(--gray-500); }
+    .view-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .bulk-bar { display:none; padding:10px 0; border-bottom:1px solid var(--gray-200); margin-bottom:12px; align-items:center; gap:10px; flex-wrap:wrap; }
+    .bulk-bar.visible { display:flex; }
+    .cb-applicant { margin-right:8px; cursor:pointer; width:14px; height:14px; }
   </style>
 </head>
 <body>
@@ -183,9 +200,27 @@
       <div class="card">
         <div class="flex-between mb-2">
           <div class="card-title" style="margin-bottom:0">Applicants</div>
-          <select class="form-select" id="jobFilter" style="width:auto;font-size:13px;">
-            <option value="">Select a job</option>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select class="form-select" id="jobFilter" style="width:auto;font-size:13px;">
+              <option value="">Select a job</option>
+            </select>
+            <div class="view-toggle">
+              <button class="view-btn active" id="btnListView" onclick="setApplicantView('list')">☰ List</button>
+              <button class="view-btn" id="btnBoardView" onclick="setApplicantView('board')">⊞ Board</button>
+            </div>
+          </div>
+        </div>
+        <!-- Bulk action bar -->
+        <div class="bulk-bar" id="bulkBar">
+          <span id="bulkCount" style="font-size:13px;font-weight:600;color:var(--gray-700);"></span>
+          <select id="bulkStatus" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:var(--radius);background:#fff;">
+            <option value="">Move to status…</option>
+            <option value="VIEWED">Viewed</option>
+            <option value="SHORTLISTED">Shortlisted</option>
+            <option value="REJECTED">Rejected</option>
           </select>
+          <button onclick="applyBulkStatus()" class="btn btn-sm btn-primary">Apply</button>
+          <button onclick="clearBulkSelect()" class="btn btn-sm btn-ghost">Clear</button>
         </div>
         <p class="text-sm text-gray mb-2">Candidates ranked by AI match score.</p>
         <div id="applicantsList">
@@ -355,16 +390,23 @@ function jobRow(j, withActions = false) {
   const apps = j._count?.applications || 0;
   return `<div class="job-row">
     <div class="job-row-info">
-      <div class="job-row-title">${escapeHtml(j.title)}</div>
-      <div class="job-row-meta">${escapeHtml(j.city || j.location || '')} · ${j.jobType || ''} · ${apps} applicant${apps !== 1 ? 's' : ''} · ${formatDate(j.postedAt)}</div>
+      <div class="job-row-title">${escapeHtml(j.title)}${j.isFeatured?` <span class="badge badge-yellow" style="font-size:10px;">⭐ Featured</span>`:''}</div>
+      <div class="job-row-meta">${escapeHtml(j.city || j.location || '')} · ${j.jobType || ''} · ${apps} applicant${apps !== 1 ? 's' : ''} · Posted ${formatDate(j.postedAt)}${j.expiresAt ? ' · Expires '+formatDate(j.expiresAt) : ''}</div>
     </div>
     <span class="badge ${j.isActive ? 'badge-green' : 'badge-gray'}">${j.isActive ? 'Active' : 'Closed'}</span>
     ${withActions ? `
       <div class="job-row-actions">
+        <button class="btn btn-sm btn-ghost" onclick="toggleFeatured('${j.id}', ${!!j.isFeatured})" title="${j.isFeatured?'Remove featured':'Mark as featured'}">${j.isFeatured?'★ Unfeature':'☆ Feature'}</button>
         <button class="btn btn-sm btn-ghost" onclick="viewApplicants('${j.id}', '${escapeHtml(j.title)}')">View Applicants</button>
         <button class="btn btn-sm btn-danger" onclick="closeJob('${j.id}')">Close</button>
       </div>` : ''}
   </div>`;
+}
+
+async function toggleFeatured(id, currentlyFeatured) {
+  const { ok, data } = await apiCall('PUT', `/api/jobs/${id}`, { isFeatured: !currentlyFeatured });
+  if (ok) { Toast.success(currentlyFeatured ? 'Featured removed' : 'Job marked as featured ⭐'); loadMyJobs(); }
+  else Toast.error(data.error || 'Failed to update');
 }
 
 async function closeJob(id) {
@@ -455,17 +497,96 @@ function viewApplicants(jobId, title) {
   }, 100);
 }
 
+let currentApplicants = [];
+let currentJobId = null;
+let applicantView = 'list';
+let selectedApps = new Set();
+
+function setApplicantView(view) {
+  applicantView = view;
+  document.getElementById('btnListView').classList.toggle('active', view === 'list');
+  document.getElementById('btnBoardView').classList.toggle('active', view === 'board');
+  renderApplicants();
+}
+
+function renderApplicants() {
+  const el = document.getElementById('applicantsList');
+  if (!currentApplicants.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div><h3>No applicants yet</h3><p>Share your job listing to attract candidates</p></div>`;
+    return;
+  }
+  if (applicantView === 'board') {
+    renderKanban(el);
+  } else {
+    el.innerHTML = currentApplicants.map(a => applicantCard(a, currentJobId)).join('');
+  }
+}
+
+function renderKanban(el) {
+  const cols = { APPLIED: [], VIEWED: [], SHORTLISTED: [], REJECTED: [] };
+  currentApplicants.forEach(a => { if (cols[a.status]) cols[a.status].push(a); });
+  const colColors = { APPLIED:'var(--blue)', VIEWED:'var(--orange)', SHORTLISTED:'var(--green)', REJECTED:'var(--red)' };
+  el.innerHTML = `<div class="kanban-board">${
+    Object.entries(cols).map(([status, apps]) => `
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <span style="color:${colColors[status]}">${status}</span>
+          <span style="background:${colColors[status]};color:#fff;border-radius:100px;padding:1px 8px;font-size:11px;">${apps.length}</span>
+        </div>
+        ${apps.length ? apps.map(a => `
+          <div class="kanban-card">
+            <div style="font-weight:700;font-size:13px;">${escapeHtml(a.user?.name||'Candidate')}</div>
+            <div style="font-size:11px;color:var(--gray-500);margin:2px 0;">${escapeHtml(a.user?.profile?.headline||a.user?.profile?.city||'')}</div>
+            ${a.atsScore ? `<div style="font-size:11px;font-weight:700;color:${getScoreClass(a.atsScore.score)==='ats-excellent'?'var(--green)':'var(--blue)'};">ATS ${a.atsScore.score}%</div>` : ''}
+            <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;">
+              <select style="font-size:11px;padding:2px 4px;border:1px solid var(--gray-200);border-radius:4px;" onchange="updateStatus('${a.id}',this.value,'${currentJobId}');this.closest('.kanban-card').style.opacity='.5'">
+                ${['APPLIED','VIEWED','SHORTLISTED','REJECTED'].map(s=>`<option value="${s}"${a.status===s?' selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('')}
+              </select>
+              <button onclick="empMsgApplicant('${a.user?.id}','${escapeHtml(a.user?.name||'')}')" style="font-size:11px;padding:2px 6px;border:1px solid var(--gray-200);border-radius:4px;background:#fff;cursor:pointer;">💬</button>
+            </div>
+          </div>`).join('') : `<div style="font-size:12px;color:var(--gray-400);text-align:center;padding:16px;">None</div>`}
+      </div>`).join('')
+  }</div>`;
+}
+
 async function loadApplicants(jobId) {
+  currentJobId = jobId;
+  selectedApps.clear();
+  updateBulkBar();
   const el = document.getElementById('applicantsList');
   el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
   const { ok, data } = await apiCall('GET', `/api/applications/job/${jobId}`);
   if (!ok) { el.innerHTML = `<p class="text-gray">${data.error}</p>`; return; }
-  const apps = data.applications || [];
-  if (!apps.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div><h3>No applicants yet</h3><p>Share your job listing to attract candidates</p></div>`;
-    return;
-  }
-  el.innerHTML = apps.map(a => applicantCard(a, jobId)).join('');
+  currentApplicants = data.applications || [];
+  renderApplicants();
+}
+
+function toggleSelectApp(id, checked) {
+  if (checked) selectedApps.add(id); else selectedApps.delete(id);
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const count = selectedApps.size;
+  bar.classList.toggle('visible', count > 0);
+  document.getElementById('bulkCount').textContent = `${count} selected`;
+}
+
+async function applyBulkStatus() {
+  const status = document.getElementById('bulkStatus').value;
+  if (!status) { Toast.warn('Select a status to apply'); return; }
+  const ids = [...selectedApps];
+  await Promise.all(ids.map(id => apiCall('PUT', `/api/applications/${id}/status`, { status })));
+  Toast.success(`${ids.length} applicant(s) moved to ${status}`);
+  clearBulkSelect();
+  loadApplicants(currentJobId);
+}
+
+function clearBulkSelect() {
+  selectedApps.clear();
+  updateBulkBar();
+  document.querySelectorAll('.cb-applicant').forEach(cb => { cb.checked = false; });
 }
 
 function applicantCard(a, jobId) {
@@ -476,12 +597,15 @@ function applicantCard(a, jobId) {
 
   return `<div class="applicant-card">
     <div class="applicant-header">
-      <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;">
+        <input type="checkbox" class="cb-applicant" onchange="toggleSelectApp('${a.id}',this.checked)" style="margin-top:4px;" />
+        <div style="flex:1;min-width:0;">
         <div class="applicant-name">${escapeHtml(a.user?.name || 'Candidate')}</div>
         <div class="applicant-meta">
           ${p?.headline ? `<span style="color:var(--blue);font-weight:600;">${escapeHtml(p.headline)}</span> · ` : ''}
           ${p?.city ? escapeHtml(p.city) + (p.province ? ', ' + p.province : '') : 'Location not set'}
           ${p?.yearsExperience ? ' · ' + p.yearsExperience + ' yrs exp' : ''}
+        </div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">

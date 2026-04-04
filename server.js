@@ -9,6 +9,7 @@
 require('dotenv').config();
 
 const express      = require('express');
+const compression  = require('compression');
 const cors         = require('cors');
 const helmet       = require('helmet');
 const rateLimit    = require('express-rate-limit');
@@ -58,6 +59,7 @@ try {
 
 // Trust Vercel's proxy (required for rate limiting to work correctly)
 app.set('trust proxy', 1);
+app.use(compression()); // gzip all responses
 
 // Security headers
 app.use(helmet({
@@ -82,7 +84,11 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '2mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1h',      // cache CSS/JS/images for 1 hour
+  etag: true,
+  lastModified: true
+}));
 
 // Rate limiting — auth routes (strict: 5 attempts / 15 min)
 const authLimiter = rateLimit({

@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Worker Dashboard — ConsTradeHire</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#f97316" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="ConsTradeHire" />
   <link rel="stylesheet" href="/style.css" />
   <style>
     .tab-bar { display:flex; gap:4px; border-bottom:1px solid var(--gray-200); margin-bottom:24px; }
@@ -69,6 +73,10 @@
     </div>
     <div class="dash-sidebar-item" data-tab="resume">
       <span class="dash-sidebar-icon">📄</span> Resume
+    </div>
+    <div class="dash-sidebar-item" data-tab="saved">
+      <span class="dash-sidebar-icon">❤️</span> Saved Jobs
+      <span id="savedBadge" style="display:none;background:var(--orange);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
     </div>
     <div class="dash-sidebar-item" data-tab="messages">
       <span class="dash-sidebar-icon">💬</span> Messages
@@ -162,8 +170,30 @@
     <!-- ── APPLICATIONS TAB ── -->
     <div class="tab-panel" id="tab-applications">
       <div class="card">
-        <div class="card-title">My Applications</div>
+        <div class="flex-between mb-2">
+          <div class="card-title" style="margin-bottom:0;">My Applications</div>
+          <select id="appStatusFilter" onchange="filterApplications()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:var(--radius);background:#fff;">
+            <option value="">All Status</option>
+            <option value="APPLIED">Applied</option>
+            <option value="VIEWED">Viewed</option>
+            <option value="SHORTLISTED">Shortlisted</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>
         <div id="allApps">
+          <div style="text-align:center;padding:20px"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SAVED JOBS TAB ── -->
+    <div class="tab-panel" id="tab-saved">
+      <div class="card">
+        <div class="flex-between mb-2">
+          <div class="card-title" style="margin-bottom:0;">Saved Jobs</div>
+          <button onclick="clearAllSaved()" class="btn btn-ghost btn-sm" style="color:var(--red);">Clear All</button>
+        </div>
+        <div id="savedJobsList">
           <div style="text-align:center;padding:20px"><div class="spinner"></div></div>
         </div>
       </div>
@@ -366,6 +396,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dashWelcome').textContent = `Welcome back, ${user?.name?.split(' ')[0] || 'there'}`;
   loadDashboard();
   loadProfile();
+  // Init saved badge
+  const savedIds = getSaved();
+  const sb = document.getElementById('savedBadge');
+  if (sb && savedIds.length) { sb.textContent = savedIds.length; sb.style.display = 'inline'; }
 });
 
 // Tab switching
@@ -377,6 +411,7 @@ function switchTab(tab) {
   document.querySelectorAll('.dash-sidebar-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
   if (tab === 'applications') loadAllApplications();
+  if (tab === 'saved')        loadSavedJobs();
   if (tab === 'messages')     dashLoadInbox();
   if (tab === 'resume')       loadResumeVersions();
 }
@@ -433,33 +468,111 @@ async function loadAllApplications() {
   el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
   const { ok, data } = await apiCall('GET', '/api/applications/mine');
   if (!ok) { el.innerHTML = `<p class="text-gray">${data.error}</p>`; return; }
-  const apps = data.applications || [];
-  if (!apps.length) {
+  allApplicationsCache = data.applications || [];
+  if (!allApplicationsCache.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No applications yet</h3><p>Start applying for jobs</p><a href="/jobs.html" class="btn btn-primary">Browse Jobs</a></div>`;
     return;
   }
-  el.innerHTML = apps.map(a => appRow(a)).join('');
+  el.innerHTML = allApplicationsCache.map(a => appRow(a)).join('');
 }
+
+// ── SAVED JOBS ────────────────────────────────
+function getSaved() { try { return JSON.parse(localStorage.getItem('ctr_saved')||'[]'); } catch { return []; } }
+
+async function loadSavedJobs() {
+  const el = document.getElementById('savedJobsList');
+  const ids = getSaved();
+  // Update sidebar badge
+  const badge = document.getElementById('savedBadge');
+  if (badge) { badge.textContent = ids.length; badge.style.display = ids.length ? 'inline' : 'none'; }
+
+  if (!ids.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❤️</div><h3>No saved jobs</h3><p>Heart a job while browsing to save it here</p><a href="/jobs.html" class="btn btn-primary">Browse Jobs</a></div>`;
+    return;
+  }
+  el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
+
+  const results = await Promise.allSettled(ids.map(id => apiCall('GET', `/api/jobs/${id}`)));
+  const jobs = results.filter(r => r.status==='fulfilled' && r.value.ok).map(r => r.value.data.job);
+
+  if (!jobs.length) {
+    el.innerHTML = `<div class="empty-state"><p class="text-gray">Could not load saved jobs. They may have been removed.</p></div>`;
+    return;
+  }
+  el.innerHTML = jobs.map(j => `
+    <div class="app-row">
+      <div class="app-info">
+        <div class="app-title">${escapeHtml(j.title)}</div>
+        <div class="app-company">${escapeHtml(j.companyName||j.employer?.name||'Company')} · ${escapeHtml(j.city||j.location||'Canada')}</div>
+        <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">${escapeHtml(j.jobType||'Full-time')}${j.salary?' · '+escapeHtml(j.salary):''} · Posted ${formatDate(j.postedAt)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">
+        <a href="/jobs.html?id=${j.id}" class="btn btn-sm btn-primary">Apply →</a>
+        <button onclick="unsaveJob('${j.id}')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;">Remove ❤️</button>
+      </div>
+    </div>`).join('');
+}
+
+function unsaveJob(id) {
+  const saved = getSaved().filter(s => s !== String(id));
+  localStorage.setItem('ctr_saved', JSON.stringify(saved));
+  loadSavedJobs();
+  Toast.success('Removed from saved jobs');
+}
+
+function clearAllSaved() {
+  if (!confirm('Remove all saved jobs?')) return;
+  localStorage.setItem('ctr_saved', '[]');
+  loadSavedJobs();
+}
+
+function statusPipeline(s) {
+  if (s === 'REJECTED') return `<div style="font-size:11px;color:var(--red);font-weight:600;margin-top:6px;">✗ Not selected this time — keep applying!</div>`;
+  const steps = ['APPLIED','VIEWED','SHORTLISTED'];
+  const idx = steps.indexOf(s);
+  const labels = ['Applied','Viewed','Shortlisted'];
+  const colors = [idx>=0?'var(--blue)':'var(--gray-200)', idx>=1?'var(--blue)':'var(--gray-200)', idx>=2?'var(--green)':'var(--gray-200)'];
+  return `<div style="display:flex;align-items:center;gap:0;margin-top:8px;max-width:220px;">
+    ${steps.map((step, i) => `
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div style="width:12px;height:12px;border-radius:50%;background:${colors[i]};flex-shrink:0;"></div>
+        <div style="font-size:9px;color:${colors[i]};margin-top:2px;white-space:nowrap;">${labels[i]}</div>
+      </div>
+      ${i<2?`<div style="flex:1;height:2px;background:${idx>i?'var(--blue)':'var(--gray-200)'};width:30px;margin-bottom:12px;"></div>`:''}
+    `).join('')}
+  </div>`;
+}
+
+let allApplicationsCache = [];
 
 function appRow(a) {
   const statusColors = { APPLIED:'badge-blue', VIEWED:'badge-yellow', SHORTLISTED:'badge-green', REJECTED:'badge-red' };
-  const statusLabel  = { APPLIED:'Applied', VIEWED:'Viewed', SHORTLISTED:'Shortlisted', REJECTED:'Rejected' };
-  const statusIcon   = { APPLIED:'📨', VIEWED:'👀', SHORTLISTED:'⭐', REJECTED:'✗' };
   const s = a.status || 'APPLIED';
   return `<div class="app-row">
-    <div style="font-size:22px;flex-shrink:0;">${statusIcon[s] || '📨'}</div>
     <div class="app-info">
       <div class="app-title">${escapeHtml(a.job?.title || 'Job')}</div>
       <div class="app-company">${escapeHtml(a.job?.companyName || 'Company')}${a.job?.location ? ' · ' + escapeHtml(a.job.location) : ''}</div>
       <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Applied ${formatDate(a.appliedAt)} · ${escapeHtml(a.job?.jobType || '')}</div>
+      ${statusPipeline(s)}
     </div>
     <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-      <span class="badge ${statusColors[s] || 'badge-gray'}">${statusLabel[s] || s}</span>
+      <span class="badge ${statusColors[s] || 'badge-gray'}">${s.charAt(0)+s.slice(1).toLowerCase()}</span>
       ${a.atsScore != null ? `<span style="font-size:11px;font-weight:700;color:${a.atsScore>=70?'var(--green)':a.atsScore>=50?'var(--blue)':'var(--orange)'};">ATS ${a.atsScore}%</span>` : ''}
-      ${a.job?.id ? `<a href="/job.html?id=${a.job.id}" style="font-size:11px;color:var(--blue);">View Job →</a>` : ''}
-      ${a.job?.isActive === false ? `<div style="font-size:11px;color:var(--gray-400);">Job closed</div>` : ''}
+      ${a.job?.id ? `<a href="/jobs.html?id=${a.job.id}" style="font-size:11px;color:var(--blue);">View →</a>` : ''}
+      ${a.job?.isActive === false ? `<span style="font-size:11px;color:var(--gray-400);">Job closed</span>` : ''}
     </div>
   </div>`;
+}
+
+function filterApplications() {
+  const filter = document.getElementById('appStatusFilter').value;
+  const el = document.getElementById('allApps');
+  const filtered = filter ? allApplicationsCache.filter(a => a.status === filter) : allApplicationsCache;
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px;"><p class="text-gray">No applications with status: ${filter}</p></div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(a => appRow(a)).join('');
 }
 
 // Profile

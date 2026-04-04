@@ -15,10 +15,29 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Simple in-memory TTL cache for public jobs list (60s TTL)
+const jobsCache = new Map();
+const CACHE_TTL = 60 * 1000; // 60 seconds
+function getCached(key) {
+  const entry = jobsCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { jobsCache.delete(key); return null; }
+  return entry.data;
+}
+function setCached(key, data) {
+  if (jobsCache.size > 200) jobsCache.clear(); // prevent unbounded growth
+  jobsCache.set(key, { data, ts: Date.now() });
+}
+// Invalidate cache on any write (post/update/delete)
+function invalidateJobsCache() { jobsCache.clear(); }
+
 // ─── LIST JOBS ────────────────────────────────
 // GET /api/jobs?search=&location=&type=&page=
 router.get('/', async (req, res) => {
   try {
+    const cacheKey = JSON.stringify(req.query);
+    const cached = getCached(cacheKey);
+    if (cached) return res.json(cached);
     const { search, location, type, province, sector, datePosted, sort } = req.query;
     const pageNum  = Math.max(1, parseInt(req.query.page)  || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
@@ -94,15 +113,12 @@ router.get('/', async (req, res) => {
       prisma.job.count({ where })
     ]);
 
-    res.json({
+    const result = {
       jobs,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum)
-      }
-    });
+      pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) }
+    };
+    setCached(cacheKey, result);
+    res.json(result);
 
   } catch (e) {
     console.error('[jobs/list]', e.message);
@@ -199,6 +215,7 @@ router.post('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res)
       }
     });
 
+    invalidateJobsCache();
     res.status(201).json({ message: 'Job posted successfully', job });
 
   } catch (e) {
@@ -220,7 +237,7 @@ router.put('/:id', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, re
       return res.status(403).json({ error: 'Access denied — not your job' });
     }
 
-    const { title, description, location, city, province, salary, jobType, skills, isActive } = req.body;
+    const { title, description, location, city, province, salary, jobType, skills, isActive, isFeatured } = req.body;
 
     const updated = await prisma.job.update({
       where: { id: req.params.id },
@@ -233,10 +250,12 @@ router.put('/:id', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, re
         ...(salary !== undefined && { salary }),
         ...(jobType && { jobType }),
         ...(skills && { skills }),
-        ...(isActive !== undefined && { isActive })
+        ...(isActive !== undefined && { isActive }),
+        ...(isFeatured !== undefined && { isFeatured })
       }
     });
 
+    invalidateJobsCache();
     res.json({ message: 'Job updated', job: updated });
 
   } catch (e) {
@@ -264,6 +283,7 @@ router.delete('/:id', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req,
       data: { isActive: false }
     });
 
+    invalidateJobsCache();
     res.json({ message: 'Job removed successfully' });
 
   } catch (e) {

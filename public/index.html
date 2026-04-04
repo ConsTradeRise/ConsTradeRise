@@ -48,6 +48,11 @@
   }
   </script>
 
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#f97316" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="ConsTradeHire" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
@@ -62,6 +67,7 @@
       <a href="#" id="navLogoutBtn" style="display:none" class="btn btn-ghost">Logout</a>
       <a href="/login.html" id="navLoginBtn" class="btn btn-ghost">Login</a>
       <a href="/register.html" id="navRegisterBtn" class="btn btn-primary">Get Started</a>
+      <button id="pwaInstallBtn" onclick="promptInstall()" style="display:none;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--gray-200);border-radius:var(--radius);background:#fff;font-size:13px;font-weight:600;cursor:pointer;">📲 Install App</button>
     </div>
     <button class="nav-toggle" id="navToggle" aria-label="Menu">&#9776;</button>
   </div>
