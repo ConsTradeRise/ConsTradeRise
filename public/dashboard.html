@@ -542,6 +542,21 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
   const btn = e.target.querySelector('[type=submit]');
   btn.disabled = true; btn.textContent = 'Saving...';
 
+  // Numverify phone validation (non-blocking — warn but don't prevent save)
+  const phoneVal = document.getElementById('profPhone').value.trim();
+  if (phoneVal) {
+    try {
+      const pRes  = await fetch('/api/validate/phone', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneVal })
+      });
+      const pData = await pRes.json();
+      if (pData.valid === false) {
+        Toast.warn(pData.reason || 'Phone number may be invalid. Please verify.');
+      }
+    } catch (_) {}
+  }
+
   const { ok, data } = await apiCall('PUT', '/api/profile/me', {
     phone:             document.getElementById('profPhone').value,
     email:             document.getElementById('profEmail').value,

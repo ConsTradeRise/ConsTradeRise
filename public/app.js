@@ -224,6 +224,22 @@ function initRegisterPage() {
     }
 
     btn.disabled = true;
+    btn.textContent = 'Validating email...';
+
+    // Mailboxlayer email validation
+    try {
+      const vRes = await fetch('/api/validate/email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const vData = await vRes.json();
+      if (vData.valid === false) {
+        if (errorEl) { errorEl.textContent = vData.reason || 'Invalid email address'; errorEl.classList.remove('hidden'); }
+        btn.disabled = false; btn.textContent = 'Create Account';
+        return;
+      }
+    } catch (_) { /* validation unavailable — continue */ }
+
     btn.textContent = 'Creating account...';
 
     const payload = { name, email, password, role };

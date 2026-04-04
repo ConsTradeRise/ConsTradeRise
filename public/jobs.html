@@ -347,6 +347,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
   if (params.get('search'))   document.getElementById('jobSearch').value = params.get('search');
   if (params.get('province')) document.getElementById('jobProvince').value = params.get('province');
+
+  // Auto-detect province via IPstack (only if no province param in URL)
+  if (!params.get('province')) {
+    try {
+      const geo = await fetch('/api/geo').then(r => r.json());
+      if (geo.province) {
+        const sel = document.getElementById('jobProvince');
+        const opt = [...sel.options].find(o =>
+          o.value && geo.province.toLowerCase().includes(o.value.toLowerCase())
+        );
+        if (opt) sel.value = opt.value;
+      }
+    } catch (_) {}
+  }
+
   await loadLiveJobs();
   loadJobs(1);
 });

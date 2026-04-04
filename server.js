@@ -34,6 +34,7 @@ const messageRoutes       = require('./routes/messages');
 const notificationRoutes  = require('./routes/notifications');
 const adminRoutes         = require('./routes/admin');
 const coverLetterRoutes   = require('./routes/coverLetter');
+const externalRoutes      = require('./routes/external');
 
 const app    = express();
 const prisma = new PrismaClient();
@@ -144,6 +145,7 @@ app.use('/api/messages',      messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin',         adminRoutes);
 app.use('/api/cover-letter', coverLetterRoutes);
+app.use('/api',             externalRoutes);
 
 // ============================================================
 //  DEDUPLICATION STORE (legacy job cache)
