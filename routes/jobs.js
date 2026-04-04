@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-//  TradesUp — Jobs Routes
+//  ConsTradeHire — Jobs Routes
 //  GET    /api/jobs          - list jobs (public)
 //  GET    /api/jobs/:id      - job detail (public)
 //  POST   /api/jobs          - employer post job
@@ -102,6 +102,26 @@ router.get('/', async (req, res) => {
   } catch (e) {
     console.error('[jobs/list]', e.message);
     res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+});
+
+// ─── MY JOBS (employer) ───────────────────────
+// GET /api/jobs/employer/mine
+router.get('/employer/mine', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res) => {
+  try {
+    const jobs = await prisma.job.findMany({
+      where: { employerId: req.user.id },
+      orderBy: { postedAt: 'desc' },
+      include: {
+        _count: { select: { applications: true } }
+      }
+    });
+
+    res.json({ jobs });
+
+  } catch (e) {
+    console.error('[jobs/mine]', e.message);
+    res.status(500).json({ error: 'Failed to fetch your jobs' });
   }
 });
 
@@ -238,26 +258,6 @@ router.delete('/:id', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req,
   } catch (e) {
     console.error('[jobs/delete]', e.message);
     res.status(500).json({ error: 'Failed to delete job' });
-  }
-});
-
-// ─── MY JOBS (employer) ───────────────────────
-// GET /api/jobs/employer/mine
-router.get('/employer/mine', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res) => {
-  try {
-    const jobs = await prisma.job.findMany({
-      where: { employerId: req.user.id },
-      orderBy: { postedAt: 'desc' },
-      include: {
-        _count: { select: { applications: true } }
-      }
-    });
-
-    res.json({ jobs });
-
-  } catch (e) {
-    console.error('[jobs/mine]', e.message);
-    res.status(500).json({ error: 'Failed to fetch your jobs' });
   }
 });
 

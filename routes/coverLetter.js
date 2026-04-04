@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-//  ConsTradeRise — Cover Letter Generator
+//  ConsTradeHire — Cover Letter Generator
 //  POST /api/cover-letter/generate
 //  Template-based (free). Uses Claude if key set.
 // ─────────────────────────────────────────────

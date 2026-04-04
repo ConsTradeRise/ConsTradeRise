@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-//  TradesUp — Profile Routes
+//  ConsTradeHire — Profile Routes
 //  GET /api/profile/me
 //  PUT /api/profile/me
 // ─────────────────────────────────────────────

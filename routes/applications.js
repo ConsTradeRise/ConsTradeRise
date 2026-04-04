@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-//  TradesUp — Applications Routes
+//  ConsTradeHire — Applications Routes
 //  POST /api/applications           - worker applies
 //  GET  /api/applications/mine      - worker: my applications
 //  GET  /api/applications/job/:id   - employer: applicants for their job

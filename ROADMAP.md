@@ -1,4 +1,4 @@
-# TradesUp AI — Master Build Roadmap
+# ConsTradeHire AI — Master Build Roadmap
 > AI-Powered Construction & Labour Job Platform (Canada-first)
 > Last updated: 2026-04-02
 
@@ -470,4 +470,4 @@
 - Free tier is sufficient for MVP
 
 ---
-*TradesUp AI — Build Roadmap v1.1 (updated 2026-04-02)*
+*ConsTradeHire AI — Build Roadmap v1.1 (updated 2026-04-02)*

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Job Details — ConsTradeRise</title>
+  <title>Job Details — ConsTradeHire</title>
   <link rel="stylesheet" href="/style.css" />
   <style>
     .job-detail-layout { display:grid; grid-template-columns:1fr 320px; gap:24px; padding:32px 0; }
@@ -33,7 +33,7 @@
 <body>
 <nav class="navbar">
   <div class="container nav-inner">
-    <a href="/" class="logo">ConsTradeRise</a>
+    <a href="/" class="logo">ConsTradeHire</a>
     <div class="nav-links" id="navLinks">
       <a href="/jobs.html">Browse Jobs</a>
       <a href="#" id="navDashboardLink" style="display:none">Dashboard</a>
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   currentJob = data.job;
-  document.title = `${currentJob.title} — ConsTradeRise`;
+  document.title = `${currentJob.title} — ConsTradeHire`;
   renderJob(currentJob);
 
   // Check if already applied

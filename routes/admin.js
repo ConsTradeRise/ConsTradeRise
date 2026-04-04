@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-//  ConsTradeRise — Admin Routes (ADMIN role only)
+//  ConsTradeHire — Admin Routes (ADMIN role only)
 //  GET  /api/admin/stats
 //  GET  /api/admin/users
 //  PUT  /api/admin/users/:id/ban

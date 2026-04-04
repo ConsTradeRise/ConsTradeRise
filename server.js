@@ -1,5 +1,5 @@
 // ============================================================
-//  ConsTradeRise — Backend Server
+//  ConsTradeHire — Backend Server
 //  Node.js + Express + Prisma
 //  Resume parsing + ATS scoring: free, no API credits
 //  Job search: Adzuna free API
@@ -85,6 +85,32 @@ app.use('/api/', apiLimiter);
 //  PLATFORM ROUTES
 // ============================================================
 app.use('/api/auth',          authLimiter, authRoutes);
+
+// Live job endpoints MUST be registered before jobRoutes to avoid /:id catching them
+app.get('/api/jobs/live', (req, res) => {
+  res.json({ jobs: cachedJobs, lastSearched: searchPrefs.lastSearched, isSearching, newCount: cachedJobs.filter(j => j.isNew).length });
+});
+app.post('/api/jobs/search', aiLimiter, async (req, res) => {
+  const { role, location } = req.body;
+  if (!role) return res.status(400).json({ error: 'role is required' });
+  try {
+    const jobs = await searchJobsWithAI(role, location || searchPrefs.location);
+    const tagged = jobs.map(job => {
+      const fp = makeFingerprint(job);
+      job.isNew = !seenFingerprints.has(fp);
+      job.fingerprint = fp;
+      job.id = `live-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      if (job.isNew) seenFingerprints.add(fp);
+      if (!cachedJobs.some(c => c.fingerprint === fp)) cachedJobs.unshift(job);
+      return job;
+    });
+    cachedJobs = cachedJobs.slice(0, 150);
+    saveDedupStore();
+    res.json({ jobs: tagged, total: tagged.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message }); }
+});
+
 app.use('/api/jobs',          jobRoutes);
 app.use('/api/profile',       profileRoutes);
 app.use('/api/applications',  applicationRoutes);
@@ -306,36 +332,6 @@ async function runAutoSearch() {
   }
   isSearching = false;
 }
-
-// ============================================================
-//  LIVE JOB ENDPOINTS
-// ============================================================
-app.get('/api/jobs/live', (req, res) => {
-  res.json({ jobs: cachedJobs, lastSearched: searchPrefs.lastSearched, isSearching, newCount: cachedJobs.filter(j => j.isNew).length });
-});
-
-app.post('/api/jobs/search', aiLimiter, async (req, res) => {
-  const { role, location } = req.body;
-  if (!role) return res.status(400).json({ error: 'role is required' });
-
-  try {
-    const jobs = await searchJobsWithAI(role, location || searchPrefs.location);
-    const tagged = jobs.map(job => {
-      const fp = makeFingerprint(job);
-      job.isNew = !seenFingerprints.has(fp);
-      job.fingerprint = fp;
-      job.id = `live-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-      if (job.isNew) seenFingerprints.add(fp);
-      if (!cachedJobs.some(c => c.fingerprint === fp)) cachedJobs.unshift(job);
-      return job;
-    });
-    cachedJobs = cachedJobs.slice(0, 150);
-    saveDedupStore();
-    res.json({ jobs: tagged, total: tagged.length });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
 
 // ============================================================
 //  AI ENDPOINTS
@@ -593,27 +589,24 @@ app.get('*', (req, res) => {
 });
 
 // ============================================================
-//  START
+//  START (local dev) / EXPORT (Vercel serverless)
 // ============================================================
 loadDedupStore();
 
-app.listen(PORT, () => {
-  console.log('');
-  console.log('╔══════════════════════════════════════════════╗');
-  console.log('║   ConsTradeRise — Construction Job Platform  ║');
-  console.log('║   http://localhost:' + PORT + '                      ║');
-  console.log('╚══════════════════════════════════════════════╝');
-  console.log('');
-  console.log('  Routes:');
-  console.log('  POST /api/auth/register');
-  console.log('  POST /api/auth/login');
-  console.log('  GET  /api/jobs');
-  console.log('  POST /api/jobs');
-  console.log('  POST /api/ats/score');
-  console.log('');
-  console.log('  Auto-searching for jobs in 5 seconds...');
-  setTimeout(runAutoSearch, 5000);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log('');
+    console.log('╔══════════════════════════════════════════════╗');
+    console.log('║   ConsTradeHire — Construction Job Platform  ║');
+    console.log('║   http://localhost:' + PORT + '                      ║');
+    console.log('╚══════════════════════════════════════════════╝');
+    console.log('');
+    console.log('  Auto-searching for jobs in 5 seconds...');
+    setTimeout(runAutoSearch, 5000);
+  });
 
-const INTERVAL_MS = (searchPrefs.autoSearchInterval || 4) * 60 * 60 * 1000;
-setInterval(runAutoSearch, INTERVAL_MS);
+  const INTERVAL_MS = (searchPrefs.autoSearchInterval || 4) * 60 * 60 * 1000;
+  setInterval(runAutoSearch, INTERVAL_MS);
+}
+
+module.exports = app;

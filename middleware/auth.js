@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-//  TradesUp — JWT Auth Middleware
+//  ConsTradeHire — JWT Auth Middleware
 // ─────────────────────────────────────────────
 
 'use strict';
