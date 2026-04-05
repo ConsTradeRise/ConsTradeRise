@@ -84,6 +84,12 @@
       <span class="dash-sidebar-icon">💬</span> Messages
       <span id="empMsgBadge" style="display:none;background:var(--blue);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
     </div>
+    <div class="dash-sidebar-item" data-tab="workers">
+      <span class="dash-sidebar-icon">🔍</span> Find Workers
+    </div>
+    <div class="dash-sidebar-item" data-tab="analytics">
+      <span class="dash-sidebar-icon">📈</span> Analytics
+    </div>
     <div class="dash-sidebar-item" data-tab="profile">
       <span class="dash-sidebar-icon">🏢</span> Company Profile
     </div>
@@ -263,6 +269,42 @@
       </div>
     </div>
 
+    <!-- ── FIND WORKERS TAB ── -->
+    <div class="tab-panel" id="tab-workers">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:12px;">Find Workers</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap;">
+          <div>
+            <label class="form-label">Keywords / Title</label>
+            <input class="form-input" id="workerSearch" placeholder="e.g. estimator, carpenter" />
+          </div>
+          <div>
+            <label class="form-label">Province</label>
+            <select class="form-input" id="workerProvince">
+              <option value="">Any Province</option>
+              <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
+              <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
+              <option>Nova Scotia</option><option>New Brunswick</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Availability</label>
+            <select class="form-input" id="workerAvail">
+              <option value="">Any</option>
+              <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Immediate</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="searchWorkers()">Search</button>
+        </div>
+      </div>
+      <div id="workersList"><div class="empty-state" style="padding:40px;"><p>Search above to find available workers.</p></div></div>
+    </div>
+
+    <!-- ── ANALYTICS TAB ── -->
+    <div class="tab-panel" id="tab-analytics">
+      <div id="analyticsWrap"><div style="text-align:center;padding:40px;"><div class="spinner"></div></div></div>
+    </div>
+
     <!-- ── SETTINGS TAB ── -->
     <div class="tab-panel" id="tab-settings">
       <div class="card" style="max-width:600px;">
@@ -366,6 +408,7 @@ function switchTab(tab) {
   if (tab === 'jobs')       loadMyJobs();
   if (tab === 'applicants') loadJobFilter();
   if (tab === 'messages')   empLoadInbox();
+  if (tab === 'analytics')  loadAnalytics();
 }
 
 async function deleteEmpAccount() {
@@ -674,6 +717,7 @@ function applicantCard(a, jobId) {
       ${a.coverLetter ? `<button class="btn btn-ghost btn-sm" onclick="toggleSection('${coverId}','${a.id}')">📝 Cover Letter</button>` : ''}
       ${a.resume?.content ? `<button class="btn btn-ghost btn-sm" onclick="toggleSection('resume-${a.id}','${a.id}')">📄 Resume</button>` : ''}
       ${a.user?.email ? `<a class="btn btn-ghost btn-sm" href="mailto:${escapeHtml(a.user.email)}">✉ ${escapeHtml(a.user.email)}</a>` : ''}
+      <button id="interview-btn-${a.id}" class="btn btn-ghost btn-sm" onclick="openInterviewModal('${a.id}','${escapeHtml(a.user?.name||'Candidate')}')">📅 Schedule Interview</button>
     </div>
     ${a.coverLetter ? `<div id="${coverId}" style="display:none;margin-top:4px;padding:12px;background:var(--gray-50);border-radius:var(--radius);font-size:13px;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;max-height:260px;overflow-y:auto;">${escapeHtml(a.coverLetter)}</div>` : ''}
     ${a.resume?.content ? `<div id="resume-${a.id}" style="display:none;margin-top:4px;padding:12px;background:var(--gray-50);border-radius:var(--radius);font-size:12px;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;max-height:320px;overflow-y:auto;">${escapeHtml(a.resume.content)}</div>` : ''}
@@ -863,6 +907,224 @@ document.getElementById('companyForm').addEventListener('submit', async (e) => {
     Toast.error(data.error || 'Failed to save profile');
   }
 });
+
+// ── FIND WORKERS ──────────────────────────────
+async function searchWorkers() {
+  const el       = document.getElementById('workersList');
+  const search   = document.getElementById('workerSearch').value.trim();
+  const province = document.getElementById('workerProvince').value;
+  const avail    = document.getElementById('workerAvail').value;
+
+  el.innerHTML = '<div style="text-align:center;padding:30px;"><div class="spinner"></div></div>';
+
+  const q = new URLSearchParams();
+  if (search)   q.set('search', search);
+  if (province) q.set('province', province);
+  if (avail)    q.set('availability', avail);
+
+  const { ok, data } = await apiCall('GET', `/api/workers?${q}`);
+  if (!ok) { el.innerHTML = `<p style="color:var(--red);padding:20px;">${data.error}</p>`; return; }
+
+  const workers = data.workers || [];
+  if (!workers.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:40px;"><p>No workers found matching your criteria.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = workers.map(w => {
+    const initials = (w.user?.name || '?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+    const skills   = (w.skills || []).slice(0, 6);
+    return `<div class="applicant-card" style="margin-bottom:10px;">
+      <div class="applicant-header">
+        <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+          <div style="width:44px;height:44px;border-radius:50%;background:#0f172a;color:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;">${initials}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="applicant-name">${escapeHtml(w.user?.name || 'Worker')}</div>
+            <div class="applicant-meta">
+              ${w.headline ? `<span style="color:var(--blue);font-weight:600;">${escapeHtml(w.headline)}</span>` : ''}
+              ${w.city ? ` · 📍 ${escapeHtml(w.city)}${w.province?', '+w.province:''}` : ''}
+              ${w.yearsExperience ? ` · ${w.yearsExperience} yrs exp` : ''}
+              ${w.availability ? ` · ${escapeHtml(w.availability)}` : ''}
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="empMsgApplicant('${w.user?.id}','${escapeHtml(w.user?.name||'')}')">💬 Message</button>
+      </div>
+      ${skills.length ? `<div class="applicant-skills">${skills.map(s=>`<span class="kw-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+      ${w.openToRelocation ? `<div style="font-size:12px;color:var(--green);margin-top:4px;">✓ Open to relocation</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── ANALYTICS ─────────────────────────────────
+async function loadAnalytics() {
+  const el = document.getElementById('analyticsWrap');
+  el.innerHTML = '<div style="text-align:center;padding:40px;"><div class="spinner"></div></div>';
+
+  const { ok, data } = await apiCall('GET', '/api/analytics/employer');
+  if (!ok) { el.innerHTML = `<p style="color:var(--red);padding:20px;">${data.error}</p>`; return; }
+
+  const { summary, jobs, statusBreakdown, atsDistribution } = data;
+  const statusColors = { APPLIED:'#3b82f6', VIEWED:'#f59e0b', SHORTLISTED:'#16a34a', REJECTED:'#dc2626' };
+  const atsColors    = { excellent:'#16a34a', good:'#3b82f6', fair:'#f59e0b', poor:'#dc2626' };
+
+  el.innerHTML = `
+    <!-- Summary cards -->
+    <div class="stats-row" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-card-num">${summary.totalJobs}</div><div class="stat-card-label">Total Jobs</div></div>
+      <div class="stat-card"><div class="stat-card-num">${summary.totalViews}</div><div class="stat-card-label">Job Views</div></div>
+      <div class="stat-card"><div class="stat-card-num">${summary.totalApps}</div><div class="stat-card-label">Applications</div></div>
+      <div class="stat-card"><div class="stat-card-num">${summary.totalViews>0?Math.round(summary.totalApps/summary.totalViews*100):0}%</div><div class="stat-card-label">Apply Rate</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <!-- Application status breakdown -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Application Status</div>
+        ${Object.entries(statusBreakdown).map(([s, count]) => `
+          <div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+              <span style="font-weight:600;">${s.charAt(0)+s.slice(1).toLowerCase()}</span>
+              <span style="font-weight:700;color:${statusColors[s]||'#666'};">${count}</span>
+            </div>
+            <div style="background:var(--gray-100);border-radius:100px;height:8px;overflow:hidden;">
+              <div style="height:100%;border-radius:100px;background:${statusColors[s]||'#666'};width:${summary.totalApps>0?Math.round(count/summary.totalApps*100):0}%;transition:width .6s;"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <!-- ATS score distribution -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Candidate Match Scores</div>
+        ${Object.entries(atsDistribution).map(([level, count]) => {
+          const total = Object.values(atsDistribution).reduce((a,b)=>a+b,0);
+          return `<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+              <span style="font-weight:600;text-transform:capitalize;">${level}</span>
+              <span style="font-weight:700;color:${atsColors[level]};">${count}</span>
+            </div>
+            <div style="background:var(--gray-100);border-radius:100px;height:8px;overflow:hidden;">
+              <div style="height:100%;border-radius:100px;background:${atsColors[level]};width:${total>0?Math.round(count/total*100):0}%;transition:width .6s;"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Per-job table -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">Performance by Job</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--gray-200);">
+              <th style="text-align:left;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Job Title</th>
+              <th style="text-align:center;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Views</th>
+              <th style="text-align:center;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Apps</th>
+              <th style="text-align:center;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Apply Rate</th>
+              <th style="text-align:center;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${jobs.map(j => `
+              <tr style="border-bottom:1px solid var(--gray-100);">
+                <td style="padding:10px;font-weight:600;">${escapeHtml(j.title)}</td>
+                <td style="padding:10px;text-align:center;">${j.views}</td>
+                <td style="padding:10px;text-align:center;">${j.applications}</td>
+                <td style="padding:10px;text-align:center;">${j.conversionRate}%</td>
+                <td style="padding:10px;text-align:center;"><span class="badge ${j.isActive?'badge-green':'badge-gray'}">${j.isActive?'Active':'Closed'}</span></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ── INTERVIEW SCHEDULING ──────────────────────
+let _interviewAppId = null;
+
+function openInterviewModal(appId, workerName) {
+  _interviewAppId = appId;
+  document.getElementById('interviewWorkerName').textContent = workerName;
+  document.getElementById('interviewMsg').innerHTML = '';
+  document.getElementById('interviewDates').innerHTML = dateSlotRow();
+  document.getElementById('interviewLocation').value = '';
+  document.getElementById('interviewNotes').value = '';
+  document.getElementById('interviewModal').classList.add('open');
+}
+
+function closeInterviewModal() {
+  document.getElementById('interviewModal').classList.remove('open');
+}
+
+function dateSlotRow() {
+  return `<div class="date-slot" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+    <input type="datetime-local" class="form-input interview-date-input" style="flex:1;" />
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--gray-400);">×</button>
+  </div>`;
+}
+
+function addDateSlot() {
+  document.getElementById('interviewDates').insertAdjacentHTML('beforeend', dateSlotRow());
+}
+
+async function submitInterview() {
+  const dates = [...document.querySelectorAll('.interview-date-input')]
+    .map(i => i.value).filter(Boolean);
+  if (!dates.length) { Toast.warn('Add at least one proposed date/time'); return; }
+
+  const location = document.getElementById('interviewLocation').value.trim();
+  const notes    = document.getElementById('interviewNotes').value.trim();
+
+  const { ok, data } = await apiCall('POST', '/api/interviews', {
+    applicationId: _interviewAppId,
+    proposedDates: dates,
+    location: location || null,
+    notes:    notes    || null
+  });
+
+  if (ok) {
+    Toast.success('Interview invitation sent!');
+    closeInterviewModal();
+    // Update button in applicant card
+    const btn = document.getElementById(`interview-btn-${_interviewAppId}`);
+    if (btn) { btn.textContent = '📅 Reschedule'; btn.style.background = '#f0fdf4'; btn.style.color = '#16a34a'; }
+  } else {
+    document.getElementById('interviewMsg').innerHTML = `<div class="alert alert-error" style="margin-bottom:8px;">${data?.error||'Failed to send'}</div>`;
+  }
+}
 </script>
+
+<!-- Interview Modal -->
+<div class="modal-overlay" id="interviewModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2>Schedule Interview</h2>
+      <button class="modal-close" onclick="closeInterviewModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">Proposing interview times for <strong id="interviewWorkerName"></strong></p>
+      <div id="interviewMsg"></div>
+      <div class="form-group">
+        <label class="form-label">Proposed Date(s) & Time(s)</label>
+        <div id="interviewDates"></div>
+        <button type="button" onclick="addDateSlot()" class="btn btn-ghost btn-sm" style="margin-top:4px;">+ Add another time slot</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Location / Format</label>
+        <input class="form-input" id="interviewLocation" placeholder="e.g. Zoom, 123 Main St Toronto, Phone call" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message to Candidate <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
+        <textarea class="form-textarea" id="interviewNotes" rows="3" placeholder="Any instructions or notes for the candidate..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeInterviewModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitInterview()">Send Invitation</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

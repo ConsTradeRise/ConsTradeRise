@@ -36,7 +36,12 @@ const Auth = {
     const role = this.getRole();
     if (role === 'EMPLOYER') window.location.href = '/employer.html';
     else if (role === 'ADMIN') window.location.href = '/admin.html';
-    else window.location.href = '/dashboard.html';
+    else {
+      // New workers go through onboarding if they haven't completed it
+      const onboarded = localStorage.getItem('ctr_onboarded');
+      if (!onboarded) window.location.href = '/onboarding.html';
+      else window.location.href = '/dashboard.html';
+    }
   }
 };
 

@@ -137,6 +137,7 @@ model Profile {
   // ── VISIBILITY (PIPEDA) ──────────────────────
   visibleToEmployers Boolean  @default(true)
   openToMatching     Boolean  @default(true)
+  profileViews       Int      @default(0)
 
   // ── EMPLOYER FIELDS ──────────────────────────
   companyName        String?
@@ -202,6 +203,7 @@ model Job {
 
   isActive     Boolean   @default(true)
   isFeatured   Boolean   @default(false)
+  viewCount    Int       @default(0)
 
   postedAt     DateTime  @default(now())
   expiresAt    DateTime?
@@ -235,8 +237,34 @@ model Application {
   appliedAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
+  interview   Interview?
+
   @@unique([userId, jobId]) // prevent duplicate applications
   @@map("applications")
+}
+
+// ─────────────────────────────────────────────
+//  INTERVIEWS
+// ─────────────────────────────────────────────
+
+model Interview {
+  id            String      @id @default(uuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  employerId    String
+  workerId      String
+
+  proposedDates Json        // array of ISO datetime strings offered by employer
+  acceptedDate  String?     // which slot the worker chose
+  status        String      @default("PENDING") // PENDING | ACCEPTED | DECLINED | CANCELLED
+  location      String?     // "Zoom", "123 Main St Toronto", etc.
+  notes         String?     // message to the candidate
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("interviews")
 }
 
 // ─────────────────────────────────────────────

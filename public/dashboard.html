@@ -102,12 +102,19 @@
       <span class="dash-sidebar-icon">❤️</span> Saved Jobs
       <span id="savedBadge" style="display:none;background:var(--orange);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
     </div>
+    <div class="dash-sidebar-item" data-tab="interviews">
+      <span class="dash-sidebar-icon">📅</span> Interviews
+      <span id="interviewBadge" style="display:none;background:var(--orange);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
+    </div>
     <div class="dash-sidebar-item" data-tab="alerts">
       <span class="dash-sidebar-icon">🔔</span> Job Alerts
     </div>
     <div class="dash-sidebar-item" data-tab="messages">
       <span class="dash-sidebar-icon">💬</span> Messages
       <span id="msgBadge" style="display:none;background:var(--blue);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
+    </div>
+    <div class="dash-sidebar-item" data-tab="analytics">
+      <span class="dash-sidebar-icon">📈</span> My Stats
     </div>
     <div class="dash-sidebar-item" data-tab="settings">
       <span class="dash-sidebar-icon">⚙️</span> Settings
@@ -328,6 +335,16 @@
 
     </div>
 
+    <!-- ── INTERVIEWS TAB ── -->
+    <div class="tab-panel" id="tab-interviews">
+      <div id="interviewsList"><div style="text-align:center;padding:40px;"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- ── ANALYTICS TAB ── -->
+    <div class="tab-panel" id="tab-analytics">
+      <div id="workerAnalyticsWrap"><div style="text-align:center;padding:40px;"><div class="spinner"></div></div></div>
+    </div>
+
     <!-- ── SETTINGS TAB ── -->
     <div class="tab-panel" id="tab-settings">
       <div class="card" style="max-width:600px;">
@@ -500,7 +517,8 @@ function switchTab(tab) {
   if (tab === 'messages')     dashLoadInbox();
   if (tab === 'resume')       loadResumeVersions();
   if (tab === 'alerts')       loadAlerts();
-  if (tab === 'settings')     {} // static content, nothing to load
+  if (tab === 'interviews')   loadInterviews();
+  if (tab === 'analytics')    loadWorkerAnalytics();
 }
 
 // Recommended jobs based on profile skills
@@ -1480,6 +1498,147 @@ async function deleteAlert(id) {
   if (!confirm('Delete this alert?')) return;
   const { ok } = await apiCall('DELETE', `/api/alerts/${id}`);
   if (ok) { Toast.success('Alert deleted'); loadAlerts(); }
+}
+
+// ── INTERVIEWS ────────────────────────────────
+async function loadInterviews() {
+  const el = document.getElementById('interviewsList');
+  el.innerHTML = '<div style="text-align:center;padding:30px;"><div class="spinner"></div></div>';
+
+  const { ok, data } = await apiCall('GET', '/api/interviews/mine');
+  if (!ok) { el.innerHTML = `<p style="color:var(--red);padding:20px;">${data.error}</p>`; return; }
+
+  const interviews = data.interviews || [];
+
+  // Update sidebar badge
+  const pending = interviews.filter(i => i.status === 'PENDING').length;
+  const badge = document.getElementById('interviewBadge');
+  if (badge) { badge.textContent = pending; badge.style.display = pending > 0 ? 'inline' : 'none'; }
+
+  if (!interviews.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:40px;">
+      <div class="empty-state-icon">📅</div>
+      <h3>No interview invitations yet</h3>
+      <p>When an employer schedules an interview, it will appear here.</p>
+    </div>`;
+    return;
+  }
+
+  const statusColors = { PENDING:'badge-yellow', ACCEPTED:'badge-green', DECLINED:'badge-gray', CANCELLED:'badge-red' };
+  el.innerHTML = interviews.map(iv => {
+    const job    = iv.application?.job;
+    const dates  = Array.isArray(iv.proposedDates) ? iv.proposedDates : [];
+    return `<div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+        <div>
+          <div style="font-size:15px;font-weight:700;">${escapeHtml(job?.title || 'Job')}</div>
+          <div style="font-size:13px;color:var(--gray-500);">${escapeHtml(job?.companyName || '')}</div>
+        </div>
+        <span class="badge ${statusColors[iv.status]||'badge-gray'}">${iv.status.charAt(0)+iv.status.slice(1).toLowerCase()}</span>
+      </div>
+
+      ${iv.location ? `<div style="font-size:13px;margin-bottom:8px;">📍 <strong>Location:</strong> ${escapeHtml(iv.location)}</div>` : ''}
+      ${iv.notes   ? `<div style="font-size:13px;color:var(--gray-600);margin-bottom:12px;padding:10px;background:var(--gray-50);border-radius:var(--radius);">${escapeHtml(iv.notes)}</div>` : ''}
+
+      ${iv.status === 'PENDING' && dates.length ? `
+        <div style="margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Choose a time:</div>
+          ${dates.map((d, i) => `
+            <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--gray-200);border-radius:var(--radius);cursor:pointer;margin-bottom:6px;font-size:13px;" id="iv-date-label-${iv.id}-${i}">
+              <input type="radio" name="iv-date-${iv.id}" value="${escapeHtml(d)}" onchange="highlightDateLabel('${iv.id}', ${i}, ${dates.length})" style="cursor:pointer;" />
+              <span>📅 ${escapeHtml(new Date(d).toLocaleString('en-CA', {weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}))}</span>
+            </label>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="respondInterview('${iv.id}','ACCEPTED')">✓ Accept</button>
+          <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;" onclick="respondInterview('${iv.id}','DECLINED')">✗ Decline</button>
+        </div>
+      ` : iv.status === 'ACCEPTED' ? `
+        <div style="font-size:13px;color:var(--green);font-weight:600;">✓ Confirmed: ${escapeHtml(new Date(iv.acceptedDate).toLocaleString('en-CA', {weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}))}</div>
+      ` : ''}
+
+      <div style="font-size:11px;color:var(--gray-400);margin-top:10px;">Received ${formatDate(iv.createdAt)}</div>
+    </div>`;
+  }).join('');
+}
+
+function highlightDateLabel(ivId, selectedIdx, total) {
+  for (let i = 0; i < total; i++) {
+    const lbl = document.getElementById(`iv-date-label-${ivId}-${i}`);
+    if (lbl) lbl.style.borderColor = i === selectedIdx ? 'var(--blue)' : 'var(--gray-200)';
+  }
+}
+
+async function respondInterview(ivId, status) {
+  const selectedRadio = document.querySelector(`input[name="iv-date-${ivId}"]:checked`);
+  if (status === 'ACCEPTED' && !selectedRadio) {
+    Toast.warn('Please select a time slot first'); return;
+  }
+  const { ok, data } = await apiCall('PUT', `/api/interviews/${ivId}/respond`, {
+    status,
+    acceptedDate: selectedRadio?.value || null
+  });
+  if (ok) {
+    Toast.success(status === 'ACCEPTED' ? 'Interview accepted!' : 'Interview declined');
+    loadInterviews();
+  } else {
+    Toast.error(data?.error || 'Failed to respond');
+  }
+}
+
+// ── WORKER ANALYTICS ─────────────────────────
+async function loadWorkerAnalytics() {
+  const el = document.getElementById('workerAnalyticsWrap');
+  el.innerHTML = '<div style="text-align:center;padding:40px;"><div class="spinner"></div></div>';
+
+  const { ok, data } = await apiCall('GET', '/api/analytics/worker');
+  if (!ok) { el.innerHTML = `<p style="color:var(--red);padding:20px;">${data.error}</p>`; return; }
+
+  const { profileViews, totalApplications, statusBreakdown, avgAtsScore, recentAts } = data;
+  const statusColors = { APPLIED:'#3b82f6', VIEWED:'#f59e0b', SHORTLISTED:'#16a34a', REJECTED:'#dc2626' };
+  const atsColor = avgAtsScore >= 70 ? '#16a34a' : avgAtsScore >= 50 ? '#f59e0b' : '#dc2626';
+
+  el.innerHTML = `
+    <div class="stats-row" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-card-num">${profileViews}</div><div class="stat-card-label">Profile Views</div></div>
+      <div class="stat-card"><div class="stat-card-num">${totalApplications}</div><div class="stat-card-label">Applications Sent</div></div>
+      <div class="stat-card"><div class="stat-card-num">${statusBreakdown.SHORTLISTED||0}</div><div class="stat-card-label">Shortlisted</div></div>
+      <div class="stat-card">
+        <div class="stat-card-num" style="color:${avgAtsScore ? atsColor : 'var(--gray-400)'};">${avgAtsScore != null ? avgAtsScore+'%' : '—'}</div>
+        <div class="stat-card-label">Avg ATS Score</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Application Pipeline</div>
+        ${Object.entries(statusBreakdown).map(([s, count]) => `
+          <div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+              <span style="font-weight:600;">${s.charAt(0)+s.slice(1).toLowerCase()}</span>
+              <span style="font-weight:700;color:${statusColors[s]||'#666'};">${count}</span>
+            </div>
+            <div style="background:var(--gray-100);border-radius:100px;height:8px;overflow:hidden;">
+              <div style="height:100%;border-radius:100px;background:${statusColors[s]||'#666'};width:${totalApplications>0?Math.round(count/totalApplications*100):0}%;transition:width .6s;"></div>
+            </div>
+          </div>`).join('')}
+        ${totalApplications===0?'<p style="font-size:13px;color:var(--gray-400);">No applications yet.</p>':''}
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Recent ATS Scores</div>
+        ${recentAts.length ? recentAts.map(r => {
+          const c = r.score>=70?'#16a34a':r.score>=50?'#f59e0b':'#dc2626';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100);font-size:13px;">
+            <span style="color:var(--gray-600);">${escapeHtml(r.matchStrength||'—')}</span>
+            <span style="font-weight:700;color:${c};">${r.score}%</span>
+          </div>`;
+        }).join('') : '<p style="font-size:13px;color:var(--gray-400);">Apply to jobs to see your ATS scores.</p>'}
+        <div style="margin-top:12px;">
+          <a href="/jobs.html" class="btn btn-primary btn-sm btn-full">Browse Jobs →</a>
+        </div>
+      </div>
+    </div>`;
 }
 </script>
 </body>

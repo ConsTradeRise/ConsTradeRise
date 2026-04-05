@@ -173,6 +173,13 @@ router.get('/:id', async (req, res) => {
 
     res.json({ job });
 
+    // Increment view count fire-and-forget
+    setImmediate(async () => {
+      try {
+        await prisma.job.update({ where: { id: req.params.id }, data: { viewCount: { increment: 1 } } });
+      } catch (_) {}
+    });
+
   } catch (e) {
     console.error('[jobs/detail]', e.message);
     res.status(500).json({ error: 'Failed to fetch job' });

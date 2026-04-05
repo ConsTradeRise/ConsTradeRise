@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Started — ConsTradeHire</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body { background:var(--gray-50); }
+    .onboard-wrap { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 16px; }
+    .onboard-card { background:#fff; border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:100%; max-width:560px; overflow:hidden; }
+    .onboard-header { background:#0f172a; padding:28px 32px; color:#fff; }
+    .onboard-logo { font-size:18px; font-weight:800; color:#f97316; margin-bottom:16px; }
+    .onboard-steps { display:flex; gap:0; }
+    .onboard-step { flex:1; display:flex; flex-direction:column; align-items:center; position:relative; }
+    .onboard-step:not(:last-child)::after { content:''; position:absolute; top:16px; left:50%; width:100%; height:2px; background:rgba(255,255,255,.2); z-index:0; }
+    .step-circle { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.15); border:2px solid rgba(255,255,255,.3); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; z-index:1; transition:all .3s; }
+    .step-circle.done { background:#16a34a; border-color:#16a34a; }
+    .step-circle.active { background:#f97316; border-color:#f97316; }
+    .step-label { font-size:10px; color:rgba(255,255,255,.6); margin-top:5px; text-align:center; white-space:nowrap; }
+    .step-label.active { color:#f97316; font-weight:700; }
+    .step-label.done { color:#4ade80; }
+
+    .onboard-body { padding:32px; }
+    .onboard-title { font-size:22px; font-weight:800; color:var(--gray-900); margin-bottom:6px; }
+    .onboard-sub { font-size:14px; color:var(--gray-500); margin-bottom:24px; }
+
+    .step-panel { display:none; }
+    .step-panel.active { display:block; }
+
+    .upload-zone { border:2px dashed var(--gray-300); border-radius:var(--radius-lg); padding:40px 20px; text-align:center; cursor:pointer; transition:all .2s; }
+    .upload-zone:hover { border-color:var(--blue); background:var(--blue-light); }
+    .upload-zone.dragover { border-color:var(--blue); background:var(--blue-light); }
+
+    .skill-chip { display:inline-flex; align-items:center; gap:5px; background:var(--blue-light); color:var(--blue); border:1px solid #bfdbfe; font-size:12px; font-weight:600; padding:4px 10px; border-radius:100px; margin:3px; cursor:pointer; }
+    .skill-chip.selected { background:var(--blue); color:#fff; border-color:var(--blue); }
+
+    .onboard-nav { display:flex; justify-content:space-between; align-items:center; margin-top:24px; padding-top:20px; border-top:1px solid var(--gray-100); }
+    .progress-bar { height:4px; background:var(--gray-100); border-radius:100px; overflow:hidden; margin-bottom:0; }
+    .progress-fill { height:100%; background:var(--blue); border-radius:100px; transition:width .4s ease; }
+  </style>
+</head>
+<body>
+<div class="onboard-wrap">
+  <div class="onboard-card">
+
+    <!-- Header with steps -->
+    <div class="onboard-header">
+      <div class="onboard-logo">ConsTradeHire</div>
+      <div class="onboard-steps">
+        <div class="onboard-step">
+          <div class="step-circle active" id="sc1">1</div>
+          <div class="step-label active" id="sl1">Upload Resume</div>
+        </div>
+        <div class="onboard-step">
+          <div class="step-circle" id="sc2">2</div>
+          <div class="step-label" id="sl2">Your Details</div>
+        </div>
+        <div class="onboard-step">
+          <div class="step-circle" id="sc3">3</div>
+          <div class="step-label" id="sl3">Find Jobs</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:33%;"></div></div>
+
+    <div class="onboard-body">
+
+      <!-- Step 1: Upload Resume -->
+      <div class="step-panel active" id="step1">
+        <div class="onboard-title">Upload your resume</div>
+        <div class="onboard-sub">We'll auto-fill your profile so you can apply to jobs in seconds.</div>
+
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('onboardFile').click()">
+          <div style="font-size:40px;margin-bottom:12px;">📄</div>
+          <div style="font-size:15px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">Drop your resume here</div>
+          <div style="font-size:13px;color:var(--gray-400);">PDF or Word — max 5MB</div>
+          <input type="file" id="onboardFile" accept=".pdf,.doc,.docx" style="display:none;" onchange="handleResumeUpload(this)" />
+        </div>
+
+        <div id="uploadStatus" style="margin-top:16px;display:none;">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--gray-50);border-radius:var(--radius);border:1px solid var(--gray-200);">
+            <div class="spinner" id="uploadSpinner" style="width:20px;height:20px;border-width:2px;flex-shrink:0;"></div>
+            <div id="uploadMsg" style="font-size:13px;color:var(--gray-600);">Parsing resume...</div>
+          </div>
+        </div>
+
+        <div id="parsedPreview" style="display:none;margin-top:16px;padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius);">
+          <div style="font-size:13px;font-weight:700;color:#166534;margin-bottom:8px;">✓ Resume parsed successfully!</div>
+          <div id="parsedDetails" style="font-size:12px;color:#166534;line-height:1.7;"></div>
+        </div>
+
+        <div class="onboard-nav">
+          <button class="btn btn-ghost btn-sm" onclick="skipOnboarding()">Skip for now</button>
+          <button class="btn btn-primary" id="step1Next" onclick="goStep(2)">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Review / Fill Details -->
+      <div class="step-panel" id="step2">
+        <div class="onboard-title">Review your details</div>
+        <div class="onboard-sub">Check what we found — fill in anything missing.</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Job Title / Headline</label>
+            <input class="form-input" id="ob_headline" placeholder="e.g. Construction Estimator" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">City</label>
+            <input class="form-input" id="ob_city" placeholder="e.g. Toronto" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Province</label>
+            <select class="form-input" id="ob_province">
+              <option value="">Select...</option>
+              <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
+              <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
+              <option>Nova Scotia</option><option>New Brunswick</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input class="form-input" id="ob_phone" placeholder="(647) 555-0123" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Years Experience</label>
+            <input class="form-input" id="ob_years" type="number" min="0" max="50" placeholder="5" />
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Availability</label>
+            <select class="form-input" id="ob_avail">
+              <option value="">Select...</option>
+              <option>Immediate</option><option>Full-time</option><option>Part-time</option><option>Contract</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:4px;">
+          <label class="form-label">Key Skills <span style="font-weight:400;color:var(--gray-400);">(tap to select)</span></label>
+          <div id="ob_skillChips" style="margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input class="form-input" id="ob_skillInput" placeholder="Add a skill..." style="flex:1;" />
+            <button class="btn btn-ghost btn-sm" onclick="addObSkill()">Add</button>
+          </div>
+        </div>
+
+        <div class="onboard-nav">
+          <button class="btn btn-ghost btn-sm" onclick="goStep(1)">← Back</button>
+          <button class="btn btn-primary" onclick="saveAndContinue()">Save & Continue →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Browse Jobs -->
+      <div class="step-panel" id="step3">
+        <div style="text-align:center;padding:20px 0;">
+          <div style="font-size:56px;margin-bottom:12px;">🎉</div>
+          <div class="onboard-title" style="text-align:center;">You're all set!</div>
+          <div class="onboard-sub" style="text-align:center;">Your profile is ready. Start applying to construction jobs across Canada.</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+          <a href="/jobs.html" class="btn btn-primary btn-full" style="padding:16px;font-size:15px;text-align:center;">🔍 Browse Jobs</a>
+          <a href="/dashboard.html" onclick="localStorage.setItem('ctr_onboarded','1')" class="btn btn-ghost btn-full" style="padding:16px;font-size:15px;text-align:center;">📊 My Dashboard</a>
+        </div>
+
+        <div id="ob_jobMatches" style="border-top:1px solid var(--gray-100);padding-top:16px;"></div>
+      </div>
+
+    </div><!-- /onboard-body -->
+  </div><!-- /onboard-card -->
+</div>
+
+<script src="/app.js"></script>
+<script>
+let _obParsed = null;
+let _obSkills = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (Auth.redirectIfNotAuth()) return;
+  if (Auth.getRole() !== 'WORKER') { window.location.href = '/employer.html'; return; }
+  // Already onboarded
+  if (localStorage.getItem('ctr_onboarded')) { window.location.href = '/dashboard.html'; return; }
+  setupUploadZone();
+});
+
+function setupUploadZone() {
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  });
+}
+
+function handleResumeUpload(input) {
+  const file = input.files[0];
+  if (file) processFile(file);
+}
+
+async function processFile(file) {
+  const status  = document.getElementById('uploadStatus');
+  const spinner = document.getElementById('uploadSpinner');
+  const msg     = document.getElementById('uploadMsg');
+  const preview = document.getElementById('parsedPreview');
+
+  status.style.display = 'block';
+  preview.style.display = 'none';
+  msg.textContent = 'Parsing resume...';
+
+  const fd = new FormData();
+  fd.append('resume', file);
+
+  try {
+    const res  = await fetch('/api/resume/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + Auth.getToken() },
+      body: fd
+    });
+    const data = await res.json();
+
+    if (!res.ok) { msg.textContent = data.error || 'Failed to parse resume.'; return; }
+
+    _obParsed = data.parsed;
+    spinner.style.display = 'none';
+    msg.textContent = '✓ Done!';
+
+    // Show parsed preview
+    const details = [];
+    if (_obParsed.name)           details.push(`👤 ${_obParsed.name}`);
+    if (_obParsed.headline)       details.push(`💼 ${_obParsed.headline}`);
+    if (_obParsed.city)           details.push(`📍 ${_obParsed.city}`);
+    if (_obParsed.yearsExperience) details.push(`⏱ ${_obParsed.yearsExperience} years experience`);
+    if (_obParsed.skills?.length) details.push(`🔧 ${_obParsed.skills.slice(0,6).join(', ')}`);
+    if (_obParsed.experiences?.length) details.push(`📋 ${_obParsed.experiences.length} experience entries`);
+    if (_obParsed.educations?.length)  details.push(`🎓 ${_obParsed.educations.length} education entries`);
+
+    document.getElementById('parsedDetails').innerHTML = details.join('<br>');
+    preview.style.display = 'block';
+
+    // Pre-fill step 2
+    prefillStep2(_obParsed);
+  } catch {
+    msg.textContent = 'Upload failed. Please try again.';
+  }
+}
+
+function prefillStep2(p) {
+  if (p.headline) document.getElementById('ob_headline').value = p.headline;
+  const cityParts = (p.city || '').split(',');
+  if (cityParts[0]) document.getElementById('ob_city').value = cityParts[0].trim();
+  if (cityParts[1]) {
+    const prov = cityParts[1].trim();
+    const sel  = document.getElementById('ob_province');
+    [...sel.options].forEach(o => { if (o.value.toLowerCase().includes(prov.toLowerCase()) || prov.toLowerCase().includes(o.value.toLowerCase())) sel.value = o.value; });
+  }
+  if (p.phone)           document.getElementById('ob_phone').value = p.phone;
+  if (p.yearsExperience) document.getElementById('ob_years').value = p.yearsExperience;
+  if (p.availability)    document.getElementById('ob_avail').value = p.availability;
+
+  _obSkills = p.skills ? [...p.skills.slice(0,12)] : [];
+  renderSkillChips();
+}
+
+function renderSkillChips() {
+  const container = document.getElementById('ob_skillChips');
+  const suggested = ['Estimating','Project Management','AutoCAD','Bluebeam','Procore','Site Supervision',
+    'OHSA','RFI Management','Quantity Takeoff','MS Project','Cost Control','Scheduling'];
+  const all = [...new Set([..._obSkills, ...suggested.filter(s => !_obSkills.includes(s))].slice(0, 20))];
+  container.innerHTML = all.map(s => `
+    <span class="skill-chip ${_obSkills.includes(s)?'selected':''}" onclick="toggleObSkill('${escapeHtml(s)}')">${escapeHtml(s)}</span>
+  `).join('');
+}
+
+function toggleObSkill(skill) {
+  if (_obSkills.includes(skill)) _obSkills = _obSkills.filter(s => s !== skill);
+  else _obSkills.push(skill);
+  renderSkillChips();
+}
+
+function addObSkill() {
+  const input = document.getElementById('ob_skillInput');
+  const val = input.value.trim();
+  if (val && !_obSkills.includes(val)) { _obSkills.push(val); renderSkillChips(); }
+  input.value = '';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('ob_skillInput');
+  if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addObSkill(); } });
+});
+
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById(`step${i}`).classList.toggle('active', i === n);
+    const circle = document.getElementById(`sc${i}`);
+    const label  = document.getElementById(`sl${i}`);
+    if (i < n)      { circle.className = 'step-circle done'; circle.textContent = '✓'; label.className = 'step-label done'; }
+    else if (i === n){ circle.className = 'step-circle active'; label.className = 'step-label active'; }
+    else             { circle.className = 'step-circle'; label.className = 'step-label'; }
+  });
+  document.getElementById('progressFill').style.width = (n / 3 * 100) + '%';
+  if (n === 3) loadJobMatches();
+}
+
+async function saveAndContinue() {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const profileData = {
+    headline:       document.getElementById('ob_headline').value.trim() || undefined,
+    city:           document.getElementById('ob_city').value.trim()     || undefined,
+    province:       document.getElementById('ob_province').value        || undefined,
+    phone:          document.getElementById('ob_phone').value.trim()    || undefined,
+    yearsExperience: parseInt(document.getElementById('ob_years').value) || undefined,
+    availability:   document.getElementById('ob_avail').value           || undefined,
+    skills:         _obSkills.length ? _obSkills : undefined,
+    ...((_obParsed?.experiences?.length) && { experiences: _obParsed.experiences }),
+    ...((_obParsed?.educations?.length)  && { educations:  _obParsed.educations }),
+    ...((_obParsed?.certifications?.length) && { certifications: _obParsed.certifications }),
+    ...((_obParsed?.summary) && { summary: _obParsed.summary }),
+    ...((_obParsed?.linkedin) && { linkedin: _obParsed.linkedin })
+  };
+
+  // Remove undefined keys
+  Object.keys(profileData).forEach(k => profileData[k] === undefined && delete profileData[k]);
+
+  const { ok, data } = await apiCall('PUT', '/api/profile/me', profileData);
+  btn.disabled = false; btn.textContent = 'Save & Continue →';
+
+  if (ok) {
+    localStorage.setItem('ctr_onboarded', '1');
+    goStep(3);
+  } else {
+    Toast.error(data?.error || 'Failed to save. Please try again.');
+  }
+}
+
+async function loadJobMatches() {
+  const el = document.getElementById('ob_jobMatches');
+  el.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:10px;">Jobs matching your profile:</div><div style="text-align:center;padding:10px;"><div class="spinner" style="width:20px;height:20px;border-width:2px;margin:auto;"></div></div>';
+  const skill = _obSkills[0] || document.getElementById('ob_headline')?.value?.split(' ')[0] || 'construction';
+  const { ok, data } = await apiCall('GET', `/api/jobs?search=${encodeURIComponent(skill)}&limit=3`);
+  if (!ok || !data.jobs?.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:10px;">Jobs matching your profile:</div>` +
+    data.jobs.map(j => `
+      <a href="/job.html?id=${j.id}" style="text-decoration:none;display:block;padding:12px;border:1px solid var(--gray-200);border-radius:var(--radius);margin-bottom:8px;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--gray-200)'">
+        <div style="font-size:14px;font-weight:700;color:var(--gray-900);">${escapeHtml(j.title)}</div>
+        <div style="font-size:12px;color:var(--gray-500);">${escapeHtml(j.companyName||'')} · ${escapeHtml(j.city||j.location||'')} · ${escapeHtml(j.jobType||'')}</div>
+      </a>`).join('');
+}
+
+function skipOnboarding() {
+  localStorage.setItem('ctr_onboarded', '1');
+  window.location.href = '/dashboard.html';
+}
+</script>
+</body>
+</html>

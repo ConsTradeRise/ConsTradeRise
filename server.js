@@ -37,6 +37,9 @@ const adminRoutes         = require('./routes/admin');
 const coverLetterRoutes   = require('./routes/coverLetter');
 const externalRoutes      = require('./routes/external');
 const alertRoutes         = require('./routes/alerts');
+const interviewRoutes     = require('./routes/interviews');
+const workerRoutes        = require('./routes/workers');
+const analyticsRoutes     = require('./routes/analytics');
 const { sendJobDigest, sendEmail, baseTemplate } = require('./utils/email');
 
 const app    = express();
@@ -154,6 +157,9 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin',         adminRoutes);
 app.use('/api/cover-letter', coverLetterRoutes);
 app.use('/api/alerts',      alertRoutes);
+app.use('/api/interviews',  interviewRoutes);
+app.use('/api/workers',     workerRoutes);
+app.use('/api/analytics',   analyticsRoutes);
 app.use('/api',             externalRoutes);
 
 // ============================================================
