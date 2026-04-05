@@ -63,14 +63,31 @@
     </div>
     <div class="modal-body">
       <div id="applyMsg"></div>
+
+      <!-- Resume selector (required) -->
       <div class="form-group">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <label class="form-label" style="margin:0;">Cover Letter <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
-          <button type="button" id="genCLBtn" onclick="genCoverLetter()" style="font-size:12px;background:var(--blue-light);color:var(--blue);border:none;border-radius:var(--radius);padding:4px 10px;cursor:pointer;font-weight:600;">✨ Auto-Generate</button>
+        <label class="form-label">Resume <span style="color:var(--red);">*</span></label>
+        <div id="applyResumeList" style="margin-bottom:8px;">
+          <div style="text-align:center;padding:12px;"><div class="spinner" style="width:20px;height:20px;border-width:2px;margin:auto;"></div></div>
         </div>
-        <textarea class="form-textarea" id="coverLetterInput" style="min-height:140px;"
+        <p class="form-hint">Select which resume to send with this application.</p>
+      </div>
+
+      <!-- Cover letter -->
+      <div class="form-group">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+          <label class="form-label" style="margin:0;">Cover Letter <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button type="button" id="genCLBtn" onclick="genCoverLetter()" style="font-size:12px;background:var(--blue-light);color:var(--blue);border:none;border-radius:var(--radius);padding:4px 10px;cursor:pointer;font-weight:600;">✨ Auto-Generate</button>
+            <label style="font-size:12px;background:#f3f4f6;color:var(--gray-700);border:1px solid var(--gray-200);border-radius:var(--radius);padding:4px 10px;cursor:pointer;font-weight:600;" title="Upload a cover letter PDF or Word file">
+              📎 Upload File
+              <input type="file" id="clFileInput" accept=".pdf,.doc,.docx" style="display:none;" onchange="uploadCoverLetterFile(this)" />
+            </label>
+          </div>
+        </div>
+        <textarea class="form-textarea" id="coverLetterInput" style="min-height:120px;"
           placeholder="Tell the employer why you're a great fit for this role..."></textarea>
-        <p class="form-hint" id="clHint">Click <strong>Auto-Generate</strong> to create a personalised cover letter from your profile.</p>
+        <p class="form-hint" id="clHint">Click <strong>Auto-Generate</strong> to create a personalised cover letter, or upload a PDF/Word file.</p>
       </div>
     </div>
     <div class="modal-footer">
@@ -281,15 +298,76 @@ function renderJob(job) {
   `;
 }
 
-function openApplyModal() {
+let _selectedResumeId = null;
+
+async function openApplyModal() {
   if (!Auth.isLoggedIn()) { window.location.href = '/login.html'; return; }
   document.getElementById('applyJobTitle').textContent = currentJob?.title || 'this job';
   document.getElementById('applyMsg').innerHTML = '';
   document.getElementById('coverLetterInput').value = '';
-  document.getElementById('clHint').innerHTML = 'Click <strong>Auto-Generate</strong> to create a personalised cover letter from your profile.';
+  document.getElementById('clHint').innerHTML = 'Click <strong>Auto-Generate</strong> to create a personalised cover letter, or upload a PDF/Word file.';
   document.getElementById('genCLBtn').disabled = false;
   document.getElementById('genCLBtn').textContent = '✨ Auto-Generate';
+  _selectedResumeId = null;
   document.getElementById('applyModal').classList.add('open');
+  await loadApplyResumes();
+}
+
+async function loadApplyResumes() {
+  const el = document.getElementById('applyResumeList');
+  const { ok, data } = await apiCall('GET', '/api/profile/resumes');
+  if (!ok || !data.resumes?.length) {
+    el.innerHTML = `<div style="padding:12px;border:1px solid #fecaca;border-radius:var(--radius);background:#fef2f2;font-size:13px;color:#dc2626;">
+      No resumes found. <a href="/dashboard.html#resume" style="color:#dc2626;font-weight:700;">Upload one in your Dashboard →</a>
+    </div>`;
+    document.getElementById('submitApplyBtn').disabled = true;
+    return;
+  }
+  document.getElementById('submitApplyBtn').disabled = false;
+  // Auto-select first resume
+  _selectedResumeId = data.resumes[0].id;
+  el.innerHTML = data.resumes.map((r, i) => `
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid ${i===0?'var(--blue)':'var(--gray-200)'};border-radius:var(--radius);cursor:pointer;margin-bottom:6px;font-size:13px;transition:border-color .15s;" id="resume-label-${r.id}">
+      <input type="radio" name="applyResume" value="${r.id}" ${i===0?'checked':''} style="cursor:pointer;" onchange="selectResume('${r.id}')" />
+      <span style="font-size:18px;">📄</span>
+      <div>
+        <div style="font-weight:600;">${escapeHtml(r.name)}</div>
+        <div style="font-size:11px;color:var(--gray-400);">${formatDate(r.createdAt)}</div>
+      </div>
+    </label>`).join('');
+}
+
+function selectResume(id) {
+  _selectedResumeId = id;
+  document.querySelectorAll('[id^="resume-label-"]').forEach(l => {
+    l.style.borderColor = l.id === `resume-label-${id}` ? 'var(--blue)' : 'var(--gray-200)';
+  });
+}
+
+async function uploadCoverLetterFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const hint = document.getElementById('clHint');
+  hint.textContent = 'Extracting text from file…';
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const res  = await fetch('/api/applications/cover-letter/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + Auth.getToken() },
+      body: fd
+    });
+    const data = await res.json();
+    if (res.ok && data.text) {
+      document.getElementById('coverLetterInput').value = data.text;
+      hint.innerHTML = `✓ <strong>Text extracted from ${escapeHtml(file.name)}</strong> — review and edit before sending.`;
+    } else {
+      hint.textContent = data.error || 'Could not extract text from file.';
+    }
+  } catch {
+    hint.textContent = 'Upload failed. Please try again.';
+  }
+  input.value = ''; // reset so same file can be re-selected
 }
 
 async function genCoverLetter() {
@@ -320,12 +398,17 @@ function closeApplyModal() {
 
 async function submitApplication() {
   if (!currentJob) return;
+  if (!_selectedResumeId) {
+    document.getElementById('applyMsg').innerHTML = `<div class="alert alert-error" style="margin-bottom:12px;">Please select a resume to send with your application.</div>`;
+    return;
+  }
   const btn = document.getElementById('submitApplyBtn');
   btn.disabled = true; btn.textContent = 'Submitting...';
 
   const coverLetter = document.getElementById('coverLetterInput').value.trim();
   const { ok, data } = await apiCall('POST', '/api/applications', {
     jobId: currentJob.id,
+    resumeId: _selectedResumeId,
     coverLetter: coverLetter || null
   });
 

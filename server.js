@@ -444,6 +444,42 @@ async function searchAllSources(role, location) {
 // Alias used by auto-search
 const searchJobsWithAI = searchAllSources;
 
+// Save live (external) jobs to DB so they survive Vercel serverless restarts.
+// Uses externalUrl as the unique key — upserts to avoid duplicates.
+async function persistLiveJobsToDB(jobs) {
+  if (!jobs?.length) return;
+  let saved = 0;
+  const expiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000); // 4-hour TTL
+  for (const job of jobs.slice(0, 100)) {
+    const url = job.url || job.externalUrl;
+    if (!url) continue;
+    try {
+      const existing = await prisma.job.findFirst({ where: { externalUrl: url }, select: { id: true } });
+      if (existing) {
+        await prisma.job.update({ where: { id: existing.id }, data: { isActive: true, expiresAt } });
+      } else {
+        await prisma.job.create({ data: {
+          title:       (job.title       || 'Construction Job').substring(0, 200),
+          description: (job.description || job.summary || job.title || '').substring(0, 5000),
+          location:    (job.location    || job.city   || 'Canada').substring(0, 200),
+          city:        (job.city        || '').substring(0, 100),
+          province:    (job.province    || '').substring(0, 100),
+          salary:      (job.salary      || '').substring(0, 100) || null,
+          jobType:     (job.type        || job.jobType || 'Full-time').substring(0, 50),
+          companyName: (job.company     || job.companyName || 'Company').substring(0, 200),
+          skills:      Array.isArray(job.skills) ? job.skills.slice(0, 20) : [],
+          source:      'EXTERNAL',
+          externalUrl: url.substring(0, 500),
+          isActive:    true,
+          expiresAt
+        }});
+        saved++;
+      }
+    } catch (_) {}
+  }
+  if (saved) console.log(`[persist] Saved ${saved} live jobs to DB.`);
+}
+
 async function runAutoSearch() {
   if (isSearching) return;
   isSearching = true;
@@ -491,6 +527,9 @@ async function runAutoSearch() {
     saveDedupStore();
     console.log(`[auto-search] Done — ${newCount} new, ${cachedJobs.length} cached.`);
 
+    // Persist new live jobs to DB so Vercel serverless instances can serve them
+    if (newCount > 0) persistLiveJobsToDB(cachedJobs.filter(j => j.isNew)).catch(() => {});
+
     // Trigger fresh Apify run for next cycle (fire-and-forget)
     triggerApifyRun().catch(() => {});
   } catch (e) {
@@ -521,6 +560,42 @@ app.post('/api/resume', aiLimiter, requireAI, async (req, res) => {
     });
     res.json({ content: response.content });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── COVER LETTER FILE UPLOAD (text extract only) ────────────
+// POST /api/applications/cover-letter/upload  — returns extracted text
+const uploadCL = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(file.mimetype) || ['.pdf','.doc','.docx'].includes(ext)) cb(null, true);
+    else cb(new Error('Only PDF and Word files are allowed'));
+  }
+});
+app.post('/api/applications/cover-letter/upload', requireAuth, uploadCL.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  try {
+    let text = '';
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    if (ext === '.pdf' || req.file.mimetype === 'application/pdf') {
+      const pdfParse = require('pdf-parse');
+      const data = await pdfParse(req.file.buffer);
+      text = data.text;
+    } else {
+      const mammoth = require('mammoth');
+      const result  = await mammoth.extractRawText({ buffer: req.file.buffer });
+      text = result.value;
+    }
+    if (!text || text.trim().length < 10) {
+      return res.status(400).json({ error: 'Could not extract text from file.' });
+    }
+    res.json({ text: text.trim().substring(0, 5000) });
+  } catch (e) {
+    console.error('[cover-letter/upload]', e.message);
+    res.status(500).json({ error: 'Failed to process file' });
+  }
 });
 
 // ─── RESUME FILE UPLOAD + PARSE ──────────────

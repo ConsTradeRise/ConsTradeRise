@@ -11,6 +11,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { sendNewApplicationAlert, sendApplicationUpdate } = require('../utils/email');
+const { scoreATS } = require('../utils/atsScorer');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -21,7 +22,8 @@ router.post('/', requireAuth, requireRole('WORKER'), async (req, res) => {
   try {
     const { jobId, resumeId, coverLetter } = req.body;
 
-    if (!jobId) return res.status(400).json({ error: 'jobId is required' });
+    if (!jobId)     return res.status(400).json({ error: 'jobId is required' });
+    if (!resumeId)  return res.status(400).json({ error: 'A resume is required to apply. Please upload one in your Resume tab first.' });
 
     // Check job exists and is active
     const job = await prisma.job.findUnique({ where: { id: jobId } });
@@ -29,12 +31,10 @@ router.post('/', requireAuth, requireRole('WORKER'), async (req, res) => {
       return res.status(404).json({ error: 'Job not found or no longer active' });
     }
 
-    // Check resume belongs to user if provided
-    if (resumeId) {
-      const resume = await prisma.resume.findUnique({ where: { id: resumeId } });
-      if (!resume || resume.userId !== req.user.id) {
-        return res.status(400).json({ error: 'Invalid resume' });
-      }
+    // Check resume belongs to user
+    const resume = await prisma.resume.findUnique({ where: { id: resumeId } });
+    if (!resume || resume.userId !== req.user.id) {
+      return res.status(400).json({ error: 'Invalid resume' });
     }
 
     // Prevent duplicate applications (unique constraint on userId+jobId)
@@ -72,6 +72,37 @@ router.post('/', requireAuth, requireRole('WORKER'), async (req, res) => {
     }
 
     res.status(201).json({ message: 'Application submitted', application });
+
+    // Fire-and-forget: compute ATS score so employer sees match % immediately
+    setImmediate(async () => {
+      try {
+        const profile = await prisma.profile.findUnique({ where: { userId: req.user.id } });
+        if (!profile) return;
+        const resumeText = [
+          profile.headline, profile.summary,
+          (profile.skills || []).join(' '),
+          JSON.stringify(profile.experiences || []),
+          JSON.stringify(profile.educations  || [])
+        ].filter(Boolean).join('\n');
+        if (resumeText.length < 30) return;
+        const jobDesc = (job.description || '') + ' ' + (job.skills || []).join(' ');
+        const result  = scoreATS(resumeText, jobDesc);
+        await prisma.atsResult.upsert({
+          where:  { userId_jobId: { userId: req.user.id, jobId } },
+          update: { score: result.score, matchStrength: result.matchStrength,
+                    keywordScore: result.keywordScore, skillsScore: result.skillsScore,
+                    titleScore: result.titleScore, formatScore: result.formatScore,
+                    matchedKeywords: result.matchedKeywords, missingKeywords: result.missingKeywords,
+                    suggestions: result.suggestions },
+          create: { userId: req.user.id, jobId, resumeId: application.resumeId || null,
+                    score: result.score, matchStrength: result.matchStrength,
+                    keywordScore: result.keywordScore, skillsScore: result.skillsScore,
+                    titleScore: result.titleScore, formatScore: result.formatScore,
+                    matchedKeywords: result.matchedKeywords, missingKeywords: result.missingKeywords,
+                    suggestions: result.suggestions }
+        });
+      } catch (_) {}
+    });
 
   } catch (e) {
     if (e.code === 'P2002') {
@@ -140,24 +171,18 @@ router.get('/job/:jobId', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (
           select: {
             id: true,
             name: true,
+            email: true,
             profile: {
               select: {
+                headline: true,
                 city: true, province: true, skills: true,
-                yearsExperience: true, visibleToEmployers: true
+                yearsExperience: true, visibleToEmployers: true,
+                experiences: true, phone: true, linkedin: true
               }
             }
           }
         },
-        resume: { select: { id: true, name: true } },
-        // Include ATS score if available
-        job: {
-          include: {
-            atsResults: {
-              where: { userId: { in: [] } }, // populated dynamically
-              select: { userId: true, score: true, matchStrength: true }
-            }
-          }
-        }
+        resume: { select: { id: true, name: true, content: true } }
       }
     });
 
@@ -191,12 +216,37 @@ router.get('/job/:jobId', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (
   }
 });
 
+// ─── AUTO-MARK VIEWED (employer) ──────────────
+// PUT /api/applications/:id/viewed  — sets APPLIED → VIEWED silently
+router.put('/:id/viewed', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res) => {
+  try {
+    const app = await prisma.application.findUnique({
+      where: { id: req.params.id },
+      include: { job: { select: { employerId: true } } }
+    });
+    if (!app) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role === 'EMPLOYER' && app.job.employerId !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    // Only advance from APPLIED → VIEWED; don't downgrade shortlisted/rejected
+    if (app.status !== 'APPLIED') return res.json({ status: app.status });
+    const updated = await prisma.application.update({
+      where: { id: req.params.id },
+      data:  { status: 'VIEWED' }
+    });
+    res.json({ status: updated.status });
+  } catch (e) {
+    console.error('[applications/viewed]', e.message);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // ─── UPDATE STATUS (employer) ─────────────────
 // PUT /api/applications/:id/status
 router.put('/:id/status', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res) => {
   try {
     const { status } = req.body;
-    const validStatuses = ['APPLIED', 'VIEWED', 'SHORTLISTED', 'REJECTED'];
+    const validStatuses = ['SHORTLISTED', 'REJECTED'];
 
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: `Status must be one of: ${validStatuses.join(', ')}` });

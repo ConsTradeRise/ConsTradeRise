@@ -109,6 +109,9 @@
       <span class="dash-sidebar-icon">💬</span> Messages
       <span id="msgBadge" style="display:none;background:var(--blue);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
     </div>
+    <div class="dash-sidebar-item" data-tab="settings">
+      <span class="dash-sidebar-icon">⚙️</span> Settings
+    </div>
     <div style="margin-top:auto; padding:20px;">
       <a href="/jobs.html" class="btn btn-primary btn-full btn-sm">Browse Jobs</a>
     </div>
@@ -323,11 +326,30 @@
         <div id="resumeVersionsList" style="margin-top:16px;"></div>
       </div>
 
-      <!-- Delete account -->
-      <div class="card" style="border-color:var(--red);margin-top:16px;">
-        <div class="card-title" style="color:var(--red);">Danger Zone</div>
-        <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px;">Permanently delete your account and all data (PIPEDA right to erasure).</p>
-        <button class="btn btn-sm" style="background:#fef2f2;color:var(--red);border:1px solid #fecaca;" onclick="deleteAccount()">Delete My Account</button>
+    </div>
+
+    <!-- ── SETTINGS TAB ── -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="card" style="max-width:600px;">
+        <div class="card-title">Account Settings</div>
+        <div style="margin-bottom:24px;">
+          <div style="font-size:14px;font-weight:600;color:var(--gray-900);margin-bottom:4px;">Email Notifications</div>
+          <p style="font-size:13px;color:var(--gray-500);margin-bottom:10px;">You currently receive email alerts for application updates and job alerts.</p>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="notifAppUpdate" checked style="width:16px;height:16px;" />
+            Notify me when my application status changes
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:8px;">
+            <input type="checkbox" id="notifJobAlert" checked style="width:16px;height:16px;" />
+            Notify me when a matching job is posted
+          </label>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--gray-200);margin:20px 0;" />
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:4px;">Delete Account</div>
+          <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px;">Permanently delete your account and all data. This cannot be undone (PIPEDA right to erasure).</p>
+          <button class="btn btn-sm" style="background:#fef2f2;color:var(--red);border:1px solid #fecaca;" onclick="deleteAccount()">Delete My Account</button>
+        </div>
       </div>
     </div>
 
@@ -478,6 +500,7 @@ function switchTab(tab) {
   if (tab === 'messages')     dashLoadInbox();
   if (tab === 'resume')       loadResumeVersions();
   if (tab === 'alerts')       loadAlerts();
+  if (tab === 'settings')     {} // static content, nothing to load
 }
 
 // Recommended jobs based on profile skills

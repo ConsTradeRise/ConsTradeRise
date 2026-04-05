@@ -87,6 +87,9 @@
     <div class="dash-sidebar-item" data-tab="profile">
       <span class="dash-sidebar-icon">🏢</span> Company Profile
     </div>
+    <div class="dash-sidebar-item" data-tab="settings">
+      <span class="dash-sidebar-icon">⚙️</span> Settings
+    </div>
   </aside>
 
   <!-- Main -->
@@ -260,6 +263,27 @@
       </div>
     </div>
 
+    <!-- ── SETTINGS TAB ── -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="card" style="max-width:600px;">
+        <div class="card-title">Account Settings</div>
+        <div style="margin-bottom:24px;">
+          <div style="font-size:14px;font-weight:600;color:var(--gray-900);margin-bottom:4px;">Email Notifications</div>
+          <p style="font-size:13px;color:var(--gray-500);margin-bottom:10px;">You currently receive email alerts for new applications and messages.</p>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="notifNewApp" checked style="width:16px;height:16px;" />
+            Notify me when someone applies to my job
+          </label>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--gray-200);margin:20px 0;" />
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:4px;">Delete Account</div>
+          <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px;">Permanently delete your employer account, all job postings, and applicant data. This cannot be undone (PIPEDA right to erasure).</p>
+          <button class="btn btn-sm" style="background:#fef2f2;color:var(--red);border:1px solid #fecaca;" onclick="deleteEmpAccount()">Delete My Account</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── COMPANY PROFILE TAB ── -->
     <div class="tab-panel" id="tab-profile">
       <div class="card">
@@ -342,6 +366,13 @@ function switchTab(tab) {
   if (tab === 'jobs')       loadMyJobs();
   if (tab === 'applicants') loadJobFilter();
   if (tab === 'messages')   empLoadInbox();
+}
+
+async function deleteEmpAccount() {
+  if (!confirm('This will permanently delete your account, all job postings, and applicant data. This cannot be undone.\n\nProceed?')) return;
+  const { ok, data } = await apiCall('DELETE', '/api/auth/account');
+  if (ok) { Auth.clear(); window.location.href = '/'; }
+  else Toast.error(data?.error || 'Failed to delete account');
 }
 
 // ── OVERVIEW ──
@@ -614,12 +645,21 @@ function applicantCard(a, jobId) {
           <span class="ats-score-badge ${getScoreClass(score.score)}">${score.score}% Match</span>
           <div style="font-size:10px;color:var(--gray-400);margin-top:2px;">${escapeHtml(score.matchStrength||'')}</div>
         </div>` : ''}
-        <select class="status-select" onchange="updateStatus('${a.id}', this.value, '${jobId}')">
-          <option value="APPLIED"     ${a.status==='APPLIED'     ?'selected':''}>Applied</option>
-          <option value="VIEWED"      ${a.status==='VIEWED'      ?'selected':''}>Viewed</option>
-          <option value="SHORTLISTED" ${a.status==='SHORTLISTED' ?'selected':''}>Shortlisted</option>
-          <option value="REJECTED"    ${a.status==='REJECTED'    ?'selected':''}>Rejected</option>
-        </select>
+        <span id="status-badge-${a.id}" class="badge ${statusColors[a.status]||'badge-gray'}" data-status="${a.status}">${a.status.charAt(0)+a.status.slice(1).toLowerCase()}</span>
+        <div id="action-btns-${a.id}" style="display:flex;gap:4px;">
+          ${a.status !== 'SHORTLISTED' && a.status !== 'REJECTED' ? `
+            <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;white-space:nowrap;"
+              onclick="updateStatus('${a.id}','SHORTLISTED','${jobId}')">✓ Shortlist</button>
+            <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;white-space:nowrap;"
+              onclick="updateStatus('${a.id}','REJECTED','${jobId}')">✗ Reject</button>
+          ` : a.status === 'SHORTLISTED' ? `
+            <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;white-space:nowrap;"
+              onclick="updateStatus('${a.id}','REJECTED','${jobId}')">✗ Reject</button>
+          ` : `
+            <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;white-space:nowrap;"
+              onclick="updateStatus('${a.id}','SHORTLISTED','${jobId}')">✓ Shortlist</button>
+          `}
+        </div>
       </div>
     </div>
 
@@ -630,22 +670,39 @@ function applicantCard(a, jobId) {
       Missing: ${score.missingKeywords.slice(0,4).map(k=>`<span style="background:#fef2f2;color:#dc2626;padding:1px 6px;border-radius:4px;margin-right:4px;">${escapeHtml(k)}</span>`).join('')}
     </div>` : ''}
 
-    ${a.coverLetter ? `
-    <div style="margin:10px 0;">
-      <button class="btn btn-ghost btn-sm" onclick="toggleCover('${coverId}')">📝 Cover Letter</button>
-      <div id="${coverId}" style="display:none;margin-top:8px;padding:12px;background:var(--gray-50);border-radius:var(--radius);font-size:13px;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;">${escapeHtml(a.coverLetter)}</div>
-    </div>` : ''}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;">
+      ${a.coverLetter ? `<button class="btn btn-ghost btn-sm" onclick="toggleSection('${coverId}','${a.id}')">📝 Cover Letter</button>` : ''}
+      ${a.resume?.content ? `<button class="btn btn-ghost btn-sm" onclick="toggleSection('resume-${a.id}','${a.id}')">📄 Resume</button>` : ''}
+      ${a.user?.email ? `<a class="btn btn-ghost btn-sm" href="mailto:${escapeHtml(a.user.email)}">✉ ${escapeHtml(a.user.email)}</a>` : ''}
+    </div>
+    ${a.coverLetter ? `<div id="${coverId}" style="display:none;margin-top:4px;padding:12px;background:var(--gray-50);border-radius:var(--radius);font-size:13px;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;max-height:260px;overflow-y:auto;">${escapeHtml(a.coverLetter)}</div>` : ''}
+    ${a.resume?.content ? `<div id="resume-${a.id}" style="display:none;margin-top:4px;padding:12px;background:var(--gray-50);border-radius:var(--radius);font-size:12px;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;max-height:320px;overflow-y:auto;">${escapeHtml(a.resume.content)}</div>` : ''}
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:12px;color:var(--gray-400);">Applied ${formatDate(a.appliedAt)}</div>
       <button class="btn btn-ghost btn-sm" onclick="empMsgApplicant('${a.user?.id}','${escapeHtml(a.user?.name||'')}')">💬 Message</button>
     </div>
   </div>`;
 }
 
-function toggleCover(id) {
+function toggleSection(id, appId) {
   const el = document.getElementById(id);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (!el) return;
+  const showing = el.style.display === 'none' || el.style.display === '';
+  el.style.display = showing ? 'block' : 'none';
+  // Auto-mark VIEWED when employer first opens resume or cover letter
+  if (showing && appId) {
+    apiCall('PUT', `/api/applications/${appId}/viewed`, {}).then(({ data }) => {
+      if (data?.status === 'VIEWED') {
+        const badge = document.getElementById(`status-badge-${appId}`);
+        if (badge && badge.dataset.status === 'APPLIED') {
+          badge.textContent = 'Viewed';
+          badge.className = 'badge badge-yellow';
+          badge.dataset.status = 'VIEWED';
+        }
+      }
+    }).catch(() => {});
+  }
 }
 
 function empMsgApplicant(userId, name) {
@@ -655,8 +712,27 @@ function empMsgApplicant(userId, name) {
 
 async function updateStatus(appId, status, jobId) {
   const { ok, data } = await apiCall('PUT', `/api/applications/${appId}/status`, { status });
-  if (ok) Toast.success('Status updated');
-  else    Toast.error(data.error || 'Failed to update');
+  if (!ok) { Toast.error(data?.error || 'Failed to update'); return; }
+  Toast.success('Status updated');
+  // Update badge in-place
+  const badge = document.getElementById(`status-badge-${appId}`);
+  const statusColors = { APPLIED:'badge-blue', VIEWED:'badge-yellow', SHORTLISTED:'badge-green', REJECTED:'badge-red' };
+  if (badge) {
+    badge.textContent = status.charAt(0) + status.slice(1).toLowerCase();
+    badge.className   = `badge ${statusColors[status] || 'badge-gray'}`;
+    badge.dataset.status = status;
+  }
+  // Update action buttons
+  const btns = document.getElementById(`action-btns-${appId}`);
+  if (btns) {
+    btns.innerHTML = status === 'SHORTLISTED' ? `
+      <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;white-space:nowrap;"
+        onclick="updateStatus('${appId}','REJECTED','${jobId}')">✗ Reject</button>
+    ` : status === 'REJECTED' ? `
+      <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;white-space:nowrap;"
+        onclick="updateStatus('${appId}','SHORTLISTED','${jobId}')">✓ Shortlist</button>
+    ` : '';
+  }
 }
 
 // ── COMPANY PROFILE ──
