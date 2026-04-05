@@ -16,6 +16,15 @@
     .tab-panel { display:none; }
     .tab-panel.active { display:block; }
 
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:var(--radius-lg); width:100%; box-shadow:var(--shadow-lg); max-height:90vh; overflow-y:auto; }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid var(--gray-200); }
+    .modal-header h2 { font-size:18px; font-weight:700; margin:0; }
+    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--gray-400); line-height:1; }
+    .modal-body { padding:24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--gray-200); display:flex; justify-content:flex-end; gap:8px; }
+
     .job-row { display:flex; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--gray-100); flex-wrap:wrap; }
     .job-row:last-child { border-bottom:none; }
     .job-row-info { flex:1; min-width:0; }
