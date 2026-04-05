@@ -17,7 +17,11 @@
       "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Program Files\\\\nodejs\\\\'' -ErrorAction SilentlyContinue | Select-Object Name\")",
       "Bash(powershell.exe -Command \"& ''C:\\\\Program Files\\\\nodejs\\\\npm.cmd'' install --prefix ''E:\\\\My Project 2026''\")",
       "WebSearch",
-      "Bash(vercel logs:*)"
+      "Bash(vercel logs:*)",
+      "Bash(ls \"E:/My Project 2026/public/\"*.png)",
+      "Bash(npx prisma:*)",
+      "Bash(node -e \":*)",
+      "Bash(git config:*)"
     ]
   }
 }
