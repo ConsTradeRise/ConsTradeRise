@@ -15,6 +15,19 @@ router.post('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res)
       return res.status(400).json({ error: 'applicationId and at least one proposedDate are required' });
     }
 
+    // Validate proposed dates — must be valid future ISO datetime strings (max 10)
+    const now = new Date();
+    const validDates = (Array.isArray(proposedDates) ? proposedDates : [])
+      .filter(d => {
+        if (typeof d !== 'string') return false;
+        const dt = new Date(d);
+        return !isNaN(dt.getTime()) && dt > now;
+      })
+      .slice(0, 10);
+    if (!validDates.length) {
+      return res.status(400).json({ error: 'At least one valid future date is required' });
+    }
+
     const app = await prisma.application.findUnique({
       where: { id: applicationId },
       include: { job: true }
@@ -26,10 +39,11 @@ router.post('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res)
 
     const interview = await prisma.interview.upsert({
       where:  { applicationId },
-      update: { proposedDates, location: location || null, notes: notes || null,
-                status: 'PENDING', acceptedDate: null },
+      update: { proposedDates: validDates, location: location?.substring(0, 200) || null,
+                notes: notes?.substring(0, 1000) || null, status: 'PENDING', acceptedDate: null },
       create: { applicationId, employerId: req.user.id, workerId: app.userId,
-                proposedDates, location: location || null, notes: notes || null }
+                proposedDates: validDates, location: location?.substring(0, 200) || null,
+                notes: notes?.substring(0, 1000) || null }
     });
 
     // Notify worker
@@ -118,6 +132,18 @@ router.get('/mine', requireAuth, requireRole('WORKER'), async (req, res) => {
 // GET /api/interviews/application/:appId
 router.get('/application/:appId', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res) => {
   try {
+    // Ownership check — employer can only view interviews for their own jobs
+    if (req.user.role === 'EMPLOYER') {
+      const app = await prisma.application.findUnique({
+        where: { id: req.params.appId },
+        include: { job: { select: { employerId: true } } }
+      });
+      if (!app) return res.status(404).json({ error: 'Application not found' });
+      if (app.job.employerId !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
     const interview = await prisma.interview.findUnique({
       where: { applicationId: req.params.appId }
     });

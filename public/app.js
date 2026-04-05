@@ -180,8 +180,9 @@ async function loadNotifications() {
     return;
   }
   const notifEls = data.notifications.map(n => {
-    // Whitelist links to relative paths only — prevents XSS via href injection
-    const safeLink = n.link && /^\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(n.link) ? n.link : '';
+    // Strict allowlist of valid notification link prefixes — prevents XSS via href injection
+    const ALLOWED_LINK_PREFIXES = ['/dashboard', '/employer', '/jobs', '/messages', '/profile', '/onboarding'];
+    const safeLink = n.link && ALLOWED_LINK_PREFIXES.some(p => n.link.startsWith(p)) ? n.link : '';
     const div = document.createElement('div');
     div.style.cssText = `padding:12px 16px;border-bottom:1px solid var(--gray-100);cursor:${safeLink?'pointer':'default'};background:${n.read?'#fff':'var(--blue-light)'}`;
     if (safeLink) div.addEventListener('click', () => { window.location.href = safeLink; });

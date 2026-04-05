@@ -67,7 +67,19 @@ app.use(compression()); // gzip all responses
 
 // Security headers
 app.use(helmet({
-  contentSecurityPolicy: false, // disabled — frontend uses inline scripts
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:     ["'self'"],
+      scriptSrc:      ["'self'", "'unsafe-inline'"],  // inline scripts in HTML pages
+      styleSrc:       ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+      fontSrc:        ["'self'", 'fonts.gstatic.com'],
+      imgSrc:         ["'self'", 'data:', 'https:'],
+      connectSrc:     ["'self'", 'https://api.adzuna.com'],
+      frameSrc:       ["'none'"],
+      objectSrc:      ["'none'"],
+      upgradeInsecureRequests: []
+    }
+  },
   crossOriginEmbedderPolicy: false
 }));
 
@@ -115,6 +127,22 @@ const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 100,
   message: { error: 'Too many requests. Please slow down.' }
+});
+
+// Rate limiting — messages (prevent spam: 10 per minute per user)
+const messageLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: { error: 'Too many messages. Please wait before sending again.' }
+});
+
+// Rate limiting — job reports (5 per hour per user)
+const reportLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: { error: 'Too many reports submitted. Please try again later.' }
 });
 
 app.use('/api/', apiLimiter);

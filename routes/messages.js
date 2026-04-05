@@ -1,11 +1,22 @@
 'use strict';
-const express = require('express');
+const express   = require('express');
+const rateLimit = require('express-rate-limit');
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth } = require('../middleware/auth');
 const { sendNewMessageAlert } = require('../utils/email');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// 10 messages per minute per user (applied only to send route)
+const sendLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: { error: 'Too many messages. Please wait before sending again.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // GET /api/messages/inbox — list all conversations (unique users)
 router.get('/inbox', requireAuth, async (req, res) => {
@@ -98,7 +109,7 @@ router.get('/:userId', requireAuth, async (req, res) => {
 });
 
 // POST /api/messages/:userId — send a message
-router.post('/:userId', requireAuth, async (req, res) => {
+router.post('/:userId', requireAuth, sendLimiter, async (req, res) => {
   try {
     const { content } = req.body;
     if (!content?.trim()) return res.status(400).json({ error: 'Message cannot be empty' });

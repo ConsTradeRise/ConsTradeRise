@@ -197,6 +197,12 @@ router.post('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res)
     }
     if (title.length > 200)       return res.status(400).json({ error: 'Title too long (max 200 chars)' });
     if (description.length > 10000) return res.status(400).json({ error: 'Description too long (max 10,000 chars)' });
+    // Validate and sanitize skills array
+    const cleanSkills = Array.isArray(skills)
+      ? skills.filter(s => typeof s === 'string' && s.trim().length > 0 && s.trim().length <= 100)
+              .map(s => s.trim())
+              .slice(0, 30)
+      : [];
     if (Array.isArray(skills) && skills.length > 30) return res.status(400).json({ error: 'Too many skills (max 30)' });
 
     // Get company name from employer profile
@@ -216,7 +222,7 @@ router.post('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res)
         province: province?.trim(),
         salary: salary?.trim(),
         jobType: jobType || 'Full-time',
-        skills: Array.isArray(skills) ? skills : [],
+        skills: cleanSkills,
         source: 'MANUAL',
         employerId: req.user.id,
         companyName: profile?.companyName || req.user.name,

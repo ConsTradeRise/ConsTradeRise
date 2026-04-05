@@ -14,6 +14,34 @@ const { generateToken, requireAuth } = require('../middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// In-memory login failure tracker — locks account for 15 min after 10 failed attempts
+const loginFailures = new Map(); // email -> { count, lockedUntil }
+const MAX_LOGIN_ATTEMPTS = 10;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkLoginLock(email) {
+  const record = loginFailures.get(email);
+  if (!record) return false;
+  if (record.lockedUntil && Date.now() < record.lockedUntil) return true;
+  if (record.lockedUntil && Date.now() >= record.lockedUntil) {
+    loginFailures.delete(email); // lock expired, reset
+  }
+  return false;
+}
+
+function recordLoginFailure(email) {
+  const record = loginFailures.get(email) || { count: 0, lockedUntil: null };
+  record.count++;
+  if (record.count >= MAX_LOGIN_ATTEMPTS) {
+    record.lockedUntil = Date.now() + LOCKOUT_MS;
+  }
+  loginFailures.set(email, record);
+}
+
+function clearLoginFailures(email) {
+  loginFailures.delete(email);
+}
+
 // ─── REGISTER ────────────────────────────────
 // POST /api/auth/register
 // Body: { name, email, password, role: "WORKER" | "EMPLOYER" }
@@ -105,9 +133,16 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if account is temporarily locked
+    if (checkLoginLock(normalizedEmail)) {
+      return res.status(429).json({ error: 'Too many failed attempts. Try again in 15 minutes.' });
+    }
+
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
       select: {
         id: true,
         name: true,
@@ -119,6 +154,7 @@ router.post('/login', async (req, res) => {
     });
 
     if (!user) {
+      recordLoginFailure(normalizedEmail);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -128,6 +164,7 @@ router.post('/login', async (req, res) => {
     // Verify password
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) {
+      recordLoginFailure(normalizedEmail);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -135,6 +172,9 @@ router.post('/login', async (req, res) => {
     if (isBanned) {
       return res.status(403).json({ error: 'Your account has been suspended. Contact support.' });
     }
+
+    // Successful login — clear failure tracker
+    clearLoginFailures(normalizedEmail);
 
     // Return token (exclude passwordHash)
     const { passwordHash, ...safeUser } = user;

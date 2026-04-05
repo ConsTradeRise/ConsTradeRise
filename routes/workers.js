@@ -10,8 +10,9 @@ const prisma  = new PrismaClient();
 // GET /api/workers
 router.get('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res) => {
   try {
-    const { search, province, skill, availability, page = 1, limit = 20 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const { search, province, skill, availability, page = 1 } = req.query;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50); // cap at 50
+    const skip = (Math.max(parseInt(page), 1) - 1) * limit;
 
     // Build Prisma where on Profile
     const where = {
@@ -47,19 +48,21 @@ router.get('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res) 
       );
     }
 
-    // Increment profile views for each returned profile (bulk, fire-and-forget)
-    setImmediate(async () => {
-      try {
-        for (const p of filtered) {
-          await prisma.profile.update({
-            where: { id: p.id },
+    // Increment profile views — bulk update, fire-and-forget
+    if (filtered.length > 0) {
+      setImmediate(async () => {
+        try {
+          await prisma.profile.updateMany({
+            where: { id: { in: filtered.map(p => p.id) } },
             data:  { profileViews: { increment: 1 } }
           });
-        }
-      } catch (_) {}
-    });
+        } catch (_) {}
+      });
+    }
 
-    res.json({ workers: filtered, total, page: parseInt(page) });
+    // Strip private contact fields before sending to employer
+    const safeWorkers = filtered.map(({ phone, email, linkedin, ...pub }) => pub);
+    res.json({ workers: safeWorkers, total, page: Math.max(parseInt(page), 1) });
   } catch (e) {
     console.error('[workers/browse]', e.message);
     res.status(500).json({ error: 'Failed to fetch workers' });
@@ -77,12 +80,18 @@ router.get('/:userId', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req
     if (!profile || !profile.visibleToEmployers) {
       return res.status(404).json({ error: 'Profile not found or not visible' });
     }
-    // Increment view count
-    await prisma.profile.update({
-      where: { id: profile.id },
-      data:  { profileViews: { increment: 1 } }
+    // Strip private contact fields from employer view
+    const { phone, email, linkedin, ...publicProfile } = profile;
+    // Increment view count (fire-and-forget)
+    setImmediate(async () => {
+      try {
+        await prisma.profile.update({
+          where: { id: profile.id },
+          data:  { profileViews: { increment: 1 } }
+        });
+      } catch (_) {}
     });
-    res.json({ profile });
+    res.json({ profile: publicProfile });
   } catch (e) {
     res.status(500).json({ error: 'Failed' });
   }
