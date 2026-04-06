@@ -74,6 +74,12 @@ async function apiCall(method, path, body = null) {
   }
 }
 
+function getApiMessage(data, fallback) {
+  if (data && typeof data.error === 'string' && data.error.trim()) return data.error;
+  if (data && typeof data.message === 'string' && data.message.trim()) return data.message;
+  return fallback;
+}
+
 // ─── TOAST NOTIFICATIONS ─────────────────────
 const Toast = {
   container: null,
@@ -273,7 +279,7 @@ function initRegisterPage() {
       Toast.success('Account created! Welcome to ConsTradeHire.');
       setTimeout(() => Auth.redirectToDashboard(), 800);
     } else {
-      if (errorEl) { errorEl.textContent = data.error || 'Registration failed'; errorEl.classList.remove('hidden'); }
+      if (errorEl) { errorEl.textContent = getApiMessage(data, 'Registration failed'); errorEl.classList.remove('hidden'); }
       btn.disabled = false;
       btn.textContent = 'Create Account';
     }
@@ -313,7 +319,7 @@ function initLoginPage() {
         else Auth.redirectToDashboard();
       }, 600);
     } else {
-      if (errorEl) { errorEl.textContent = data.error || 'Login failed'; errorEl.classList.remove('hidden'); }
+      if (errorEl) { errorEl.textContent = getApiMessage(data, 'Login failed'); errorEl.classList.remove('hidden'); }
       btn.disabled = false;
       btn.textContent = 'Login';
     }
@@ -349,7 +355,7 @@ function initJobsPage() {
     const { ok, data } = await apiCall('GET', `/api/jobs?${query}`);
 
     if (!ok) {
-      container.innerHTML = `<div class="empty-state"><p class="text-gray">${escapeHtml(data.error || 'Failed to load jobs')}</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p class="text-gray">${escapeHtml(getApiMessage(data, 'Failed to load jobs'))}</p></div>`;
       return;
     }
 
