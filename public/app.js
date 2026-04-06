@@ -56,7 +56,18 @@ async function apiCall(method, path, body = null) {
 
   try {
     const res = await fetch(API + path, opts);
-    const data = await res.json();
+    let data = {};
+    const raw = await res.text();
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { error: 'Invalid server response' };
+      }
+    } else if (raw) {
+      data = { message: raw };
+    }
     return { ok: res.ok, status: res.status, data };
   } catch (e) {
     return { ok: false, status: 0, data: { error: 'Network error — please check your connection' } };
@@ -80,7 +91,11 @@ const Toast = {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     const icons = { success: '✓', error: '✕', default: 'ℹ' };
-    toast.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${message}</span>`;
+    const iconEl = document.createElement('span');
+    iconEl.textContent = icons[type] || 'ℹ';
+    const messageEl = document.createElement('span');
+    messageEl.textContent = String(message ?? '');
+    toast.append(iconEl, messageEl);
     this.container.appendChild(toast);
     setTimeout(() => {
       toast.style.opacity = '0';
@@ -334,7 +349,7 @@ function initJobsPage() {
     const { ok, data } = await apiCall('GET', `/api/jobs?${query}`);
 
     if (!ok) {
-      container.innerHTML = `<div class="empty-state"><p class="text-gray">${data.error || 'Failed to load jobs'}</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p class="text-gray">${escapeHtml(data.error || 'Failed to load jobs')}</p></div>`;
       return;
     }
 
@@ -365,13 +380,16 @@ function initJobsPage() {
 }
 
 function renderJobCard(job) {
-  const score    = job.atsScore;
-  const scoreHtml = score
-    ? `<span class="ats-score-badge ${getScoreClass(score.score)}">${score.score}%</span>`
+  const score = job.atsScore;
+  const numericScore = Number(score?.score);
+  const safeScore = Number.isFinite(numericScore) ? Math.max(0, Math.min(100, Math.round(numericScore))) : null;
+  const safeJobId = encodeURIComponent(String(job.id ?? ''));
+  const scoreHtml = safeScore !== null
+    ? `<span class="ats-score-badge ${getScoreClass(safeScore)}">${safeScore}%</span>`
     : '';
 
   return `
-    <div class="job-card" onclick="window.location.href='/job.html?id=${job.id}'">
+    <div class="job-card" onclick="window.location.href='/job.html?id=${safeJobId}'">
       <div class="job-card-header">
         <div>
           <div class="job-title">${escapeHtml(job.title)}</div>
