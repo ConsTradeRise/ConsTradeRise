@@ -201,11 +201,6 @@ app.use('/api/workers',     workerRoutes);
 app.use('/api/analytics',   analyticsRoutes);
 app.use('/api',             externalRoutes);
 
-app.get('/api/debug/env', async (req, res) => {
-  try { await prisma.$queryRaw`SELECT 1`; res.json({ db: 'ok', dbUrl: (process.env.DATABASE_URL||'').slice(0,60) }); }
-  catch (e) { res.json({ db: 'fail', error: e.message.slice(0,120), dbUrl: (process.env.DATABASE_URL||'').slice(0,60) }); }
-});
-
 // ============================================================
 //  SEO — robots.txt + sitemap.xml
 // ============================================================
