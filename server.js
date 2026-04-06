@@ -201,6 +201,22 @@ app.use('/api/workers',     workerRoutes);
 app.use('/api/analytics',   analyticsRoutes);
 app.use('/api',             externalRoutes);
 
+// ── Temp debug endpoint ──────────────────────────────────────
+app.get('/api/debug/env', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      db: 'ok',
+      jwt: !!process.env.JWT_SECRET,
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch
+    });
+  } catch (e) {
+    res.json({ db: 'fail', error: e.message, jwt: !!process.env.JWT_SECRET, node: process.version });
+  }
+});
+
 // ============================================================
 //  SEO — robots.txt + sitemap.xml
 // ============================================================
