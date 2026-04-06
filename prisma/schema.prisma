@@ -47,6 +47,8 @@ model User {
   role                 Role      @default(WORKER)
   emailVerified        Boolean   @default(false)
   isVerified           Boolean   @default(false)  // employer trust badge (admin-set)
+  emailVerifyToken     String?
+  emailVerifyExpiry    DateTime?
   passwordResetToken   String?
   passwordResetExpiry  DateTime?
   createdAt            DateTime  @default(now())

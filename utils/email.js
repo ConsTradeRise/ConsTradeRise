@@ -136,6 +136,7 @@ async function sendJobDigest({ to, workerName, jobs }) {
 
 module.exports = {
   sendEmail,
+  baseTemplate,
   sendNewMessageAlert,
   sendApplicationUpdate,
   sendNewApplicationAlert,
