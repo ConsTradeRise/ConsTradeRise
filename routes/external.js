@@ -87,13 +87,12 @@ router.post('/validate/email', async (req, res) => {
     }
 
     res.json({
-      valid:        data.format_valid && !data.disposable && (data.smtp_check !== false),
+      valid:        data.format_valid && !data.disposable,
       formatValid:  data.format_valid,
       disposable:   data.disposable,
       smtpValid:    data.smtp_check,
       reason:       data.disposable ? 'Disposable email addresses are not allowed'
                   : !data.format_valid ? 'Invalid email format'
-                  : data.smtp_check === false ? 'Email address does not exist'
                   : 'ok'
     });
   } catch (e) {

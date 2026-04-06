@@ -8,8 +8,10 @@
 'use strict';
 const express  = require('express');
 const bcrypt   = require('bcryptjs');
+const crypto   = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 const { generateToken, requireAuth } = require('../middleware/auth');
+const { sendEmail, baseTemplate } = require('../utils/email');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -218,6 +220,84 @@ router.get('/me', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('[auth/me]', e.message);
     res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+// ─── FORGOT PASSWORD ──────────────────────────
+// POST /api/auth/forgot-password
+// Body: { email }
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+
+    // Always return 200 to prevent email enumeration
+    if (!user) return res.json({ message: 'If that email exists, a reset link has been sent.' });
+
+    const token  = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetToken: token, passwordResetExpiry: expiry }
+    });
+
+    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const resetUrl = `${baseUrl}/reset-password.html?token=${token}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Reset your ConsTradeHire password',
+      html: baseTemplate('Password Reset Request', `
+        <p>Hi ${user.name},</p>
+        <p>Click the button below to reset your password. This link expires in 1 hour.</p>
+        <a href="${resetUrl}" class="btn">Reset Password</a>
+        <p style="margin-top:20px;font-size:12px;color:#94a3b8;">
+          If you didn't request this, you can safely ignore this email.
+        </p>`)
+    });
+
+    res.json({ message: 'If that email exists, a reset link has been sent.' });
+  } catch (e) {
+    console.error('[auth/forgot-password]', e.message);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+// ─── RESET PASSWORD ───────────────────────────
+// POST /api/auth/reset-password
+// Body: { token, password }
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Token and password are required' });
+
+    if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters with a letter and number' });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        passwordResetToken: token,
+        passwordResetExpiry: { gt: new Date() }
+      }
+    });
+
+    if (!user) return res.status(400).json({ error: 'Invalid or expired reset link' });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, passwordResetToken: null, passwordResetExpiry: null }
+    });
+
+    clearLoginFailures(user.email);
+    res.json({ message: 'Password reset successfully. You can now log in.' });
+  } catch (e) {
+    console.error('[auth/reset-password]', e.message);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 });
 

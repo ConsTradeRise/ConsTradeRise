@@ -148,6 +148,31 @@ router.get('/employer/mine', requireAuth, requireRole('EMPLOYER', 'ADMIN'), asyn
   }
 });
 
+// ─── SAVED JOBS ───────────────────────────────
+// GET /api/jobs/saved  (must be before /:id)
+router.get('/saved', requireAuth, async (req, res) => {
+  try {
+    const saved = await prisma.savedJob.findMany({
+      where: { userId: req.user.id },
+      orderBy: { savedAt: 'desc' },
+      include: {
+        job: {
+          select: {
+            id: true, title: true, companyName: true, location: true,
+            city: true, jobType: true, salary: true, isFeatured: true,
+            postedAt: true, isActive: true, skills: true,
+            employer: { select: { profile: { select: { companyName: true } } } }
+          }
+        }
+      }
+    });
+    res.json({ savedJobs: saved.map(s => ({ ...s.job, savedAt: s.savedAt })) });
+  } catch (e) {
+    console.error('[jobs/saved]', e.message);
+    res.status(500).json({ error: 'Failed to fetch saved jobs' });
+  }
+});
+
 // ─── JOB DETAIL ───────────────────────────────
 // GET /api/jobs/:id
 router.get('/:id', async (req, res) => {
@@ -338,6 +363,39 @@ router.post('/:id/report', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('[jobs/report]', e.message);
     res.status(500).json({ error: 'Failed to submit report' });
+  }
+});
+
+// ─── SAVE / UNSAVE JOB ────────────────────────
+// POST   /api/jobs/:id/save
+// DELETE /api/jobs/:id/save
+
+router.post('/:id/save', requireAuth, async (req, res) => {
+  try {
+    const job = await prisma.job.findUnique({ where: { id: req.params.id }, select: { id: true } });
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    await prisma.savedJob.upsert({
+      where: { userId_jobId: { userId: req.user.id, jobId: req.params.id } },
+      create: { userId: req.user.id, jobId: req.params.id },
+      update: {}
+    });
+    res.json({ saved: true });
+  } catch (e) {
+    console.error('[jobs/save]', e.message);
+    res.status(500).json({ error: 'Failed to save job' });
+  }
+});
+
+router.delete('/:id/save', requireAuth, async (req, res) => {
+  try {
+    await prisma.savedJob.deleteMany({
+      where: { userId: req.user.id, jobId: req.params.id }
+    });
+    res.json({ saved: false });
+  } catch (e) {
+    console.error('[jobs/unsave]', e.message);
+    res.status(500).json({ error: 'Failed to unsave job' });
   }
 });
 
