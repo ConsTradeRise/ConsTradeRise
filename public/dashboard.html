@@ -106,6 +106,9 @@
       <span class="dash-sidebar-icon">📅</span> Interviews
       <span id="interviewBadge" style="display:none;background:var(--orange);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
     </div>
+    <div class="dash-sidebar-item" data-tab="interview-prep">
+      <span class="dash-sidebar-icon">🤖</span> AI Interview Prep
+    </div>
     <div class="dash-sidebar-item" data-tab="alerts">
       <span class="dash-sidebar-icon">🔔</span> Job Alerts
     </div>
@@ -338,6 +341,28 @@
     <!-- ── INTERVIEWS TAB ── -->
     <div class="tab-panel" id="tab-interviews">
       <div id="interviewsList"><div style="text-align:center;padding:40px;"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- ── INTERVIEW PREP TAB ── -->
+    <div class="tab-panel" id="tab-interview-prep">
+      <div class="card" style="max-width:700px;">
+        <div class="card-title">🤖 AI Interview Prep</div>
+        <p style="font-size:14px;color:var(--gray-500);margin-bottom:20px;">Paste a job description and get 8 tailored interview Q&amp;As with strong model answers.</p>
+        <div class="form-group">
+          <label class="form-label">Job Title</label>
+          <input class="form-input" id="ip_title" placeholder="e.g. Senior Estimator" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company</label>
+          <input class="form-input" id="ip_company" placeholder="e.g. PCL Construction" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Job Description</label>
+          <textarea class="form-textarea" id="ip_desc" rows="6" placeholder="Paste the job description here..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="runInterviewPrep()" id="ipBtn">✨ Generate Interview Q&amp;As</button>
+        <div id="ipResults" style="margin-top:24px;"></div>
+      </div>
     </div>
 
     <!-- ── ANALYTICS TAB ── -->
@@ -996,7 +1021,9 @@ function openItemModal(type, index) {
           <input class="form-input" id="im_endDate" value="${escapeHtml(item.isCurrent?'Present':item.endDate||'')}" placeholder="Present or Jun 2025" /></div>
       </div>
       <div class="form-group"><label class="form-label">Key Bullets <span style="font-weight:400;color:var(--gray-400);">(one per line)</span></label>
-        <textarea class="form-textarea" id="im_bullets" rows="4" placeholder="• Managed estimating for ICI projects&#10;• Prepared BOEs using HeavyBid">${escapeHtml(Array.isArray(item.bullets)?item.bullets.join('\n'):(item.bullets||''))}</textarea></div>`;
+        <textarea class="form-textarea" id="im_bullets" rows="4" placeholder="• Managed estimating for ICI projects&#10;• Prepared BOEs using HeavyBid">${escapeHtml(Array.isArray(item.bullets)?item.bullets.join('\n'):(item.bullets||''))}</textarea>
+        <button type="button" onclick="enhanceBullets()" style="margin-top:8px;padding:6px 14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:var(--radius);font-size:12px;font-weight:700;cursor:pointer;" id="enhanceBulletsBtn">✨ Enhance with AI</button>
+      </div>`;
   } else if (type === 'edu') {
     body.innerHTML = `
       <div class="form-group"><label class="form-label">Degree / Program</label>
@@ -1639,6 +1666,73 @@ async function loadWorkerAnalytics() {
         </div>
       </div>
     </div>`;
+}
+
+// ── AI BULLET ENHANCE ────────────────────────
+async function enhanceBullets() {
+  const bulletsEl = document.getElementById('im_bullets');
+  const titleEl   = document.getElementById('im_title');
+  const btn       = document.getElementById('enhanceBulletsBtn');
+  if (!bulletsEl) return;
+  const bullets = bulletsEl.value.trim();
+  const title   = titleEl?.value?.trim() || 'Construction Professional';
+  if (!bullets) { Toast.error('Add some bullet points first.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Enhancing...';
+  const { ok, data } = await apiCall('POST', '/api/exp-bullets', {
+    systemPrompt: 'You are a Canadian construction industry resume expert. Rewrite the provided bullet points to be stronger, more achievement-focused, and ATS-optimized. Use action verbs, quantify where possible, and keep each bullet under 20 words. Return ONLY the improved bullets, one per line, no numbering.',
+    userPrompt:   `Job title: ${title}\n\nCurrent bullets:\n${bullets}`,
+    maxTokens: 500
+  });
+  btn.disabled = false;
+  btn.textContent = '✨ Enhance with AI';
+
+  if (!ok) { Toast.error(data?.error || 'AI unavailable. Check ANTHROPIC_API_KEY.'); return; }
+  const text = data.content?.[0]?.text || '';
+  if (text) { bulletsEl.value = text; Toast.success('Bullets enhanced!'); }
+}
+
+// ── AI INTERVIEW PREP ─────────────────────────
+async function runInterviewPrep() {
+  const title = document.getElementById('ip_title')?.value?.trim();
+  const company = document.getElementById('ip_company')?.value?.trim();
+  const desc  = document.getElementById('ip_desc')?.value?.trim();
+  const btn   = document.getElementById('ipBtn');
+  const out   = document.getElementById('ipResults');
+  if (!title) { Toast.error('Enter a job title.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating...';
+  out.innerHTML = '<div style="text-align:center;padding:20px;"><div class="spinner"></div><p style="margin-top:8px;color:var(--gray-500);">AI is preparing your questions...</p></div>';
+
+  const user = Auth.getUser();
+  const { ok, data } = await apiCall('POST', '/api/interview-prep', {
+    jobTitle: title, company, jobDesc: desc,
+    candidateName: user?.name || 'Candidate',
+    role: user?.name || 'Construction Professional',
+    skills: (_profData?.skills || []).slice(0,10).join(', ')
+  });
+
+  btn.disabled = false;
+  btn.textContent = '✨ Generate Interview Q&As';
+
+  if (!ok) { out.innerHTML = `<p style="color:var(--red);">${data?.error || 'AI unavailable.'}</p>`; return; }
+
+  const text = data.content?.[0]?.text || '';
+  const pairs = text.split(/\n(?=Q:)/).filter(Boolean);
+  out.innerHTML = `
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--gray-900);">Your Interview Q&As — ${escapeHtml(title)} ${company ? 'at ' + escapeHtml(company) : ''}</h3>
+    ${pairs.map((p, i) => {
+      const [q, ...aParts] = p.split(/\nA:/);
+      const qText = q.replace(/^Q:\s*/, '').trim();
+      const aText = aParts.join('\nA:').trim();
+      return `<div style="margin-bottom:20px;padding:16px;background:#f8fafc;border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;">
+        <div style="font-size:14px;font-weight:700;color:var(--gray-900);margin-bottom:8px;">Q${i+1}: ${escapeHtml(qText)}</div>
+        <div style="font-size:13px;color:var(--gray-600);line-height:1.6;">${escapeHtml(aText)}</div>
+      </div>`;
+    }).join('')}
+    <button onclick="window.print()" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">🖨 Print / Save PDF</button>`;
 }
 </script>
 </body>
