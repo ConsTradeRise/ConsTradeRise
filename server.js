@@ -106,11 +106,20 @@ app.use(express.static(path.join(__dirname, 'public'), {
   lastModified: true
 }));
 
-// Rate limiting — auth routes (strict: 5 attempts / 15 min)
-const authLimiter = rateLimit({
+// Rate limiting — login (20 attempts / 15 min per IP)
+const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 20,
   message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiting — register (10 registrations / hour per IP)
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many registration attempts. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -150,7 +159,9 @@ app.use('/api/', apiLimiter);
 // ============================================================
 //  PLATFORM ROUTES
 // ============================================================
-app.use('/api/auth',          authLimiter, authRoutes);
+app.post('/api/auth/login',    loginLimiter);
+app.post('/api/auth/register', registerLimiter);
+app.use('/api/auth',          authRoutes);
 
 // Live job endpoints MUST be registered before jobRoutes to avoid /:id catching them
 app.get('/api/jobs/live', (req, res) => {

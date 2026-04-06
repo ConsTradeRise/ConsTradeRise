@@ -294,13 +294,15 @@ function initLoginPage() {
       Toast.success('Welcome back!');
       const next = new URLSearchParams(window.location.search).get('next');
       setTimeout(() => {
-        if (next) window.location.href = next;
+        if (next && next.startsWith('/')) window.location.href = next;
         else Auth.redirectToDashboard();
       }, 600);
     } else {
       if (errorEl) { errorEl.textContent = data.error || 'Login failed'; errorEl.classList.remove('hidden'); }
       btn.disabled = false;
-      btn.textContent = 'Login';
+      const roleCfg = typeof ROLE_CONFIG !== 'undefined' && typeof selectedRole !== 'undefined'
+        ? ROLE_CONFIG[selectedRole] : null;
+      btn.textContent = roleCfg ? roleCfg.btnText : 'Login';
     }
   });
 }
