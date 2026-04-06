@@ -342,12 +342,28 @@ function initLoginPage() {
 
     if (ok) {
       Auth.save(data.token, data.user);
-      Toast.success('Welcome back!');
-      const next = new URLSearchParams(window.location.search).get('next');
-      setTimeout(() => {
-        if (next && next.startsWith('/')) window.location.href = next;
-        else Auth.redirectToDashboard();
-      }, 600);
+      const actualRole = data.user.role;
+      const chosenRole = typeof selectedRole !== 'undefined' ? selectedRole : null;
+      const roleMismatch = chosenRole === 'employer' && actualRole === 'WORKER'
+        || chosenRole === 'worker' && actualRole === 'EMPLOYER';
+
+      if (roleMismatch) {
+        const label = actualRole === 'EMPLOYER' ? 'Employer' : 'Job Seeker';
+        const errorEl = document.getElementById('loginError');
+        if (errorEl) {
+          errorEl.style.cssText = 'background:#fffbeb;border:1px solid #fbbf24;color:#92400e;padding:10px 14px;border-radius:8px;font-size:13px;';
+          errorEl.textContent = `This account is registered as a ${label}. Redirecting you to the correct dashboard...`;
+          errorEl.classList.remove('hidden');
+        }
+        setTimeout(() => Auth.redirectToDashboard(), 2200);
+      } else {
+        Toast.success('Welcome back!');
+        const next = new URLSearchParams(window.location.search).get('next');
+        setTimeout(() => {
+          if (next && next.startsWith('/')) window.location.href = next;
+          else Auth.redirectToDashboard();
+        }, 600);
+      }
     } else {
       if (errorEl) {
         if (data.requiresVerification) {
@@ -496,10 +512,11 @@ function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   const now = new Date();
-  const diff = Math.floor((now - d) / 86400000);
+  const diff = Math.floor((now - d) / 86400000); // positive = past, negative = future
   if (diff === 0) return 'Today';
   if (diff === 1) return 'Yesterday';
-  if (diff < 7)  return `${diff} days ago`;
+  if (diff > 0 && diff < 7) return `${diff} days ago`;
+  if (diff < 0 && diff > -7) return `in ${-diff} days`;
   return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
 }
 
