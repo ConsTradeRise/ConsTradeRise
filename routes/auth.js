@@ -3,6 +3,11 @@
 //  POST /api/auth/register
 //  POST /api/auth/login
 //  GET  /api/auth/me
+//  GET  /api/auth/verify-email
+//  POST /api/auth/resend-verification
+//  POST /api/auth/forgot-password
+//  POST /api/auth/reset-password
+//  DELETE /api/auth/account
 // ─────────────────────────────────────────────
 
 'use strict';
@@ -90,6 +95,10 @@ router.post('/register', async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
+    // Generate email verification token
+    const verifyToken  = crypto.randomBytes(32).toString('hex');
+    const verifyExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     // Create user + profile in one transaction
     const user = await prisma.user.create({
       data: {
@@ -97,6 +106,9 @@ router.post('/register', async (req, res) => {
         email: email.toLowerCase().trim(),
         passwordHash,
         role: userRole,
+        emailVerified: false,
+        emailVerifyToken: verifyToken,
+        emailVerifyExpiry: verifyExpiry,
         profile: {
           create: {} // empty profile — user fills it in onboarding
         }
@@ -110,17 +122,122 @@ router.post('/register', async (req, res) => {
       }
     });
 
-    const token = generateToken(user);
+    // Send verification email (non-blocking — don't fail registration if email fails)
+    const baseUrl   = process.env.APP_URL || 'http://localhost:3001';
+    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${verifyToken}`;
+
+    sendEmail({
+      to: user.email,
+      subject: 'Verify your ConsTradeHire email',
+      html: baseTemplate('Verify Your Email Address', `
+        <p>Hi ${user.name},</p>
+        <p>Thanks for joining ConsTradeHire! Click the button below to verify your email address and activate your account.</p>
+        <p style="text-align:center;margin:28px 0;">
+          <a href="${verifyUrl}" class="btn">Verify My Email →</a>
+        </p>
+        <p style="font-size:12px;color:#94a3b8;">
+          This link expires in 24 hours. If you didn't create this account, you can safely ignore this email.
+        </p>
+        <p style="font-size:12px;color:#94a3b8;">
+          If the button doesn't work, copy and paste this link into your browser:<br>
+          <a href="${verifyUrl}" style="color:#f97316;word-break:break-all;">${verifyUrl}</a>
+        </p>
+      `)
+    }).catch(() => {});
 
     res.status(201).json({
-      message: 'Account created successfully',
-      token,
-      user
+      message: 'Account created! Please check your email to verify your account.',
+      requiresVerification: true,
+      email: user.email
     });
 
   } catch (e) {
     console.error('[auth/register]', e.message);
     res.status(500).json({ error: 'Registration failed. Please try again.' });
+  }
+});
+
+// ─── VERIFY EMAIL ─────────────────────────────
+// GET /api/auth/verify-email?token=xxx
+// Called from the link in verification email
+router.get('/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.redirect('/login.html?verifyError=invalid');
+
+    const user = await prisma.user.findFirst({
+      where: {
+        emailVerifyToken: token,
+        emailVerifyExpiry: { gt: new Date() }
+      }
+    });
+
+    if (!user) return res.redirect('/login.html?verifyError=expired');
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerifyToken: null,
+        emailVerifyExpiry: null
+      }
+    });
+
+    res.redirect('/login.html?verified=1');
+  } catch (e) {
+    console.error('[auth/verify-email]', e.message);
+    res.redirect('/login.html?verifyError=error');
+  }
+});
+
+// ─── RESEND VERIFICATION EMAIL ────────────────
+// POST /api/auth/resend-verification
+// Body: { email }
+router.post('/resend-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() }
+    });
+
+    // Always 200 — prevents email enumeration
+    if (!user || user.emailVerified) {
+      return res.json({ message: 'If that email exists and is unverified, a new link has been sent.' });
+    }
+
+    const verifyToken  = crypto.randomBytes(32).toString('hex');
+    const verifyExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerifyToken: verifyToken, emailVerifyExpiry: verifyExpiry }
+    });
+
+    const baseUrl   = process.env.APP_URL || 'http://localhost:3001';
+    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${verifyToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Verify your ConsTradeHire email (new link)',
+      html: baseTemplate('New Verification Link', `
+        <p>Hi ${user.name},</p>
+        <p>Here is your new email verification link. It expires in 24 hours.</p>
+        <p style="text-align:center;margin:28px 0;">
+          <a href="${verifyUrl}" class="btn">Verify My Email →</a>
+        </p>
+        <p style="font-size:12px;color:#94a3b8;">
+          If the button doesn't work, copy this link:<br>
+          <a href="${verifyUrl}" style="color:#f97316;word-break:break-all;">${verifyUrl}</a>
+        </p>
+      `)
+    });
+
+    res.json({ message: 'A new verification link has been sent to your email.' });
+  } catch (e) {
+    console.error('[auth/resend-verification]', e.message);
+    res.status(500).json({ error: 'Failed to resend verification email' });
   }
 });
 
@@ -142,7 +259,7 @@ router.post('/login', async (req, res) => {
       return res.status(429).json({ error: 'Too many failed attempts. Try again in 15 minutes.' });
     }
 
-    // Find user
+    // Find user (include verification fields)
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       select: {
@@ -151,7 +268,9 @@ router.post('/login', async (req, res) => {
         email: true,
         passwordHash: true,
         role: true,
-        createdAt: true
+        createdAt: true,
+        emailVerified: true,
+        emailVerifyToken: true
       }
     });
 
@@ -175,11 +294,29 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ error: 'Your account has been suspended. Contact support.' });
     }
 
+    // ── Email verification check ──────────────────
+    if (!user.emailVerified) {
+      // Old accounts (created before this feature) have no emailVerifyToken — auto-verify them
+      if (!user.emailVerifyToken) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { emailVerified: true }
+        });
+      } else {
+        // New account — must verify email first
+        return res.status(403).json({
+          error: 'Please verify your email before logging in. Check your inbox.',
+          requiresVerification: true,
+          email: user.email
+        });
+      }
+    }
+
     // Successful login — clear failure tracker
     clearLoginFailures(normalizedEmail);
 
-    // Return token (exclude passwordHash)
-    const { passwordHash, ...safeUser } = user;
+    // Return token (exclude passwordHash & sensitive fields)
+    const { passwordHash, emailVerified, emailVerifyToken, ...safeUser } = user;
     const token = generateToken(safeUser);
 
     res.json({
@@ -244,7 +381,7 @@ router.post('/forgot-password', async (req, res) => {
       data: { passwordResetToken: token, passwordResetExpiry: expiry }
     });
 
-    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const baseUrl  = process.env.APP_URL || 'http://localhost:3001';
     const resetUrl = `${baseUrl}/reset-password.html?token=${token}`;
 
     await sendEmail({

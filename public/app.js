@@ -254,15 +254,47 @@ function initRegisterPage() {
     const { ok, data } = await apiCall('POST', '/api/auth/register', payload);
 
     if (ok) {
-      Auth.save(data.token, data.user);
-      Toast.success('Account created! Welcome to ConsTradeHire.');
-      setTimeout(() => Auth.redirectToDashboard(), 800);
+      if (data.requiresVerification) {
+        // Show email verification prompt — hide form, show success panel
+        form.style.display = 'none';
+        const successPanel = document.getElementById('regVerifyPanel');
+        if (successPanel) {
+          successPanel.style.display = 'block';
+          const emailSpan = document.getElementById('regVerifyEmail');
+          if (emailSpan) emailSpan.textContent = data.email || email;
+        }
+        // Store email for resend button
+        window._pendingVerifyEmail = data.email || email;
+      } else {
+        Auth.save(data.token, data.user);
+        Toast.success('Account created! Welcome to ConsTradeHire.');
+        setTimeout(() => Auth.redirectToDashboard(), 800);
+      }
     } else {
       if (errorEl) { errorEl.textContent = data.error || 'Registration failed'; errorEl.classList.remove('hidden'); }
       btn.disabled = false;
       btn.textContent = 'Create Account';
     }
   });
+}
+
+async function resendVerificationEmail(email) {
+  const btn = document.getElementById('resendVerifyBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+  const { ok, data } = await apiCall('POST', '/api/auth/resend-verification', { email });
+
+  if (btn) {
+    btn.textContent = ok ? 'Sent! Check your inbox' : 'Failed — try again';
+    btn.style.background = ok ? '#16a34a' : '#dc2626';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = 'Resend Verification Email';
+      btn.style.background = '';
+    }, 4000);
+  }
+
+  Toast[ok ? 'success' : 'error'](data.message || data.error || 'Done');
 }
 
 // ─── LOGIN PAGE ───────────────────────────────
@@ -276,10 +308,29 @@ function initLoginPage() {
     return;
   }
 
+  // Show email verified success banner
+  const params = new URLSearchParams(window.location.search);
+  const verifiedBanner = document.getElementById('loginVerifiedBanner');
+  const loginError     = document.getElementById('loginError');
+
+  if (params.get('verified') === '1' && verifiedBanner) {
+    verifiedBanner.style.display = 'block';
+  }
+  if (params.get('verifyError') && loginError) {
+    const msg = params.get('verifyError') === 'expired'
+      ? 'Verification link has expired. Please request a new one.'
+      : 'Invalid verification link. Please try again.';
+    loginError.textContent = msg;
+    loginError.classList.remove('hidden');
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = form.querySelector('[type=submit]');
     const errorEl = document.getElementById('loginError');
+
+    if (verifiedBanner) verifiedBanner.style.display = 'none';
+    if (errorEl) errorEl.classList.add('hidden');
 
     const email    = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -291,14 +342,46 @@ function initLoginPage() {
 
     if (ok) {
       Auth.save(data.token, data.user);
-      Toast.success('Welcome back!');
-      const next = new URLSearchParams(window.location.search).get('next');
-      setTimeout(() => {
-        if (next && next.startsWith('/')) window.location.href = next;
-        else Auth.redirectToDashboard();
-      }, 600);
+      const actualRole = data.user.role;
+      const chosenRole = typeof selectedRole !== 'undefined' ? selectedRole : null;
+      const roleMismatch = chosenRole === 'employer' && actualRole === 'WORKER'
+        || chosenRole === 'worker' && actualRole === 'EMPLOYER';
+
+      if (roleMismatch) {
+        const label = actualRole === 'EMPLOYER' ? 'Employer' : 'Job Seeker';
+        const errorEl = document.getElementById('loginError');
+        if (errorEl) {
+          errorEl.style.cssText = 'background:#fffbeb;border:1px solid #fbbf24;color:#92400e;padding:10px 14px;border-radius:8px;font-size:13px;';
+          errorEl.textContent = `This account is registered as a ${label}. Redirecting you to the correct dashboard...`;
+          errorEl.classList.remove('hidden');
+        }
+        setTimeout(() => Auth.redirectToDashboard(), 2200);
+      } else {
+        Toast.success('Welcome back!');
+        const next = new URLSearchParams(window.location.search).get('next');
+        setTimeout(() => {
+          if (next && next.startsWith('/')) window.location.href = next;
+          else Auth.redirectToDashboard();
+        }, 600);
+      }
     } else {
-      if (errorEl) { errorEl.textContent = data.error || 'Login failed'; errorEl.classList.remove('hidden'); }
+      if (errorEl) {
+        if (data.requiresVerification) {
+          // Show error with resend button
+          window._pendingVerifyEmail = data.email || email;
+          errorEl.innerHTML = `
+            ${escapeHtml(data.error || 'Please verify your email first.')}
+            <div style="margin-top:10px;">
+              <button id="loginResendBtn" onclick="resendVerificationEmail(window._pendingVerifyEmail)"
+                style="padding:7px 16px;border-radius:6px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">
+                Resend Verification Email
+              </button>
+            </div>`;
+        } else {
+          errorEl.textContent = data.error || 'Login failed';
+        }
+        errorEl.classList.remove('hidden');
+      }
       btn.disabled = false;
       const roleCfg = typeof ROLE_CONFIG !== 'undefined' && typeof selectedRole !== 'undefined'
         ? ROLE_CONFIG[selectedRole] : null;
@@ -429,10 +512,11 @@ function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   const now = new Date();
-  const diff = Math.floor((now - d) / 86400000);
+  const diff = Math.floor((now - d) / 86400000); // positive = past, negative = future
   if (diff === 0) return 'Today';
   if (diff === 1) return 'Yesterday';
-  if (diff < 7)  return `${diff} days ago`;
+  if (diff > 0 && diff < 7) return `${diff} days ago`;
+  if (diff < 0 && diff > -7) return `in ${-diff} days`;
   return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
 }
 

@@ -13,6 +13,40 @@
     .tab-bar { display:flex; gap:4px; border-bottom:1px solid var(--gray-200); margin-bottom:24px; }
     .tab-btn { padding:10px 16px; font-size:13px; font-weight:600; color:var(--gray-500); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
     .tab-btn.active { color:var(--blue); border-bottom-color:var(--blue); }
+
+    /* Mobile horizontal tab nav — sits between navbar and dash-layout */
+    .dash-mobile-nav {
+      display: none;
+      overflow-x: auto;
+      white-space: nowrap;
+      background: var(--gray-900);
+      padding: 0 8px;
+      scrollbar-width: none;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      position: sticky;
+      top: 60px; /* below navbar */
+      z-index: 50;
+    }
+    .dash-mobile-nav::-webkit-scrollbar { display:none; }
+    .dash-mobile-nav-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 11px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .dash-mobile-nav-item.active { color: #fff; border-bottom-color: var(--blue); }
+    .dash-mobile-nav-item:hover  { color: #fff; }
+    @media (max-width: 768px) {
+      .dash-mobile-nav { display: block; }
+      .dash-main { padding: 20px 16px 80px; }
+    }
     .tab-panel { display:none; }
     .tab-panel.active { display:block; }
 
@@ -25,12 +59,13 @@
     .modal-body { padding:24px; }
     .modal-footer { padding:16px 24px; border-top:1px solid var(--gray-200); display:flex; justify-content:flex-end; gap:8px; }
 
-    .job-row { display:flex; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--gray-100); flex-wrap:wrap; }
+    .job-row { display:flex; align-items:flex-start; gap:12px; padding:16px 0; border-bottom:1px solid var(--gray-100); flex-wrap:wrap; }
     .job-row:last-child { border-bottom:none; }
-    .job-row-info { flex:1; min-width:0; }
+    .job-row-info { flex:1; min-width:200px; }
     .job-row-title { font-size:14px; font-weight:700; color:var(--gray-900); }
-    .job-row-meta  { font-size:12px; color:var(--gray-500); margin-top:2px; }
-    .job-row-actions { display:flex; gap:6px; align-items:center; }
+    .job-row-meta  { font-size:12px; color:var(--gray-500); margin-top:4px; line-height:1.6; }
+    .job-row-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    @media(max-width:600px) { .job-row-actions { width:100%; } }
 
     .applicant-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius); padding:16px; margin-bottom:10px; }
     .applicant-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -116,6 +151,19 @@
         <p id="empSubtitle">Manage your jobs and candidates</p>
       </div>
       <button class="btn btn-primary" onclick="switchTab('post')">+ Post a Job</button>
+    </div>
+
+    <!-- Mobile tab nav (visible only on small screens, replaces sidebar) -->
+    <div class="dash-mobile-nav" id="dashMobileNav">
+      <span class="dash-mobile-nav-item active" data-tab="overview">📊 Overview</span>
+      <span class="dash-mobile-nav-item" data-tab="post">➕ Post Job</span>
+      <span class="dash-mobile-nav-item" data-tab="jobs">📋 My Jobs</span>
+      <span class="dash-mobile-nav-item" data-tab="applicants">👥 Applicants</span>
+      <span class="dash-mobile-nav-item" data-tab="messages">💬 Messages</span>
+      <span class="dash-mobile-nav-item" data-tab="workers">🔍 Workers</span>
+      <span class="dash-mobile-nav-item" data-tab="analytics">📈 Analytics</span>
+      <span class="dash-mobile-nav-item" data-tab="profile">🏢 Profile</span>
+      <span class="dash-mobile-nav-item" data-tab="settings">⚙️ Settings</span>
     </div>
 
     <!-- ── OVERVIEW TAB ── -->
@@ -406,18 +454,22 @@ document.addEventListener('DOMContentLoaded', () => {
   loadProfile();
 });
 
-// Tab switching
-document.querySelectorAll('.dash-sidebar-item').forEach(item => {
+// Tab switching — sidebar + mobile nav
+document.querySelectorAll('.dash-sidebar-item, .dash-mobile-nav-item').forEach(item => {
   item.addEventListener('click', () => switchTab(item.dataset.tab));
 });
 
 function switchTab(tab) {
   document.querySelectorAll('.dash-sidebar-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
+  document.querySelectorAll('.dash-mobile-nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
   if (tab === 'jobs')       loadMyJobs();
   if (tab === 'applicants') loadJobFilter();
   if (tab === 'messages')   empLoadInbox();
   if (tab === 'analytics')  loadAnalytics();
+  // Scroll mobile nav item into view
+  const mobileItem = document.querySelector(`.dash-mobile-nav-item[data-tab="${tab}"]`);
+  if (mobileItem) mobileItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 }
 
 async function deleteEmpAccount() {
@@ -474,7 +526,7 @@ function jobRow(j, withActions = false) {
   return `<div class="job-row">
     <div class="job-row-info">
       <div class="job-row-title">${escapeHtml(j.title)}${j.isFeatured?` <span class="badge badge-yellow" style="font-size:10px;">⭐ Featured</span>`:''}</div>
-      <div class="job-row-meta">${escapeHtml(j.city || j.location || '')} · ${j.jobType || ''} · ${apps} applicant${apps !== 1 ? 's' : ''} · Posted ${formatDate(j.postedAt)}${j.expiresAt ? ' · Expires '+formatDate(j.expiresAt) : ''}</div>
+      <div class="job-row-meta">${escapeHtml(j.city || j.location || '')} · ${j.jobType || ''} · ${apps} applicant${apps !== 1 ? 's' : ''} · Posted ${formatDate(j.postedAt)}${j.expiresAt ? ' · Expires ' + new Date(j.expiresAt).toLocaleDateString('en-CA',{month:'short',day:'numeric'}) : ''}</div>
     </div>
     <span class="badge ${j.isActive ? 'badge-green' : 'badge-gray'}">${j.isActive ? 'Active' : 'Closed'}</span>
     ${withActions ? `

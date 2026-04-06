@@ -102,43 +102,6 @@ router.put('/me', requireAuth, async (req, res) => {
   }
 });
 
-// ─── GET PUBLIC PROFILE (employer views candidate) ───
-// Returns limited data based on visibility settings
-router.get('/:userId', requireAuth, async (req, res) => {
-  try {
-    const profile = await prisma.profile.findUnique({
-      where: { userId: req.params.userId },
-      include: {
-        user: { select: { id: true, name: true, role: true } }
-      }
-    });
-
-    if (!profile) {
-      return res.status(404).json({ error: 'Profile not found' });
-    }
-
-    // Workers can only view their own profile; employers can view workers (if visible); admins see all
-    if (req.user.role === 'WORKER' && profile.user.id !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    if (req.user.role === 'EMPLOYER') {
-      if (!profile.visibleToEmployers) {
-        return res.status(403).json({ error: 'This candidate has restricted their profile visibility' });
-      }
-      // Strip phone from employer view
-      const { phone, email: _e, ...publicProfile } = profile;
-      return res.json({ profile: publicProfile });
-    }
-
-    res.json({ profile });
-
-  } catch (e) {
-    console.error('[profile/public]', e.message);
-    res.status(500).json({ error: 'Failed to fetch profile' });
-  }
-});
-
 // ─── RESUME VERSIONS ─────────────────────────
 router.get('/resumes', requireAuth, async (req, res) => {
   try {
@@ -188,6 +151,43 @@ router.get('/completeness', requireAuth, async (req, res) => {
     res.json({ score, missing });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── GET PUBLIC PROFILE (employer views candidate) ───
+// MUST be last — /:userId would shadow /resumes and /completeness otherwise
+router.get('/:userId', requireAuth, async (req, res) => {
+  try {
+    const profile = await prisma.profile.findUnique({
+      where: { userId: req.params.userId },
+      include: {
+        user: { select: { id: true, name: true, role: true } }
+      }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    // Workers can only view their own profile; employers can view workers (if visible); admins see all
+    if (req.user.role === 'WORKER' && profile.user.id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    if (req.user.role === 'EMPLOYER') {
+      if (!profile.visibleToEmployers) {
+        return res.status(403).json({ error: 'This candidate has restricted their profile visibility' });
+      }
+      // Strip phone from employer view
+      const { phone, email: _e, ...publicProfile } = profile;
+      return res.json({ profile: publicProfile });
+    }
+
+    res.json({ profile });
+
+  } catch (e) {
+    console.error('[profile/public]', e.message);
+    res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
 
