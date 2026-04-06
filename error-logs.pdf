@@ -1,0 +1,117 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1701 >>
+stream
+BT
+/F1 10 Tf
+1 0 0 1 40 752 Tm
+12 TL
+(=== npm run build ===) Tj
+T*
+(npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.) Tj
+T*
+() Tj
+T*
+(> constradehire@1.0.0 build) Tj
+T*
+(> prisma db push && prisma generate) Tj
+T*
+() Tj
+T*
+(Prisma schema loaded from prisma/schema.prisma) Tj
+T*
+(Datasource "db": PostgreSQL database) Tj
+T*
+() Tj
+T*
+(Error: Prisma schema validation - \(get-config wasm\)) Tj
+T*
+(Error code: P1012) Tj
+T*
+(error: Environment variable not found: DATABASE_URL.) Tj
+T*
+(  -->  prisma/schema.prisma:12) Tj
+T*
+(   | ) Tj
+T*
+(11 |   provider = "postgresql") Tj
+T*
+(12 |   url      = env\("DATABASE_URL"\)) Tj
+T*
+(   | ) Tj
+T*
+() Tj
+T*
+(Validation Error Count: 1) Tj
+T*
+([Context: getConfig]) Tj
+T*
+() Tj
+T*
+(Prisma CLI Version : 5.22.0) Tj
+T*
+() Tj
+T*
+(=== npm run lint ===) Tj
+T*
+(npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.) Tj
+T*
+(npm error Missing script: "lint") Tj
+T*
+(npm error) Tj
+T*
+(npm error Did you mean this?) Tj
+T*
+(npm error   npm link # Symlink a package folder) Tj
+T*
+(npm error) Tj
+T*
+(npm error To see a list of scripts, run:) Tj
+T*
+(npm error   npm run) Tj
+T*
+(npm error A complete log of this run can be found in: /root/.npm/_logs/2026-04-06T00_45_34_243Z-debug-0.log) Tj
+T*
+() Tj
+T*
+(=== npm test ===) Tj
+T*
+(npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.) Tj
+T*
+(npm error Missing script: "test") Tj
+T*
+(npm error) Tj
+T*
+(npm error To see a list of scripts, run:) Tj
+T*
+(npm error   npm run) Tj
+T*
+(npm error A complete log of this run can be found in: /root/.npm/_logs/2026-04-06T00_45_34_717Z-debug-0.log) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001994 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2064
+%%EOF
