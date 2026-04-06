@@ -366,15 +366,16 @@ function initJobsPage() {
   loadJobs(1);
 }
 
-function renderJobCard(job) {
+function renderJobCard(job, isSaved = false) {
   const score    = job.atsScore;
   const scoreHtml = score
     ? `<span class="ats-score-badge ${getScoreClass(score.score)}">${score.score}%</span>`
     : '';
+  const saveId = `save-${job.id}`;
 
   return `
-    <div class="job-card" onclick="window.location.href='/job.html?id=${job.id}'">
-      <div class="job-card-header">
+    <div class="job-card" id="jobcard-${job.id}">
+      <div class="job-card-header" onclick="window.location.href='/job.html?id=${job.id}'" style="cursor:pointer;">
         <div>
           <div class="job-title">${escapeHtml(job.title)}</div>
           <div class="job-company">${escapeHtml(job.companyName || job.employer?.profile?.companyName || job.employer?.name || 'Company')}</div>
@@ -390,9 +391,24 @@ function renderJobCard(job) {
       ${job.skills?.length ? `<div class="kw-tags">${job.skills.slice(0,4).map(s => `<span class="kw-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
       <div class="job-footer">
         <span class="job-date">${formatDate(job.postedAt)}</span>
-        <span class="btn btn-sm btn-primary">View Job</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${Auth.isLoggedIn() ? `<button id="${saveId}" onclick="toggleSaveJob('${job.id}', this)" style="background:none;border:1px solid var(--gray-200);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px;color:${isSaved ? 'var(--blue)' : 'var(--gray-500)'};" title="${isSaved ? 'Unsave' : 'Save job'}">${isSaved ? '🔖 Saved' : '🔖 Save'}</button>` : ''}
+          <span class="btn btn-sm btn-primary" onclick="window.location.href='/job.html?id=${job.id}'">View Job</span>
+        </div>
       </div>
     </div>`;
+}
+
+async function toggleSaveJob(jobId, btn) {
+  const isSaved = btn.textContent.includes('Saved');
+  btn.disabled = true;
+  const method = isSaved ? 'DELETE' : 'POST';
+  const { ok } = await apiCall(method, `/api/jobs/${jobId}/save`);
+  if (ok) {
+    btn.textContent = isSaved ? '🔖 Save' : '🔖 Saved';
+    btn.style.color = isSaved ? 'var(--gray-500)' : 'var(--blue)';
+  }
+  btn.disabled = false;
 }
 
 // ─── HOMEPAGE STATS ───────────────────────────

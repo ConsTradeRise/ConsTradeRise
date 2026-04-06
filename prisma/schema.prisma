@@ -39,27 +39,30 @@ enum ApplicationStatus {
 // ─────────────────────────────────────────────
 
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  passwordHash  String
-  role          Role     @default(WORKER)
-  emailVerified Boolean  @default(false)
-  isVerified    Boolean  @default(false)  // employer trust badge (admin-set)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                   String    @id @default(uuid())
+  name                 String
+  email                String    @unique
+  passwordHash         String
+  role                 Role      @default(WORKER)
+  emailVerified        Boolean   @default(false)
+  isVerified           Boolean   @default(false)  // employer trust badge (admin-set)
+  passwordResetToken   String?
+  passwordResetExpiry  DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   // Relations
-  profile       Profile?
-  resumes       Resume[]
-  postedJobs    Job[]          @relation("EmployerJobs")
-  applications  Application[]
-  sentMessages  Message[]      @relation("SentMessages")
-  receivedMessages Message[]   @relation("ReceivedMessages")
-  notifications Notification[]
-  atsResults    AtsResult[]
-  jobReports    JobReport[]
-  jobAlerts     JobAlert[]
+  profile          Profile?
+  resumes          Resume[]
+  postedJobs       Job[]          @relation("EmployerJobs")
+  applications     Application[]
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  notifications    Notification[]
+  atsResults       AtsResult[]
+  jobReports       JobReport[]
+  jobAlerts        JobAlert[]
+  savedJobs        SavedJob[]
 
   @@map("users")
 }
@@ -213,6 +216,7 @@ model Job {
   applications Application[]
   atsResults   AtsResult[]
   matches      Match[]
+  savedBy      SavedJob[]
 
   @@map("jobs")
 }
@@ -371,6 +375,22 @@ model JobReport {
 
   @@unique([jobId, userId]) // one report per user per job
   @@map("job_reports")
+}
+
+// ─────────────────────────────────────────────
+//  SAVED JOBS (bookmarks)
+// ─────────────────────────────────────────────
+
+model SavedJob {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  savedAt   DateTime @default(now())
+
+  @@unique([userId, jobId])
+  @@map("saved_jobs")
 }
 
 // ─────────────────────────────────────────────
