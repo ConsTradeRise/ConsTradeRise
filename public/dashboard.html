@@ -348,12 +348,15 @@
 
       <!-- Upload resume -->
       <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div class="card-title" style="margin:0;">Upload Resume</div>
-          <button class="btn btn-primary btn-sm" onclick="document.getElementById('resumeFile').click()">+ Upload New</button>
+        <div class="card-title" style="margin-bottom:12px;">Upload Resume</div>
+        <div id="resumeDropZone" onclick="document.getElementById('resumeFile').click()"
+          style="border:2px dashed var(--gray-200);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;">
+          <div style="font-size:32px;margin-bottom:8px;">📄</div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Drop your resume here</div>
+          <div style="font-size:13px;color:var(--gray-500);margin-bottom:12px;">or click to browse from your device</div>
+          <span class="btn btn-primary btn-sm" style="pointer-events:none;">Choose File</span>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:10px;">PDF or Word · max 4MB · text extracted · no AI</div>
         </div>
-        <p style="font-size:14px;color:var(--gray-500);margin-bottom:12px;">Upload a PDF or Word file — fields are extracted and your profile is updated automatically.</p>
-        <p class="form-hint">Accepted: PDF, Word (.docx) — max 4MB · Text extracted · No AI</p>
         <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" />
         <div id="resumeVersionsList" style="margin-top:16px;"></div>
       </div>
@@ -1181,45 +1184,66 @@ async function deleteItem(type, index) {
 // ── RESUME UPLOAD ──────────────────────────────
 let parsedResumeData = null;
 
-document.getElementById('resumeFile').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
+async function handleResumeFile(file) {
   if (!file) return;
+  const allowed = ['.pdf','.doc','.docx'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  if (!allowed.includes(ext)) {
+    openModal('Upload Failed');
+    document.getElementById('modalBody').innerHTML = `<div class="alert alert-error">Only PDF or Word (.docx) files are accepted.</div>`;
+    return;
+  }
+  if (file.size > 4 * 1024 * 1024) {
+    openModal('Upload Failed');
+    document.getElementById('modalBody').innerHTML = `<div class="alert alert-error">File too large. Maximum size is 4MB.</div>`;
+    return;
+  }
 
-  // Open modal with loading state
-  openModal('Parsing your resume...');
-
-  const formData = new FormData();
-  formData.append('resume', file);
+  openModal('Reading your resume…');
+  const fd = new FormData();
+  fd.append('resume', file);
 
   try {
     const token = Auth.getToken();
-    const res   = await fetch('/api/resume/upload', {
+    const res  = await fetch('/api/resume/upload', {
       method: 'POST',
       headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-      body: formData
+      body: fd
     });
     const data = await res.json();
-
     if (!res.ok) {
       document.getElementById('modalTitle').textContent = 'Upload Failed';
-      document.getElementById('modalBody').innerHTML = `
-        <div class="alert alert-error">${data.error || 'Failed to parse resume. Please try again.'}</div>`;
+      document.getElementById('modalBody').innerHTML = `<div class="alert alert-error">${escapeHtml(data.error || 'Failed to parse resume.')}</div>`;
       return;
     }
-
     parsedResumeData = data.parsed;
     showParsedModal(data.parsed, file.name, data.profileSaved);
-    // Refresh profile form fields if auto-saved
     if (data.profileSaved) loadProfile();
-
-  } catch (e) {
+  } catch {
     document.getElementById('modalTitle').textContent = 'Error';
     document.getElementById('modalBody').innerHTML = `<div class="alert alert-error">Network error. Please try again.</div>`;
   }
+}
 
-  // Reset file input so same file can be re-uploaded
+// File input change
+document.getElementById('resumeFile').addEventListener('change', (e) => {
+  handleResumeFile(e.target.files[0]);
   e.target.value = '';
 });
+
+// Drag-and-drop
+(function() {
+  const zone = document.getElementById('resumeDropZone');
+  const highlight = () => { zone.style.borderColor = 'var(--blue)'; zone.style.background = '#eff6ff'; };
+  const unhighlight = () => { zone.style.borderColor = 'var(--gray-200)'; zone.style.background = ''; };
+  zone.addEventListener('dragover',  (e) => { e.preventDefault(); highlight(); });
+  zone.addEventListener('dragleave', (e) => { if (!zone.contains(e.relatedTarget)) unhighlight(); });
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault(); unhighlight();
+    const file = e.dataTransfer.files[0];
+    if (file) handleResumeFile(file);
+  });
+})();
 
 function openModal(title) {
   document.getElementById('modalTitle').textContent = title;
