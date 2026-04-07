@@ -58,7 +58,7 @@ router.post('/', requireAuth, requireRole('WORKER'), async (req, res) => {
           type: 'new_application',
           title: 'New Application',
           body: `${req.user.name} applied for "${job.title}"`,
-          link: `/employer/jobs/${jobId}/applicants`
+          link: `/employer.html`
         }
       });
       if (employer) {
@@ -276,7 +276,7 @@ router.put('/:id/status', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (
         type: 'application_update',
         title: 'Application Update',
         body: `Your application for "${application.job.title}" has been ${status.toLowerCase()}`,
-        link: `/dashboard/applications`
+        link: `/dashboard.html`
       }
     });
 
