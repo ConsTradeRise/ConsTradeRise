@@ -5,1187 +5,980 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Employer Dashboard — ConsTradeHire</title>
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#f97316" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="ConsTradeHire" />
+  <meta name="theme-color" content="#2563eb" />
   <link rel="stylesheet" href="/style.css" />
   <style>
-    .tab-bar { display:flex; gap:4px; border-bottom:1px solid var(--gray-200); margin-bottom:24px; }
-    .tab-btn { padding:10px 16px; font-size:13px; font-weight:600; color:var(--gray-500); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
-    .tab-btn.active { color:var(--blue); border-bottom-color:var(--blue); }
+    :root { --sb: 220px; --sb-sm: 56px; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f8fafc; color: #0f172a; font-family: var(--font); }
 
-    /* Mobile horizontal tab nav — sits between navbar and dash-layout */
-    .dash-mobile-nav {
-      display: none;
-      overflow-x: auto;
-      white-space: nowrap;
-      background: var(--gray-900);
-      padding: 0 8px;
-      scrollbar-width: none;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      position: sticky;
-      top: 60px; /* below navbar */
-      z-index: 50;
+    /* Shell */
+    .shell { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sb {
+      width: var(--sb); flex-shrink: 0;
+      background: #fff; border-right: 1px solid #e2e8f0;
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 100;
+      transition: width .25s ease;
     }
-    .dash-mobile-nav::-webkit-scrollbar { display:none; }
-    .dash-mobile-nav-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 11px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #94a3b8;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all .15s;
-      white-space: nowrap;
+    .sb.mini { width: var(--sb-sm); }
+
+    .sb-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 14px 14px; font-weight: 800; font-size: 16px;
+      color: #0f172a; text-decoration: none; white-space: nowrap; overflow: hidden;
     }
-    .dash-mobile-nav-item.active { color: #fff; border-bottom-color: var(--blue); }
-    .dash-mobile-nav-item:hover  { color: #fff; }
-    @media (max-width: 768px) {
-      .dash-mobile-nav { display: block; }
-      .dash-main { padding: 20px 16px 80px; }
+    .sb-mark {
+      width: 30px; height: 30px; border-radius: 8px; background: #2563eb; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; flex-shrink: 0;
     }
-    .tab-panel { display:none; }
-    .tab-panel.active { display:block; }
+    .sb-brand-text { transition: opacity .2s, width .2s; }
+    .sb.mini .sb-brand-text { opacity: 0; width: 0; overflow: hidden; }
 
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:20px; }
-    .modal-overlay.open { display:flex; }
-    .modal { background:#fff; border-radius:var(--radius-lg); width:100%; box-shadow:var(--shadow-lg); max-height:90vh; overflow-y:auto; }
-    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid var(--gray-200); }
-    .modal-header h2 { font-size:18px; font-weight:700; margin:0; }
-    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--gray-400); line-height:1; }
-    .modal-body { padding:24px; }
-    .modal-footer { padding:16px 24px; border-top:1px solid var(--gray-200); display:flex; justify-content:flex-end; gap:8px; }
+    .sb-nav { flex: 1; padding: 4px 8px; display: flex; flex-direction: column; gap: 2px; }
 
-    .job-row { display:flex; align-items:flex-start; gap:12px; padding:16px 0; border-bottom:1px solid var(--gray-100); flex-wrap:wrap; }
-    .job-row:last-child { border-bottom:none; }
-    .job-row-info { flex:1; min-width:200px; }
-    .job-row-title { font-size:14px; font-weight:700; color:var(--gray-900); }
-    .job-row-meta  { font-size:12px; color:var(--gray-500); margin-top:4px; line-height:1.6; }
-    .job-row-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-    @media(max-width:600px) { .job-row-actions { width:100%; } }
+    .sb-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 10px; border-radius: 8px; cursor: pointer;
+      font-size: 13.5px; font-weight: 500; color: #64748b;
+      transition: background .15s, color .15s; white-space: nowrap; overflow: hidden;
+      position: relative;
+    }
+    .sb-item:hover { background: #f1f5f9; color: #0f172a; }
+    .sb-item.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
+    .sb-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+    .sb-label { transition: opacity .2s; }
+    .sb.mini .sb-label { opacity: 0; width: 0; overflow: hidden; }
+    .sb-badge {
+      margin-left: auto; background: #2563eb; color: #fff;
+      border-radius: 100px; font-size: 10px; font-weight: 700; padding: 1px 6px;
+    }
+    .sb.mini .sb-badge { display: none; }
 
-    .applicant-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius); padding:16px; margin-bottom:10px; }
-    .applicant-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-    .applicant-name { font-size:15px; font-weight:700; }
-    .applicant-meta { font-size:13px; color:var(--gray-500); }
-    .applicant-skills { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+    /* Tooltip for mini mode */
+    .sb.mini .sb-item:hover::after {
+      content: attr(data-label);
+      position: absolute; left: calc(var(--sb-sm) + 4px); top: 50%; transform: translateY(-50%);
+      background: #0f172a; color: #fff; border-radius: 6px;
+      padding: 5px 10px; font-size: 12px; font-weight: 600; white-space: nowrap;
+      pointer-events: none; z-index: 200;
+    }
 
-    .post-job-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-    @media(max-width:600px){ .post-job-grid{grid-template-columns:1fr;} }
-    .skills-input-wrap { display:flex; gap:8px; margin-bottom:10px; }
-    .skills-tags { display:flex; flex-wrap:wrap; gap:6px; }
-    .skill-tag { display:inline-flex; align-items:center; gap:6px; background:var(--blue-light); color:var(--blue); border:1px solid #bfdbfe; font-size:12px; font-weight:600; padding:4px 10px; border-radius:100px; }
-    .skill-tag button { background:none; border:none; cursor:pointer; color:var(--blue); font-size:14px; line-height:1; padding:0; }
+    .sb-foot {
+      padding: 12px 8px; border-top: 1px solid #e2e8f0;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .sb-collapse {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 10px; border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 500; color: #94a3b8;
+      background: none; border: none; width: 100%; text-align: left;
+      transition: background .15s;
+    }
+    .sb-collapse:hover { background: #f1f5f9; color: #64748b; }
+    .sb-collapse-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; transition: transform .25s; }
+    .sb.mini .sb-collapse-icon { transform: rotate(180deg); }
+    .sb-collapse-label { transition: opacity .2s; }
+    .sb.mini .sb-collapse-label { opacity: 0; width: 0; overflow: hidden; }
+    .sb-user { padding: 4px 10px; font-size: 12px; color: #94a3b8; overflow: hidden; }
+    .sb.mini .sb-user { opacity: 0; }
 
-    .status-select { font-size:12px; padding:4px 8px; border:1px solid var(--gray-200); border-radius:var(--radius); background:#fff; cursor:pointer; }
-    .kanban-board { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; align-items:start; }
-    @media(max-width:900px){ .kanban-board{grid-template-columns:repeat(2,1fr);} }
-    @media(max-width:500px){ .kanban-board{grid-template-columns:1fr;} }
-    .kanban-col { background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:12px; }
-    .kanban-col-header { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
-    .kanban-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius); padding:12px; margin-bottom:8px; font-size:13px; }
-    .kanban-card:last-child { margin-bottom:0; }
-    .view-toggle { display:flex; gap:6px; }
-    .view-btn { padding:4px 12px; border:1px solid var(--gray-200); border-radius:var(--radius); font-size:12px; font-weight:600; cursor:pointer; background:#fff; color:var(--gray-500); }
-    .view-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
-    .bulk-bar { display:none; padding:10px 0; border-bottom:1px solid var(--gray-200); margin-bottom:12px; align-items:center; gap:10px; flex-wrap:wrap; }
-    .bulk-bar.visible { display:flex; }
-    .cb-applicant { margin-right:8px; cursor:pointer; width:14px; height:14px; }
+    /* Main */
+    .main { margin-left: var(--sb); flex: 1; padding: 32px 36px 60px; min-width: 0; transition: margin-left .25s ease; }
+    .main.mini-offset { margin-left: var(--sb-sm); }
+
+    /* Header */
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+    .page-head h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
+    .page-head p  { font-size: 13px; color: #64748b; margin: 0; }
+
+    /* Primary button */
+    .btn-post {
+      background: #2563eb; color: #fff; border: none; border-radius: 8px;
+      padding: 10px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+      transition: background .2s, transform .15s; white-space: nowrap;
+    }
+    .btn-post:hover { background: #1d4ed8; }
+    .btn-post:active { transform: scale(.97); }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+    .stat {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .stat:hover { transform: translateY(-2px); box-shadow: 0 6px 20px -8px rgba(0,0,0,.12); }
+    .stat-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+    .stat-num   { font-size: 28px; font-weight: 700; margin-top: 6px; line-height: 1; }
+
+    /* Section */
+    .section { margin-bottom: 28px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
+    .section-title { font-size: 15px; font-weight: 700; margin: 0; }
+    .section-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* List */
+    .list { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px; border-bottom: 1px solid #f1f5f9;
+      transition: background .15s; animation: fadeUp .25s ease;
+    }
+    .row:last-child { border-bottom: none; }
+    .row:hover { background: #fafbfc; }
+    .row-main { flex: 1; min-width: 0; }
+    .row-title { font-size: 13.5px; font-weight: 600; margin: 0 0 3px; }
+    .row-meta  { font-size: 12px; color: #64748b; }
+    .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+    .b-open        { background: #dcfce7; color: #15803d; }
+    .b-closed      { background: #f1f5f9; color: #64748b; }
+    .b-applied     { background: #dbeafe; color: #1d4ed8; }
+    .b-viewed      { background: #fef3c7; color: #b45309; }
+    .b-shortlisted { background: #dcfce7; color: #15803d; }
+    .b-rejected    { background: #fee2e2; color: #b91c1c; }
+    .b-interview   { background: #f3e8ff; color: #7c3aed; }
+
+    /* Buttons */
+    .btn {
+      background: #fff; color: #374151; border: 1px solid #e2e8f0; border-radius: 7px;
+      padding: 6px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+      transition: background .15s, transform .12s; white-space: nowrap;
+    }
+    .btn:hover { background: #f1f5f9; }
+    .btn:active { transform: scale(.96); }
+    .btn-sm { padding: 4px 9px; font-size: 12px; }
+    .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-danger { color: #b91c1c; border-color: #fecaca; }
+    .btn-danger:hover { background: #fef2f2; }
+    .btn-ghost { background: none; border-color: transparent; color: #64748b; }
+    .btn-ghost:hover { background: #f1f5f9; color: #374151; }
+
+    /* Filter */
+    .filter {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 7px;
+      padding: 6px 10px; font-size: 12.5px; color: #374151; cursor: pointer;
+    }
+    .filter:focus { outline: none; border-color: #2563eb; }
+
+    /* Empty */
+    .empty { padding: 48px 24px; text-align: center; color: #94a3b8; }
+    .empty-icon { font-size: 36px; margin-bottom: 10px; opacity: .5; }
+    .empty p { font-size: 13px; margin: 0 0 14px; }
+
+    /* Skeleton */
+    .skel { padding: 14px 18px; border-bottom: 1px solid #f1f5f9; }
+    .skel-bar {
+      height: 13px; border-radius: 4px;
+      background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
+      background-size: 200% 100%; animation: shimmer 1.4s infinite;
+    }
+    .skel-bar.s { width: 45%; margin-top: 7px; height: 11px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* Error */
+    .err-box { padding: 20px; text-align: center; }
+    .err-box p { color: #b91c1c; font-size: 13px; margin: 0 0 10px; }
+
+    /* Modal */
+    .modal-bg {
+      display: none; position: fixed; inset: 0; background: rgba(15,23,42,.5);
+      z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-bg.open { display: flex; animation: fadeIn .2s ease; }
+    @keyframes fadeIn { from{opacity:0}to{opacity:1} }
+    .modal {
+      background: #fff; border-radius: 12px; width: 100%; max-width: 540px;
+      max-height: 90vh; overflow-y: auto; animation: fadeUp .25s ease;
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
+    .modal-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #94a3b8; line-height: 1; padding: 2px 6px; }
+    .modal-body { padding: 20px; }
+    .modal-foot { padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px; }
+
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 5px; }
+    .input, .textarea, .select {
+      width: 100%; padding: 9px 11px; border: 1px solid #e2e8f0; border-radius: 7px;
+      font-size: 13.5px; font-family: inherit; color: #0f172a; background: #fff;
+    }
+    .input:focus, .textarea:focus, .select:focus { outline: none; border-color: #2563eb; }
+    .textarea { min-height: 100px; resize: vertical; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Messages */
+    .chat-shell { display: grid; grid-template-columns: 240px 1fr; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #fff; height: 520px; }
+    .chat-list { border-right: 1px solid #e2e8f0; overflow-y: auto; }
+    .conv { display: flex; align-items: center; gap: 10px; padding: 11px 13px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background .15s; }
+    .conv:hover { background: #f8fafc; }
+    .conv.active { background: #eff6ff; }
+    .conv-av { width: 34px; height: 34px; border-radius: 50%; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .conv-name { font-size: 13px; font-weight: 600; }
+    .conv-last { font-size: 11px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-pane { display: flex; flex-direction: column; min-width: 0; }
+    .chat-head { padding: 13px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 13.5px; }
+    .chat-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 7px; background: #f8fafc; }
+    .msg { max-width: 72%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+    .msg.mine { background: #2563eb; color: #fff; align-self: flex-end; border-radius: 12px 12px 2px 12px; }
+    .msg.them { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; align-self: flex-start; border-radius: 12px 12px 12px 2px; }
+    .chat-input { padding: 10px 14px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; }
+
+    /* Workers */
+    .worker-filters { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 16px; }
+
+    /* Animations */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none} }
+
+    /* View */
+    .view { display: none; animation: fadeUp .28s ease; }
+    .view.active { display: block; }
+
+    /* Mobile */
+    @media(max-width:900px) {
+      .sb { width: var(--sb-sm); }
+      .sb .sb-label, .sb .sb-brand-text, .sb .sb-collapse-label, .sb .sb-badge { opacity: 0; width: 0; overflow: hidden; }
+      .main { margin-left: var(--sb-sm); padding: 20px 16px 60px; }
+      .main.mini-offset { margin-left: var(--sb-sm); }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .grid2 { grid-template-columns: 1fr; }
+      .chat-shell { grid-template-columns: 1fr; height: auto; }
+      .chat-list { max-height: 180px; border-right: none; border-bottom: 1px solid #e2e8f0; }
+      .chat-pane { min-height: 360px; }
+      .page-head { flex-direction: column; align-items: stretch; }
+      .worker-filters { grid-template-columns: 1fr 1fr; }
+    }
+    @media(max-width:500px) {
+      .stats { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="container nav-inner">
-    <a href="/" class="logo">ConsTradeHire</a>
-    <div class="nav-links" id="navLinks">
-      <span id="empNameDisplay" style="font-size:13px;color:var(--gray-500);"></span>
-      <a href="#" id="navLogoutBtn" class="btn btn-ghost">Logout</a>
-    </div>
-  </div>
-</nav>
-
-<div class="dash-layout">
-
+<div class="shell">
   <!-- Sidebar -->
-  <aside class="dash-sidebar">
-    <div class="dash-sidebar-item active" data-tab="overview">
-      <span class="dash-sidebar-icon">📊</span> Overview
-    </div>
-    <div class="dash-sidebar-item" data-tab="post">
-      <span class="dash-sidebar-icon">➕</span> Post a Job
-    </div>
-    <div class="dash-sidebar-item" data-tab="jobs">
-      <span class="dash-sidebar-icon">📋</span> My Jobs
-    </div>
-    <div class="dash-sidebar-item" data-tab="applicants">
-      <span class="dash-sidebar-icon">👥</span> Applicants
-    </div>
-    <div class="dash-sidebar-item" data-tab="messages">
-      <span class="dash-sidebar-icon">💬</span> Messages
-      <span id="empMsgBadge" style="display:none;background:var(--blue);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
-    </div>
-    <div class="dash-sidebar-item" data-tab="workers">
-      <span class="dash-sidebar-icon">🔍</span> Find Workers
-    </div>
-    <div class="dash-sidebar-item" data-tab="analytics">
-      <span class="dash-sidebar-icon">📈</span> Analytics
-    </div>
-    <div class="dash-sidebar-item" data-tab="profile">
-      <span class="dash-sidebar-icon">🏢</span> Company Profile
-    </div>
-    <div class="dash-sidebar-item" data-tab="settings">
-      <span class="dash-sidebar-icon">⚙️</span> Settings
+  <aside class="sb" id="sb">
+    <a href="/" class="sb-brand">
+      <div class="sb-mark">C</div>
+      <span class="sb-brand-text">ConsTradeHire</span>
+    </a>
+
+    <nav class="sb-nav">
+      <div class="sb-item active" data-view="overview" data-label="Overview">
+        <span class="sb-icon">⬛</span><span class="sb-label">Overview</span>
+      </div>
+      <div class="sb-item" data-view="jobs" data-label="My Jobs">
+        <span class="sb-icon">📋</span><span class="sb-label">My Jobs</span>
+      </div>
+      <div class="sb-item" data-view="candidates" data-label="Candidates">
+        <span class="sb-icon">👥</span><span class="sb-label">Candidates</span>
+      </div>
+      <div class="sb-item" data-view="workers" data-label="Find Workers">
+        <span class="sb-icon">🔍</span><span class="sb-label">Find Workers</span>
+      </div>
+      <div class="sb-item" data-view="messages" data-label="Messages">
+        <span class="sb-icon">💬</span><span class="sb-label">Messages</span>
+        <span class="sb-badge" id="msgBadge" style="display:none;"></span>
+      </div>
+      <div class="sb-item" data-view="settings" data-label="Settings">
+        <span class="sb-icon">⚙</span><span class="sb-label">Settings</span>
+      </div>
+    </nav>
+
+    <div class="sb-foot">
+      <button class="sb-collapse" id="collapseBtn">
+        <span class="sb-collapse-icon">◀</span>
+        <span class="sb-collapse-label">Collapse</span>
+      </button>
+      <div class="sb-user" id="sbUser"></div>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn" style="width:100%;justify-content:flex-start;">Logout</button>
     </div>
   </aside>
 
   <!-- Main -->
-  <main class="dash-main">
+  <main class="main" id="main">
 
-    <div class="dash-header">
-      <div>
-        <h1 id="empWelcome">Employer Dashboard</h1>
-        <p id="empSubtitle">Manage your jobs and candidates</p>
-      </div>
-      <button class="btn btn-primary" onclick="switchTab('post')">+ Post a Job</button>
-    </div>
-
-    <!-- Mobile tab nav (visible only on small screens, replaces sidebar) -->
-    <div class="dash-mobile-nav" id="dashMobileNav">
-      <span class="dash-mobile-nav-item active" data-tab="overview">📊 Overview</span>
-      <span class="dash-mobile-nav-item" data-tab="post">➕ Post Job</span>
-      <span class="dash-mobile-nav-item" data-tab="jobs">📋 My Jobs</span>
-      <span class="dash-mobile-nav-item" data-tab="applicants">👥 Applicants</span>
-      <span class="dash-mobile-nav-item" data-tab="messages">💬 Messages</span>
-      <span class="dash-mobile-nav-item" data-tab="workers">🔍 Workers</span>
-      <span class="dash-mobile-nav-item" data-tab="analytics">📈 Analytics</span>
-      <span class="dash-mobile-nav-item" data-tab="profile">🏢 Profile</span>
-      <span class="dash-mobile-nav-item" data-tab="settings">⚙️ Settings</span>
-    </div>
-
-    <!-- ── OVERVIEW TAB ── -->
-    <div class="tab-panel active" id="tab-overview">
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-card-num" id="statJobs">—</div>
-          <div class="stat-card-label">Active Jobs</div>
+    <!-- ── OVERVIEW ── -->
+    <div class="view active" id="view-overview">
+      <div class="page-head">
+        <div>
+          <h1 id="welcomeHead">Dashboard</h1>
+          <p id="welcomeSub">Manage your jobs and candidates</p>
         </div>
-        <div class="stat-card">
-          <div class="stat-card-num" id="statApplicants">—</div>
-          <div class="stat-card-label">Total Applicants</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-card-num" id="statShortlisted">—</div>
-          <div class="stat-card-label">Shortlisted</div>
-        </div>
+        <button class="btn-post" onclick="openPostJob()">+ Post Job</button>
       </div>
 
-      <div class="card">
-        <div class="flex-between mb-2">
-          <div class="card-title" style="margin-bottom:0;">Active Job Listings</div>
-          <button class="btn btn-ghost btn-sm" onclick="switchTab('jobs')">Manage All</button>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Open Jobs</div><div class="stat-num" id="statJobs">—</div></div>
+        <div class="stat"><div class="stat-label">Total Applicants</div><div class="stat-num" id="statApps">—</div></div>
+        <div class="stat"><div class="stat-label">Shortlisted</div><div class="stat-num" id="statShort">—</div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h2 class="section-title">Active Jobs</h2>
+          <button class="btn btn-ghost btn-sm" onclick="setView('jobs')">View all →</button>
         </div>
-        <div id="overviewJobs">
-          <div style="text-align:center;padding:20px"><div class="spinner"></div></div>
+        <div class="list" id="overviewJobsList"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h2 class="section-title">Recent Applicants</h2>
+          <button class="btn btn-ghost btn-sm" onclick="setView('candidates')">View all →</button>
         </div>
+        <div class="list" id="overviewAppsList"></div>
       </div>
     </div>
 
-    <!-- ── POST JOB TAB ── -->
-    <div class="tab-panel" id="tab-post">
-      <div class="card">
-        <div class="card-title">Post a New Job</div>
-        <div id="postJobSuccess" class="alert alert-success hidden">Job posted successfully! <a href="#" onclick="switchTab('jobs')">View your jobs →</a></div>
-        <div id="postJobError" class="alert alert-error hidden"></div>
-        <form id="postJobForm">
-          <div class="post-job-grid">
-            <div class="form-group">
-              <label class="form-label">Job Title *</label>
-              <input class="form-input" id="jobTitle" type="text" placeholder="e.g. Senior Estimator" required />
+    <!-- ── JOBS ── -->
+    <div class="view" id="view-jobs">
+      <div class="page-head">
+        <div>
+          <h1>My Jobs</h1>
+          <p id="jobsCountLabel">0 jobs</p>
+        </div>
+        <button class="btn-post" onclick="openPostJob()">+ Post Job</button>
+      </div>
+      <div class="section">
+        <div class="section-head">
+          <span></span>
+          <select class="filter" id="jobFilter" onchange="renderJobs()">
+            <option value="all">All</option>
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div class="list" id="jobsList"></div>
+      </div>
+    </div>
+
+    <!-- ── CANDIDATES ── -->
+    <div class="view" id="view-candidates">
+      <div class="page-head">
+        <div>
+          <h1>Candidates</h1>
+          <p id="candCountLabel">0 applicants</p>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head">
+          <span></span>
+          <div class="section-tools">
+            <select class="filter" id="candJobSel" onchange="renderCandidates()">
+              <option value="all">All jobs</option>
+            </select>
+            <input class="filter" id="candSearch" placeholder="Search name…" oninput="renderCandidates()" style="min-width:140px;" />
+          </div>
+        </div>
+        <div class="list" id="candidatesList"></div>
+      </div>
+    </div>
+
+    <!-- ── FIND WORKERS ── -->
+    <div class="view" id="view-workers">
+      <div class="page-head">
+        <div>
+          <h1>Find Workers</h1>
+          <p>Workers who opted to share their profile, matched to your posting</p>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head">
+          <h2 class="section-title" style="margin:0;">Search by job posting</h2>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:16px;">
+          <div class="worker-filters">
+            <div class="field" style="margin:0;">
+              <label>Job Posting</label>
+              <select class="select" id="workerJobSel"></select>
             </div>
-            <div class="form-group">
-              <label class="form-label">Job Type</label>
-              <select class="form-select" id="jobType">
-                <option>Full-time</option>
-                <option>Contract</option>
-                <option>Part-time</option>
-                <option>Seasonal</option>
+            <div class="field" style="margin:0;">
+              <label>Availability</label>
+              <select class="select" id="workerAvail">
+                <option value="">Any</option>
+                <option>Full-time</option><option>Part-time</option>
+                <option>Contract</option><option>Immediate</option>
               </select>
             </div>
-            <div class="form-group">
-              <label class="form-label">City *</label>
-              <input class="form-input" id="jobCity" type="text" placeholder="e.g. Toronto" required />
+            <button class="btn-post" onclick="searchWorkers()">Search</button>
+          </div>
+          <p style="font-size:11.5px;color:#94a3b8;margin:10px 0 0;">Only workers who opted to share their profile are shown. Max 10 per search. No private contact info is displayed.</p>
+        </div>
+        <div class="list" id="workersList">
+          <div class="empty"><div class="empty-icon">🔍</div><p>Select a job posting above and search to find matched workers</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MESSAGES ── -->
+    <div class="view" id="view-messages">
+      <div class="page-head">
+        <div><h1>Messages</h1><p>Chat with candidates directly</p></div>
+      </div>
+      <div class="chat-shell">
+        <div class="chat-list" id="convList">
+          <div class="empty" style="padding:30px;"><p>No conversations yet</p></div>
+        </div>
+        <div class="chat-pane" id="chatPane">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;" id="chatEmpty">
+            <div style="text-align:center;"><div style="font-size:32px;margin-bottom:8px;">💬</div>Select a conversation</div>
+          </div>
+          <div id="chatActive" style="display:none;flex-direction:column;height:100%;">
+            <div class="chat-head" id="chatHead"></div>
+            <div class="chat-body" id="chatBody"></div>
+            <div class="chat-input">
+              <input class="input" id="msgInput" placeholder="Type a message…" />
+              <button class="btn btn-primary" onclick="sendMsg()">Send</button>
             </div>
-            <div class="form-group">
-              <label class="form-label">Province</label>
-              <select class="form-select" id="jobProvince">
-                <option value="">Select province</option>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="view" id="view-settings">
+      <div class="page-head">
+        <div><h1>Settings</h1><p>Company profile and account</p></div>
+      </div>
+
+      <div class="section" style="max-width:580px;">
+        <h2 class="section-title" style="margin-bottom:12px;">Company Profile</h2>
+        <form id="companyForm" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;">
+          <div class="grid2">
+            <div class="field"><label>Company Name</label><input class="input" id="companyName" /></div>
+            <div class="field"><label>Industry</label><input class="input" id="companyIndustry" /></div>
+            <div class="field"><label>City</label><input class="input" id="companyCity" /></div>
+            <div class="field"><label>Province</label>
+              <select class="select" id="companyProvince">
+                <option value="">Select</option>
                 <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
                 <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
                 <option>Nova Scotia</option><option>New Brunswick</option>
               </select>
             </div>
-            <div class="form-group">
-              <label class="form-label">Salary Range</label>
-              <input class="form-input" id="jobSalary" type="text" placeholder="e.g. $80,000–$100,000/yr" />
-            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Job Description *</label>
-            <textarea class="form-textarea" id="jobDesc" style="min-height:160px;" placeholder="Describe the role, responsibilities, and requirements..." required></textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Required Skills</label>
-            <div class="skills-input-wrap">
-              <input class="form-input" id="jobSkillInput" type="text" placeholder="e.g. HeavyBid, AutoCAD..." />
-              <button type="button" class="btn btn-outline" id="addJobSkillBtn">Add</button>
-            </div>
-            <div class="skills-tags" id="jobSkillsTags"></div>
-            <p class="form-hint">Skills help AI match the best candidates to your job</p>
-          </div>
-          <button type="submit" class="btn btn-primary">Post Job</button>
-        </form>
-      </div>
-    </div>
-
-    <!-- ── MY JOBS TAB ── -->
-    <div class="tab-panel" id="tab-jobs">
-      <div class="card">
-        <div class="card-title">My Job Listings</div>
-        <div id="myJobsList">
-          <div style="text-align:center;padding:20px"><div class="spinner"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── APPLICANTS TAB ── -->
-    <div class="tab-panel" id="tab-applicants">
-      <div class="card">
-        <div class="flex-between mb-2">
-          <div class="card-title" style="margin-bottom:0">Applicants</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <select class="form-select" id="jobFilter" style="width:auto;font-size:13px;">
-              <option value="">Select a job</option>
-            </select>
-            <div class="view-toggle">
-              <button class="view-btn active" id="btnListView" onclick="setApplicantView('list')">☰ List</button>
-              <button class="view-btn" id="btnBoardView" onclick="setApplicantView('board')">⊞ Board</button>
-            </div>
-          </div>
-        </div>
-        <!-- Bulk action bar -->
-        <div class="bulk-bar" id="bulkBar">
-          <span id="bulkCount" style="font-size:13px;font-weight:600;color:var(--gray-700);"></span>
-          <select id="bulkStatus" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:var(--radius);background:#fff;">
-            <option value="">Move to status…</option>
-            <option value="VIEWED">Viewed</option>
-            <option value="SHORTLISTED">Shortlisted</option>
-            <option value="REJECTED">Rejected</option>
-          </select>
-          <button onclick="applyBulkStatus()" class="btn btn-sm btn-primary">Apply</button>
-          <button onclick="clearBulkSelect()" class="btn btn-sm btn-ghost">Clear</button>
-        </div>
-        <p class="text-sm text-gray mb-2">Candidates ranked by AI match score.</p>
-        <div id="applicantsList">
-          <div class="empty-state">
-            <div class="empty-state-icon">👥</div>
-            <h3>Select a job above</h3>
-            <p>Choose one of your jobs to see applicants</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── MESSAGES TAB ── -->
-    <div class="tab-panel" id="tab-messages">
-      <div class="card" style="padding:0;overflow:hidden;">
-        <div style="display:grid;grid-template-columns:260px 1fr;height:500px;">
-          <div style="border-right:1px solid var(--gray-200);display:flex;flex-direction:column;">
-            <div style="padding:14px 16px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:14px;">Conversations</div>
-            <div id="empConvList" style="flex:1;overflow-y:auto;">
-              <div style="padding:20px;text-align:center;"><div class="spinner"></div></div>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;">
-            <div id="empChatEmpty" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:14px;text-align:center;padding:20px;">
-              <div><div style="font-size:36px;margin-bottom:8px;">💬</div>Select a conversation</div>
-            </div>
-            <div id="empChatArea" style="display:none;flex-direction:column;flex:1;">
-              <div style="padding:12px 16px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:14px;" id="empChatHeader"></div>
-              <div id="empChatBody" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--gray-50);"></div>
-              <div style="padding:12px 16px;border-top:1px solid var(--gray-200);display:flex;gap:8px;">
-                <input class="form-input" id="empMsgInput" placeholder="Type a message..." style="flex:1;" />
-                <button class="btn btn-primary btn-sm" onclick="empSendMsg()">Send</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── FIND WORKERS TAB ── -->
-    <div class="tab-panel" id="tab-workers">
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-title" style="margin-bottom:12px;">Find Workers</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap;">
-          <div>
-            <label class="form-label">Keywords / Title</label>
-            <input class="form-input" id="workerSearch" placeholder="e.g. estimator, carpenter" />
-          </div>
-          <div>
-            <label class="form-label">Province</label>
-            <select class="form-input" id="workerProvince">
-              <option value="">Any Province</option>
-              <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
-              <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
-              <option>Nova Scotia</option><option>New Brunswick</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Availability</label>
-            <select class="form-input" id="workerAvail">
-              <option value="">Any</option>
-              <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Immediate</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" onclick="searchWorkers()">Search</button>
-        </div>
-      </div>
-      <div id="workersList"><div class="empty-state" style="padding:40px;"><p>Search above to find available workers.</p></div></div>
-    </div>
-
-    <!-- ── ANALYTICS TAB ── -->
-    <div class="tab-panel" id="tab-analytics">
-      <div id="analyticsWrap"><div style="text-align:center;padding:40px;"><div class="spinner"></div></div></div>
-    </div>
-
-    <!-- ── SETTINGS TAB ── -->
-    <div class="tab-panel" id="tab-settings">
-      <div class="card" style="max-width:600px;">
-        <div class="card-title">Account Settings</div>
-        <div style="margin-bottom:24px;">
-          <div style="font-size:14px;font-weight:600;color:var(--gray-900);margin-bottom:4px;">Email Notifications</div>
-          <p style="font-size:13px;color:var(--gray-500);margin-bottom:10px;">You currently receive email alerts for new applications and messages.</p>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-            <input type="checkbox" id="notifNewApp" checked style="width:16px;height:16px;" />
-            Notify me when someone applies to my job
-          </label>
-        </div>
-        <hr style="border:none;border-top:1px solid var(--gray-200);margin:20px 0;" />
-        <div>
-          <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:4px;">Delete Account</div>
-          <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px;">Permanently delete your employer account, all job postings, and applicant data. This cannot be undone (PIPEDA right to erasure).</p>
-          <button class="btn btn-sm" style="background:#fef2f2;color:var(--red);border:1px solid #fecaca;" onclick="deleteEmpAccount()">Delete My Account</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── COMPANY PROFILE TAB ── -->
-    <div class="tab-panel" id="tab-profile">
-      <div class="card">
-        <div class="card-title">Company Profile</div>
-        <div id="profileSaved" class="alert alert-success hidden">Profile saved!</div>
-        <form id="companyForm">
-          <div class="post-job-grid">
-            <div class="form-group">
-              <label class="form-label">Company Name</label>
-              <input class="form-input" id="companyName" type="text" placeholder="Your company name" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Industry</label>
-              <input class="form-input" id="companyIndustry" type="text" placeholder="e.g. ICI Construction" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Company Size</label>
-              <select class="form-select" id="companySize">
-                <option value="">Select size</option>
-                <option>1–10</option><option>11–50</option><option>51–200</option>
-                <option>201–500</option><option>500+</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Website</label>
-              <input class="form-input" id="companyWebsite" type="url" placeholder="https://yourcompany.ca" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">City</label>
-              <input class="form-input" id="companyCity" type="text" placeholder="e.g. Toronto" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Province</label>
-              <select class="form-select" id="companyProvince">
-                <option value="">Select province</option>
-                <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
-                <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
-              </select>
-            </div>
-          </div>
+          <div class="field"><label>Website</label><input class="input" id="companyWebsite" type="url" placeholder="https://" /></div>
           <button type="submit" class="btn btn-primary">Save Profile</button>
         </form>
+      </div>
+
+      <div class="section" style="max-width:580px;">
+        <h2 class="section-title" style="margin-bottom:12px;color:#b91c1c;">Danger Zone</h2>
+        <div style="background:#fff;border:1px solid #fecaca;border-radius:10px;padding:20px;">
+          <p style="margin:0 0 12px;font-size:13px;color:#64748b;">Permanently delete your account and all data. Cannot be undone.</p>
+          <button class="btn btn-danger" onclick="deleteAccount()">Delete Account</button>
+        </div>
       </div>
     </div>
 
   </main>
 </div>
 
+<!-- Post Job Modal -->
+<div class="modal-bg" id="postJobModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Post a New Job</h2>
+      <button class="modal-close" onclick="closePostJob()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="postJobErr" style="display:none;background:#fef2f2;color:#b91c1c;padding:9px 13px;border-radius:7px;font-size:13px;margin-bottom:10px;"></div>
+      <div class="grid2">
+        <div class="field"><label>Job Title *</label><input class="input" id="jTitle" required placeholder="e.g. Senior Estimator" /></div>
+        <div class="field"><label>Job Type</label>
+          <select class="select" id="jType">
+            <option>Full-time</option><option>Contract</option><option>Part-time</option><option>Seasonal</option>
+          </select>
+        </div>
+        <div class="field"><label>City *</label><input class="input" id="jCity" required placeholder="e.g. Toronto" /></div>
+        <div class="field"><label>Province</label>
+          <select class="select" id="jProv">
+            <option value="">Select</option>
+            <option>Ontario</option><option>British Columbia</option><option>Alberta</option>
+            <option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option>
+            <option>Nova Scotia</option><option>New Brunswick</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Salary / Rate</label><input class="input" id="jSalary" placeholder="e.g. $80k–$100k/yr" /></div>
+      <div class="field"><label>Description *</label><textarea class="textarea" id="jDesc" required placeholder="Role, responsibilities, requirements…"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closePostJob()">Cancel</button>
+      <button class="btn btn-primary" id="postJobBtn" onclick="submitPostJob()">Post Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- Interview Modal -->
+<div class="modal-bg" id="interviewModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Schedule Interview — <span id="ivName"></span></h2>
+      <button class="modal-close" onclick="closeInterview()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="ivErr" style="display:none;background:#fef2f2;color:#b91c1c;padding:9px 13px;border-radius:7px;font-size:13px;margin-bottom:10px;"></div>
+      <p style="font-size:12.5px;color:#64748b;margin:0 0 14px;">Provide your meeting link and proposed time. The candidate will receive an invitation with this link.</p>
+      <div class="field"><label>Meeting Link *</label><input class="input" id="ivLink" type="url" placeholder="https://zoom.us/j/... or Teams / Meet link" /></div>
+      <div class="field"><label>Proposed Date &amp; Time *</label><input class="input" id="ivDate" type="datetime-local" /></div>
+      <div class="field"><label>Location / Format</label><input class="input" id="ivLocation" placeholder="e.g. Zoom, Phone Call, 123 Main St Toronto" /></div>
+      <div class="field"><label>Notes to Candidate</label><textarea class="textarea" id="ivNotes" rows="3" placeholder="Any instructions or preparation notes…"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeInterview()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitInterview()">Send Invitation</button>
+    </div>
+  </div>
+</div>
+
 <script src="/app.js"></script>
 <script>
-let myJobs    = [];
-let jobSkills = [];
+// ── State ──────────────────────────────────────
+const S = { jobs: [], apps: [], loaded: false };
+let _ivAppId = null;
+let _activeConv = null;
+let _msgPoll = null;
 
+// ── Boot ──────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   if (Auth.redirectIfNotAuth()) return;
   const user = Auth.getUser();
   if (user?.role !== 'EMPLOYER' && user?.role !== 'ADMIN') {
     window.location.href = '/dashboard.html'; return;
   }
+  document.getElementById('welcomeHead').textContent = `Welcome, ${user?.name?.split(' ')[0] || 'there'}`;
+  document.getElementById('sbUser').textContent = user?.name || '';
+  document.getElementById('logoutBtn').onclick = () => { Auth.clear(); window.location.href = '/'; };
 
-  document.getElementById('empWelcome').textContent  = `Welcome, ${user?.name?.split(' ')[0] || 'there'}`;
-  document.getElementById('empNameDisplay').textContent = user?.name || '';
+  // Sidebar collapse
+  document.getElementById('collapseBtn').onclick = () => {
+    const sb = document.getElementById('sb');
+    const main = document.getElementById('main');
+    sb.classList.toggle('mini');
+    main.classList.toggle('mini-offset');
+  };
 
-  document.getElementById('navLogoutBtn').addEventListener('click', () => {
-    Auth.clear(); window.location.href = '/';
+  // Nav
+  document.querySelectorAll('.sb-item[data-view]').forEach(el => {
+    el.addEventListener('click', () => setView(el.dataset.view));
   });
 
-  loadOverview();
   loadProfile();
+  loadAll();
+  pollUnread();
+  setInterval(pollUnread, 30000);
 });
 
-// Tab switching — sidebar + mobile nav
-document.querySelectorAll('.dash-sidebar-item, .dash-mobile-nav-item').forEach(item => {
-  item.addEventListener('click', () => switchTab(item.dataset.tab));
-});
-
-function switchTab(tab) {
-  document.querySelectorAll('.dash-sidebar-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
-  document.querySelectorAll('.dash-mobile-nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
-  if (tab === 'jobs')       loadMyJobs();
-  if (tab === 'applicants') loadJobFilter();
-  if (tab === 'messages')   empLoadInbox();
-  if (tab === 'analytics')  loadAnalytics();
-  // Scroll mobile nav item into view
-  const mobileItem = document.querySelector(`.dash-mobile-nav-item[data-tab="${tab}"]`);
-  if (mobileItem) mobileItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+// ── View ──────────────────────────────────────
+function setView(v) {
+  document.querySelectorAll('.sb-item[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === v));
+  document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id === `view-${v}`));
+  if (v === 'jobs') renderJobs();
+  if (v === 'candidates') renderCandidates();
+  if (v === 'messages') loadInbox();
+  if (v === 'workers') initWorkers();
 }
 
-async function deleteEmpAccount() {
-  if (!confirm('This will permanently delete your account, all job postings, and applicant data. This cannot be undone.\n\nProceed?')) return;
-  const { ok, data } = await apiCall('DELETE', '/api/auth/account');
-  if (ok) { Auth.clear(); window.location.href = '/'; }
-  else Toast.error(data?.error || 'Failed to delete account');
-}
-
-// ── OVERVIEW ──
-async function loadOverview() {
+// ── Load all ──────────────────────────────────
+async function loadAll() {
+  skel('overviewJobsList', 4);
+  skel('overviewAppsList', 3);
   const { ok, data } = await apiCall('GET', '/api/jobs/employer/mine');
-  if (!ok) return;
-  myJobs = data.jobs || [];
-
-  const activeJobs = myJobs.filter(j => j.isActive);
-  const totalApps  = myJobs.reduce((s, j) => s + (j._count?.applications || 0), 0);
-
-  document.getElementById('statJobs').textContent       = activeJobs.length;
-  document.getElementById('statApplicants').textContent = totalApps;
-
-  // Fetch shortlisted count
-  let shortlisted = 0;
-  for (const job of myJobs.slice(0, 5)) {
-    const { ok, data } = await apiCall('GET', `/api/applications/job/${job.id}`);
-    if (ok) shortlisted += (data.applications||[]).filter(a => a.status === 'SHORTLISTED').length;
-  }
-  document.getElementById('statShortlisted').textContent = shortlisted;
-
-  const el = document.getElementById('overviewJobs');
-  if (!activeJobs.length) {
-    el.innerHTML = `<div class="empty-state" style="padding:20px;"><p class="text-gray">No active jobs. <button class="btn btn-primary btn-sm" onclick="switchTab('post')">Post your first job</button></p></div>`;
-    return;
-  }
-  el.innerHTML = activeJobs.slice(0, 5).map(j => jobRow(j)).join('');
+  if (!ok) { errBox('overviewJobsList', data?.error || 'Failed to load', loadAll); return; }
+  S.jobs = data.jobs || [];
+  S.apps = [];
+  await Promise.all(S.jobs.map(async j => {
+    const r = await apiCall('GET', `/api/applications/job/${j.id}`);
+    if (r.ok) (r.data.applications || []).forEach(a => S.apps.push({ ...a, _jid: j.id, _jtitle: j.title }));
+  }));
+  S.loaded = true;
+  renderOverview();
+  syncWorkerJobSel();
+  syncCandJobSel();
 }
 
-// ── MY JOBS ──
-async function loadMyJobs() {
-  const el = document.getElementById('myJobsList');
-  el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
-  const { ok, data } = await apiCall('GET', '/api/jobs/employer/mine');
-  if (!ok) { el.innerHTML = `<p class="text-gray">${data.error}</p>`; return; }
-  myJobs = data.jobs || [];
-  if (!myJobs.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No jobs yet</h3><p>Post your first job to start receiving applications</p><button class="btn btn-primary" onclick="switchTab('post')">Post a Job</button></div>`;
-    return;
+// ── Overview ──────────────────────────────────
+function renderOverview() {
+  const open = S.jobs.filter(j => j.isActive);
+  document.getElementById('statJobs').textContent  = open.length;
+  document.getElementById('statApps').textContent  = S.apps.length;
+  document.getElementById('statShort').textContent = S.apps.filter(a => a.status === 'SHORTLISTED').length;
+  if (document.getElementById('welcomeSub').textContent === 'Manage your jobs and candidates') {}
+
+  // Jobs list
+  const jl = document.getElementById('overviewJobsList');
+  if (!open.length) {
+    jl.innerHTML = emptyHtml('No open jobs yet', '');
+  } else {
+    jl.innerHTML = open.slice(0, 5).map(j => jobRowHtml(j)).join('');
   }
-  el.innerHTML = myJobs.map(j => jobRow(j, true)).join('');
+
+  // Applicants list
+  const al = document.getElementById('overviewAppsList');
+  if (!S.apps.length) {
+    al.innerHTML = emptyHtml('No applicants yet', 'Applicants will appear once candidates apply to your jobs');
+  } else {
+    al.innerHTML = S.apps.slice(0, 5).map(a => appRowHtml(a)).join('');
+  }
 }
 
-function jobRow(j, withActions = false) {
-  const apps = j._count?.applications || 0;
-  return `<div class="job-row">
-    <div class="job-row-info">
-      <div class="job-row-title">${escapeHtml(j.title)}${j.isFeatured?` <span class="badge badge-yellow" style="font-size:10px;">⭐ Featured</span>`:''}</div>
-      <div class="job-row-meta">${escapeHtml(j.city || j.location || '')} · ${j.jobType || ''} · ${apps} applicant${apps !== 1 ? 's' : ''} · Posted ${formatDate(j.postedAt)}${j.expiresAt ? ' · Expires ' + new Date(j.expiresAt).toLocaleDateString('en-CA',{month:'short',day:'numeric'}) : ''}</div>
+// ── Jobs view ─────────────────────────────────
+function renderJobs() {
+  const f = document.getElementById('jobFilter').value;
+  let list = S.jobs;
+  if (f === 'open')   list = list.filter(j => j.isActive);
+  if (f === 'closed') list = list.filter(j => !j.isActive);
+  document.getElementById('jobsCountLabel').textContent = `${list.length} job${list.length !== 1 ? 's' : ''}`;
+  const el = document.getElementById('jobsList');
+  if (!list.length) { el.innerHTML = emptyHtml('No jobs', ''); return; }
+  el.innerHTML = list.map(j => jobRowHtml(j, true)).join('');
+}
+
+function jobRowHtml(j, actions = false) {
+  const apps = S.apps.filter(a => a._jid === j.id).length;
+  return `<div class="row">
+    <div class="row-main">
+      <div class="row-title">${escapeHtml(j.title)}</div>
+      <div class="row-meta">${escapeHtml(j.city || j.location || '')}${j.jobType ? ' · ' + j.jobType : ''} · ${apps} applicant${apps !== 1 ? 's' : ''}</div>
     </div>
-    <span class="badge ${j.isActive ? 'badge-green' : 'badge-gray'}">${j.isActive ? 'Active' : 'Closed'}</span>
-    ${withActions ? `
-      <div class="job-row-actions">
-        <button class="btn btn-sm btn-ghost" onclick="toggleFeatured('${j.id}', ${!!j.isFeatured})" title="${j.isFeatured?'Remove featured':'Mark as featured'}">${j.isFeatured?'★ Unfeature':'☆ Feature'}</button>
-        <button class="btn btn-sm btn-ghost" onclick="viewApplicants('${j.id}', '${escapeHtml(j.title)}')">View Applicants</button>
-        <button class="btn btn-sm btn-danger" onclick="closeJob('${j.id}')">Close</button>
-      </div>` : ''}
+    <span class="badge ${j.isActive ? 'b-open' : 'b-closed'}">${j.isActive ? 'Open' : 'Closed'}</span>
+    ${actions ? `<div class="row-actions">
+      <button class="btn btn-sm" onclick="goToApplicants('${j.id}')">Applicants</button>
+      ${j.isActive ? `<button class="btn btn-sm btn-danger" onclick="closeJob('${j.id}')">Close</button>` : ''}
+    </div>` : ''}
   </div>`;
 }
 
-async function toggleFeatured(id, currentlyFeatured) {
-  const { ok, data } = await apiCall('PUT', `/api/jobs/${id}`, { isFeatured: !currentlyFeatured });
-  if (ok) { Toast.success(currentlyFeatured ? 'Featured removed' : 'Job marked as featured ⭐'); loadMyJobs(); }
-  else Toast.error(data.error || 'Failed to update');
+// ── Candidates view ───────────────────────────
+function syncCandJobSel() {
+  const sel = document.getElementById('candJobSel');
+  sel.innerHTML = '<option value="all">All jobs</option>' +
+    S.jobs.map(j => `<option value="${j.id}">${escapeHtml(j.title)}</option>`).join('');
 }
 
+function renderCandidates() {
+  const jf = document.getElementById('candJobSel').value;
+  const q  = document.getElementById('candSearch').value.trim().toLowerCase();
+  let list = S.apps;
+  if (jf !== 'all') list = list.filter(a => a._jid === jf);
+  if (q) list = list.filter(a => (a.user?.name || '').toLowerCase().includes(q));
+  document.getElementById('candCountLabel').textContent = `${list.length} applicant${list.length !== 1 ? 's' : ''}`;
+  const el = document.getElementById('candidatesList');
+  if (!list.length) { el.innerHTML = emptyHtml('No candidates', 'No candidates match your filters'); return; }
+  el.innerHTML = list.map(a => appRowHtml(a, true)).join('');
+}
+
+function appRowHtml(a, actions = false) {
+  const status = (a.status || 'APPLIED').toLowerCase();
+  const name   = a.user?.name || 'Candidate';
+  const meta   = [a.user?.profile?.headline, a.user?.profile?.city].filter(Boolean).join(' · ');
+  return `<div class="row">
+    <div class="row-main">
+      <div class="row-title">${escapeHtml(name)}</div>
+      <div class="row-meta">${escapeHtml(meta)}${a._jtitle ? ` · <strong>${escapeHtml(a._jtitle)}</strong>` : ''}</div>
+    </div>
+    <span class="badge b-${status}">${status}</span>
+    ${actions ? `<div class="row-actions">
+      ${a.status !== 'SHORTLISTED' ? `<button class="btn btn-sm" onclick="setStatus('${a.id}','SHORTLISTED')">Shortlist</button>` : ''}
+      ${a.status !== 'REJECTED' ? `<button class="btn btn-sm btn-danger" onclick="setStatus('${a.id}','REJECTED')">Reject</button>` : ''}
+      <button class="btn btn-sm" onclick="openInterview('${a.id}','${escapeHtml(name)}')">Interview</button>
+      <button class="btn btn-sm btn-ghost" onclick="msgUser('${a.user?.id}','${escapeHtml(name)}')">Message</button>
+    </div>` : ''}
+  </div>`;
+}
+
+function goToApplicants(jobId) {
+  setView('candidates');
+  setTimeout(() => { document.getElementById('candJobSel').value = jobId; renderCandidates(); }, 50);
+}
+
+// ── Actions ───────────────────────────────────
 async function closeJob(id) {
   if (!confirm('Close this job listing?')) return;
   const { ok, data } = await apiCall('DELETE', `/api/jobs/${id}`);
-  if (ok) { Toast.success('Job closed'); loadMyJobs(); loadOverview(); }
-  else Toast.error(data.error || 'Failed to close job');
+  if (!ok) { Toast.error(data?.error || 'Failed'); return; }
+  Toast.success('Job closed');
+  await loadAll(); renderJobs();
 }
 
-// ── POST JOB ──
-document.getElementById('addJobSkillBtn').addEventListener('click', () => {
-  const input = document.getElementById('jobSkillInput');
-  const val   = input.value.trim();
-  if (val && !jobSkills.includes(val)) { jobSkills.push(val); renderJobSkills(); }
-  input.value = '';
-});
-document.getElementById('jobSkillInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addJobSkillBtn').click(); }
-});
-
-function renderJobSkills() {
-  document.getElementById('jobSkillsTags').innerHTML = jobSkills.map((s, i) =>
-    `<span class="skill-tag">${escapeHtml(s)} <button onclick="removeJobSkill(${i})">×</button></span>`
-  ).join('');
-}
-function removeJobSkill(i) { jobSkills.splice(i, 1); renderJobSkills(); }
-
-document.getElementById('postJobForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = e.target.querySelector('[type=submit]');
-  btn.disabled = true; btn.textContent = 'Posting...';
-
-  const city     = document.getElementById('jobCity').value.trim();
-  const province = document.getElementById('jobProvince').value;
-  const location = [city, province].filter(Boolean).join(', ');
-
-  const { ok, data } = await apiCall('POST', '/api/jobs', {
-    title:       document.getElementById('jobTitle').value.trim(),
-    description: document.getElementById('jobDesc').value.trim(),
-    location,
-    city,
-    province,
-    salary:      document.getElementById('jobSalary').value.trim(),
-    jobType:     document.getElementById('jobType').value,
-    skills:      jobSkills
-  });
-
-  btn.disabled = false; btn.textContent = 'Post Job';
-
-  const successEl = document.getElementById('postJobSuccess');
-  const errorEl   = document.getElementById('postJobError');
-
-  if (ok) {
-    successEl.classList.remove('hidden');
-    errorEl.classList.add('hidden');
-    e.target.reset();
-    jobSkills = [];
-    renderJobSkills();
-    Toast.success('Job posted successfully!');
-    loadOverview();
-  } else {
-    errorEl.textContent = data.error || 'Failed to post job';
-    errorEl.classList.remove('hidden');
-    successEl.classList.add('hidden');
-  }
-});
-
-// ── APPLICANTS ──
-async function loadJobFilter() {
-  if (!myJobs.length) {
-    const { ok, data } = await apiCall('GET', '/api/jobs/employer/mine');
-    if (ok) myJobs = data.jobs || [];
-  }
-  const sel = document.getElementById('jobFilter');
-  sel.innerHTML = '<option value="">Select a job</option>' +
-    myJobs.filter(j => j.isActive).map(j =>
-      `<option value="${j.id}">${escapeHtml(j.title)} (${j._count?.applications || 0} applicants)</option>`
-    ).join('');
-  sel.onchange = () => { if (sel.value) loadApplicants(sel.value); };
-}
-
-function viewApplicants(jobId, title) {
-  switchTab('applicants');
-  setTimeout(async () => {
-    await loadJobFilter();
-    document.getElementById('jobFilter').value = jobId;
-    loadApplicants(jobId);
-  }, 100);
-}
-
-let currentApplicants = [];
-let currentJobId = null;
-let applicantView = 'list';
-let selectedApps = new Set();
-
-function setApplicantView(view) {
-  applicantView = view;
-  document.getElementById('btnListView').classList.toggle('active', view === 'list');
-  document.getElementById('btnBoardView').classList.toggle('active', view === 'board');
-  renderApplicants();
-}
-
-function renderApplicants() {
-  const el = document.getElementById('applicantsList');
-  if (!currentApplicants.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div><h3>No applicants yet</h3><p>Share your job listing to attract candidates</p></div>`;
-    return;
-  }
-  if (applicantView === 'board') {
-    renderKanban(el);
-  } else {
-    el.innerHTML = currentApplicants.map(a => applicantCard(a, currentJobId)).join('');
-  }
-}
-
-function renderKanban(el) {
-  const cols = { APPLIED: [], VIEWED: [], SHORTLISTED: [], REJECTED: [] };
-  currentApplicants.forEach(a => { if (cols[a.status]) cols[a.status].push(a); });
-  const colColors = { APPLIED:'var(--blue)', VIEWED:'var(--orange)', SHORTLISTED:'var(--green)', REJECTED:'var(--red)' };
-  el.innerHTML = `<div class="kanban-board">${
-    Object.entries(cols).map(([status, apps]) => `
-      <div class="kanban-col">
-        <div class="kanban-col-header">
-          <span style="color:${colColors[status]}">${status}</span>
-          <span style="background:${colColors[status]};color:#fff;border-radius:100px;padding:1px 8px;font-size:11px;">${apps.length}</span>
-        </div>
-        ${apps.length ? apps.map(a => `
-          <div class="kanban-card">
-            <div style="font-weight:700;font-size:13px;">${escapeHtml(a.user?.name||'Candidate')}</div>
-            <div style="font-size:11px;color:var(--gray-500);margin:2px 0;">${escapeHtml(a.user?.profile?.headline||a.user?.profile?.city||'')}</div>
-            ${a.atsScore ? `<div style="font-size:11px;font-weight:700;color:${getScoreClass(a.atsScore.score)==='ats-excellent'?'var(--green)':'var(--blue)'};">ATS ${a.atsScore.score}%</div>` : ''}
-            <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;">
-              <select style="font-size:11px;padding:2px 4px;border:1px solid var(--gray-200);border-radius:4px;" onchange="updateStatus('${a.id}',this.value,'${currentJobId}');this.closest('.kanban-card').style.opacity='.5'">
-                ${['APPLIED','VIEWED','SHORTLISTED','REJECTED'].map(s=>`<option value="${s}"${a.status===s?' selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`).join('')}
-              </select>
-              <button onclick="empMsgApplicant('${a.user?.id}','${escapeHtml(a.user?.name||'')}')" style="font-size:11px;padding:2px 6px;border:1px solid var(--gray-200);border-radius:4px;background:#fff;cursor:pointer;">💬</button>
-            </div>
-          </div>`).join('') : `<div style="font-size:12px;color:var(--gray-400);text-align:center;padding:16px;">None</div>`}
-      </div>`).join('')
-  }</div>`;
-}
-
-async function loadApplicants(jobId) {
-  currentJobId = jobId;
-  selectedApps.clear();
-  updateBulkBar();
-  const el = document.getElementById('applicantsList');
-  el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
-  const { ok, data } = await apiCall('GET', `/api/applications/job/${jobId}`);
-  if (!ok) { el.innerHTML = `<p class="text-gray">${data.error}</p>`; return; }
-  currentApplicants = data.applications || [];
-  renderApplicants();
-}
-
-function toggleSelectApp(id, checked) {
-  if (checked) selectedApps.add(id); else selectedApps.delete(id);
-  updateBulkBar();
-}
-
-function updateBulkBar() {
-  const bar = document.getElementById('bulkBar');
-  const count = selectedApps.size;
-  bar.classList.toggle('visible', count > 0);
-  document.getElementById('bulkCount').textContent = `${count} selected`;
-}
-
-async function applyBulkStatus() {
-  const status = document.getElementById('bulkStatus').value;
-  if (!status) { Toast.warn('Select a status to apply'); return; }
-  const ids = [...selectedApps];
-  await Promise.all(ids.map(id => apiCall('PUT', `/api/applications/${id}/status`, { status })));
-  Toast.success(`${ids.length} applicant(s) moved to ${status}`);
-  clearBulkSelect();
-  loadApplicants(currentJobId);
-}
-
-function clearBulkSelect() {
-  selectedApps.clear();
-  updateBulkBar();
-  document.querySelectorAll('.cb-applicant').forEach(cb => { cb.checked = false; });
-}
-
-function applicantCard(a, jobId) {
-  const p      = a.user?.profile;
-  const score  = a.atsScore;
-  const statusColors = { APPLIED:'badge-blue', VIEWED:'badge-yellow', SHORTLISTED:'badge-green', REJECTED:'badge-red' };
-  const coverId = `cover-${a.id}`;
-
-  return `<div class="applicant-card">
-    <div class="applicant-header">
-      <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;">
-        <input type="checkbox" class="cb-applicant" onchange="toggleSelectApp('${a.id}',this.checked)" style="margin-top:4px;" />
-        <div style="flex:1;min-width:0;">
-        <div class="applicant-name">${escapeHtml(a.user?.name || 'Candidate')}</div>
-        <div class="applicant-meta">
-          ${p?.headline ? `<span style="color:var(--blue);font-weight:600;">${escapeHtml(p.headline)}</span> · ` : ''}
-          ${p?.city ? escapeHtml(p.city) + (p.province ? ', ' + p.province : '') : 'Location not set'}
-          ${p?.yearsExperience ? ' · ' + p.yearsExperience + ' yrs exp' : ''}
-        </div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-        ${score ? `
-        <div style="text-align:center;">
-          <span class="ats-score-badge ${getScoreClass(score.score)}">${score.score}% Match</span>
-          <div style="font-size:10px;color:var(--gray-400);margin-top:2px;">${escapeHtml(score.matchStrength||'')}</div>
-        </div>` : ''}
-        <span id="status-badge-${a.id}" class="badge ${statusColors[a.status]||'badge-gray'}" data-status="${a.status}">${a.status.charAt(0)+a.status.slice(1).toLowerCase()}</span>
-        <div id="action-btns-${a.id}" style="display:flex;gap:4px;">
-          ${a.status !== 'SHORTLISTED' && a.status !== 'REJECTED' ? `
-            <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;white-space:nowrap;"
-              onclick="updateStatus('${a.id}','SHORTLISTED','${jobId}')">✓ Shortlist</button>
-            <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;white-space:nowrap;"
-              onclick="updateStatus('${a.id}','REJECTED','${jobId}')">✗ Reject</button>
-          ` : a.status === 'SHORTLISTED' ? `
-            <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;white-space:nowrap;"
-              onclick="updateStatus('${a.id}','REJECTED','${jobId}')">✗ Reject</button>
-          ` : `
-            <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;white-space:nowrap;"
-              onclick="updateStatus('${a.id}','SHORTLISTED','${jobId}')">✓ Shortlist</button>
-          `}
-        </div>
-      </div>
-    </div>
-
-    ${p?.skills?.length ? `<div class="applicant-skills">${p.skills.slice(0,8).map(s=>`<span class="kw-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
-
-    ${score?.missingKeywords?.length ? `
-    <div style="margin:8px 0;font-size:12px;color:var(--gray-500);">
-      Missing: ${score.missingKeywords.slice(0,4).map(k=>`<span style="background:#fef2f2;color:#dc2626;padding:1px 6px;border-radius:4px;margin-right:4px;">${escapeHtml(k)}</span>`).join('')}
-    </div>` : ''}
-
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;">
-      ${a.coverLetter ? `<button class="btn btn-ghost btn-sm" onclick="toggleSection('${coverId}','${a.id}')">📝 Cover Letter</button>` : ''}
-      ${a.resume?.content ? `<button class="btn btn-ghost btn-sm" onclick="toggleSection('resume-${a.id}','${a.id}')">📄 Resume</button>` : ''}
-      ${a.user?.email ? `<a class="btn btn-ghost btn-sm" href="mailto:${escapeHtml(a.user.email)}">✉ ${escapeHtml(a.user.email)}</a>` : ''}
-      <button id="interview-btn-${a.id}" class="btn btn-ghost btn-sm" onclick="openInterviewModal('${a.id}','${escapeHtml(a.user?.name||'Candidate')}')">📅 Schedule Interview</button>
-    </div>
-    ${a.coverLetter ? `<div id="${coverId}" style="display:none;margin-top:4px;padding:12px;background:var(--gray-50);border-radius:var(--radius);font-size:13px;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;max-height:260px;overflow-y:auto;">${escapeHtml(a.coverLetter)}</div>` : ''}
-    ${a.resume?.content ? `<div id="resume-${a.id}" style="display:none;margin-top:4px;padding:12px;background:var(--gray-50);border-radius:var(--radius);font-size:12px;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;max-height:320px;overflow-y:auto;">${escapeHtml(a.resume.content)}</div>` : ''}
-
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:12px;color:var(--gray-400);">Applied ${formatDate(a.appliedAt)}</div>
-      <button class="btn btn-ghost btn-sm" onclick="empMsgApplicant('${a.user?.id}','${escapeHtml(a.user?.name||'')}')">💬 Message</button>
-    </div>
-  </div>`;
-}
-
-function toggleSection(id, appId) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const showing = el.style.display === 'none' || el.style.display === '';
-  el.style.display = showing ? 'block' : 'none';
-  // Auto-mark VIEWED when employer first opens resume or cover letter
-  if (showing && appId) {
-    apiCall('PUT', `/api/applications/${appId}/viewed`, {}).then(({ data }) => {
-      if (data?.status === 'VIEWED') {
-        const badge = document.getElementById(`status-badge-${appId}`);
-        if (badge && badge.dataset.status === 'APPLIED') {
-          badge.textContent = 'Viewed';
-          badge.className = 'badge badge-yellow';
-          badge.dataset.status = 'VIEWED';
-        }
-      }
-    }).catch(() => {});
-  }
-}
-
-function empMsgApplicant(userId, name) {
-  switchTab('messages');
-  setTimeout(() => empOpenConv(userId, name), 200);
-}
-
-async function updateStatus(appId, status, jobId) {
+async function setStatus(appId, status) {
   const { ok, data } = await apiCall('PUT', `/api/applications/${appId}/status`, { status });
-  if (!ok) { Toast.error(data?.error || 'Failed to update'); return; }
-  Toast.success('Status updated');
-  // Update badge in-place
-  const badge = document.getElementById(`status-badge-${appId}`);
-  const statusColors = { APPLIED:'badge-blue', VIEWED:'badge-yellow', SHORTLISTED:'badge-green', REJECTED:'badge-red' };
-  if (badge) {
-    badge.textContent = status.charAt(0) + status.slice(1).toLowerCase();
-    badge.className   = `badge ${statusColors[status] || 'badge-gray'}`;
-    badge.dataset.status = status;
-  }
-  // Update action buttons
-  const btns = document.getElementById(`action-btns-${appId}`);
-  if (btns) {
-    btns.innerHTML = status === 'SHORTLISTED' ? `
-      <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;white-space:nowrap;"
-        onclick="updateStatus('${appId}','REJECTED','${jobId}')">✗ Reject</button>
-    ` : status === 'REJECTED' ? `
-      <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;white-space:nowrap;"
-        onclick="updateStatus('${appId}','SHORTLISTED','${jobId}')">✓ Shortlist</button>
-    ` : '';
-  }
+  if (!ok) { Toast.error(data?.error || 'Failed'); return; }
+  const a = S.apps.find(x => x.id === appId);
+  if (a) a.status = status;
+  Toast.success('Updated');
+  renderCandidates(); renderOverview();
 }
 
-// ── COMPANY PROFILE ──
+// ── Post Job ──────────────────────────────────
+function openPostJob() { document.getElementById('postJobModal').classList.add('open'); }
+function closePostJob() {
+  document.getElementById('postJobModal').classList.remove('open');
+  document.getElementById('postJobErr').style.display = 'none';
+  ['jTitle','jCity','jDesc','jSalary'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('jProv').value = '';
+}
+
+async function submitPostJob() {
+  const errEl = document.getElementById('postJobErr');
+  const btn   = document.getElementById('postJobBtn');
+  const title = document.getElementById('jTitle').value.trim();
+  const city  = document.getElementById('jCity').value.trim();
+  const desc  = document.getElementById('jDesc').value.trim();
+  if (!title || !city || !desc) {
+    errEl.textContent = 'Title, city and description are required'; errEl.style.display = 'block'; return;
+  }
+  const province = document.getElementById('jProv').value;
+  btn.disabled = true; btn.textContent = 'Posting…';
+  const { ok, data } = await apiCall('POST', '/api/jobs', {
+    title, city, description: desc,
+    location: [city, province].filter(Boolean).join(', '),
+    province,
+    salary: document.getElementById('jSalary').value.trim(),
+    jobType: document.getElementById('jType').value
+  });
+  btn.disabled = false; btn.textContent = 'Post Job';
+  if (!ok) {
+    console.error('[postJob]', data);
+    errEl.textContent = data?.error || 'Failed to post job'; errEl.style.display = 'block'; return;
+  }
+  Toast.success('Job posted!');
+  closePostJob();
+  await loadAll(); renderOverview();
+}
+
+// ── Profile ───────────────────────────────────
 async function loadProfile() {
   const { ok, data } = await apiCall('GET', '/api/profile/me');
-  if (!ok) return;
+  if (!ok || !data?.profile) return;
   const p = data.profile;
-  if (!p) return;
   document.getElementById('companyName').value     = p.companyName  || '';
   document.getElementById('companyIndustry').value = p.industry     || '';
-  document.getElementById('companySize').value     = p.companySize  || '';
-  document.getElementById('companyWebsite').value  = p.website      || '';
   document.getElementById('companyCity').value     = p.city         || '';
   document.getElementById('companyProvince').value = p.province     || '';
-
-  if (p.companyName) {
-    document.getElementById('empSubtitle').textContent = p.companyName;
-  }
+  document.getElementById('companyWebsite').value  = p.website      || '';
+  if (p.companyName) document.getElementById('welcomeSub').textContent = p.companyName;
 }
 
-// ── MESSAGES ──────────────────────────────────
-let empActiveConv = null;
-let empMsgPoll    = null;
-
-async function empLoadInbox() {
-  const el = document.getElementById('empConvList');
-  const { ok, data } = await apiCall('GET', '/api/messages/inbox');
-  if (!ok || !data.conversations?.length) {
-    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px;">No messages yet.</div>`;
-    return;
-  }
-  el.innerHTML = data.conversations.map(c => {
-    const initials = c.user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    return `<div onclick="empOpenConv('${c.user.id}','${escapeHtml(c.user.name)}')"
-      style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--gray-100);${empActiveConv===c.user.id?'background:var(--blue-light)':''}">
-      <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${initials}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:700;">${escapeHtml(c.user.name)}</div>
-        <div style="font-size:11px;color:var(--gray-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(c.lastMessage||'')}</div>
-      </div>
-      ${c.unread>0?`<span style="background:var(--blue);color:#fff;border-radius:100px;font-size:10px;font-weight:700;padding:1px 6px;">${c.unread}</span>`:''}
-    </div>`;
-  }).join('');
-  const totalUnread = data.conversations.reduce((n,c)=>n+c.unread,0);
-  const badge = document.getElementById('empMsgBadge');
-  if (badge) { badge.textContent = totalUnread; badge.style.display = totalUnread > 0 ? 'inline' : 'none'; }
-}
-
-async function empOpenConv(userId, name) {
-  empActiveConv = userId;
-  document.getElementById('empChatEmpty').style.display = 'none';
-  const area = document.getElementById('empChatArea');
-  area.style.display = 'flex';
-  document.getElementById('empChatHeader').textContent = name;
-  await empFetchMsgs(userId);
-  if (empMsgPoll) clearInterval(empMsgPoll);
-  empMsgPoll = setInterval(() => empFetchMsgs(userId), 5000);
-  empLoadInbox();
-}
-
-async function empFetchMsgs(userId) {
-  const { ok, data } = await apiCall('GET', `/api/messages/${userId}`);
-  if (!ok) return;
-  const me   = Auth.getUser()?.id;
-  const body = document.getElementById('empChatBody');
-  const atBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 50;
-  body.innerHTML = data.messages.map(m => {
-    const mine = m.senderId === me;
-    return `<div style="display:flex;justify-content:${mine?'flex-end':'flex-start'};">
-      <div style="max-width:70%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;
-        ${mine?'background:var(--blue);color:#fff;':'background:#fff;border:1px solid var(--gray-200);color:var(--gray-800);'}">
-        ${escapeHtml(m.content)}
-      </div>
-    </div>`;
-  }).join('');
-  if (atBottom) body.scrollTop = body.scrollHeight;
-}
-
-async function empSendMsg() {
-  if (!empActiveConv) return;
-  const input = document.getElementById('empMsgInput');
-  const content = input.value.trim();
-  if (!content) return;
-  input.value = '';
-  await apiCall('POST', `/api/messages/${empActiveConv}`, { content });
-  empFetchMsgs(empActiveConv);
-  empLoadInbox();
-}
-
-document.getElementById('empMsgInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); empSendMsg(); }
-});
-
-// Poll unread count every 30s
-async function empPollUnread() {
-  const { ok, data } = await apiCall('GET', '/api/messages/unread-count');
-  if (ok && data.count > 0) {
-    const badge = document.getElementById('empMsgBadge');
-    if (badge) { badge.textContent = data.count; badge.style.display = 'inline'; }
-  }
-}
-empPollUnread();
-setInterval(empPollUnread, 30000);
-
-document.getElementById('companyForm').addEventListener('submit', async (e) => {
+document.getElementById('companyForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const btn = e.target.querySelector('[type=submit]');
-  btn.disabled = true; btn.textContent = 'Saving...';
-
   const { ok, data } = await apiCall('PUT', '/api/profile/me', {
     companyName: document.getElementById('companyName').value,
     industry:    document.getElementById('companyIndustry').value,
-    companySize: document.getElementById('companySize').value,
-    website:     document.getElementById('companyWebsite').value,
     city:        document.getElementById('companyCity').value,
-    province:    document.getElementById('companyProvince').value
+    province:    document.getElementById('companyProvince').value,
+    website:     document.getElementById('companyWebsite').value
   });
-
-  btn.disabled = false; btn.textContent = 'Save Profile';
-  if (ok) {
-    document.getElementById('profileSaved').classList.remove('hidden');
-    setTimeout(() => document.getElementById('profileSaved').classList.add('hidden'), 3000);
-    Toast.success('Company profile saved!');
-    if (document.getElementById('companyName').value) {
-      document.getElementById('empSubtitle').textContent = document.getElementById('companyName').value;
-    }
-  } else {
-    Toast.error(data.error || 'Failed to save profile');
-  }
+  ok ? Toast.success('Profile saved') : Toast.error(data?.error || 'Failed');
 });
 
-// ── FIND WORKERS ──────────────────────────────
+async function deleteAccount() {
+  if (!confirm('Permanently delete account and all data? This cannot be undone.')) return;
+  const { ok } = await apiCall('DELETE', '/api/auth/account');
+  if (ok) { Auth.clear(); window.location.href = '/'; }
+}
+
+// ── Messages ──────────────────────────────────
+async function loadInbox() {
+  const el = document.getElementById('convList');
+  el.innerHTML = skel('convList', 3, true);
+  const { ok, data } = await apiCall('GET', '/api/messages/inbox');
+  if (!ok || !data?.conversations?.length) {
+    el.innerHTML = '<div class="empty" style="padding:24px;"><p>No messages yet</p></div>'; return;
+  }
+  el.innerHTML = data.conversations.map(c => {
+    const init = c.user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    return `<div class="conv ${_activeConv === c.user.id ? 'active' : ''}" onclick="openConv('${c.user.id}','${escapeHtml(c.user.name)}')">
+      <div class="conv-av">${init}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="conv-name">${escapeHtml(c.user.name)}</div>
+        <div class="conv-last">${escapeHtml(c.lastMessage || '')}</div>
+      </div>
+      ${c.unread > 0 ? `<span style="background:#2563eb;color:#fff;border-radius:100px;font-size:10px;font-weight:700;padding:1px 5px;">${c.unread}</span>` : ''}
+    </div>`;
+  }).join('');
+  const total = data.conversations.reduce((n, c) => n + c.unread, 0);
+  updateMsgBadge(total);
+}
+
+async function openConv(userId, name) {
+  _activeConv = userId;
+  document.getElementById('chatEmpty').style.display = 'none';
+  const active = document.getElementById('chatActive');
+  active.style.display = 'flex';
+  document.getElementById('chatHead').textContent = name;
+  await fetchMsgs(userId);
+  if (_msgPoll) clearInterval(_msgPoll);
+  _msgPoll = setInterval(() => fetchMsgs(userId), 5000);
+  loadInbox();
+}
+
+async function fetchMsgs(userId) {
+  const { ok, data } = await apiCall('GET', `/api/messages/${userId}`);
+  if (!ok) return;
+  const me   = Auth.getUser()?.id;
+  const body = document.getElementById('chatBody');
+  const wasBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 60;
+  body.innerHTML = (data.messages || []).map(m =>
+    `<div class="msg ${m.senderId === me ? 'mine' : 'them'}">${escapeHtml(m.content)}</div>`
+  ).join('');
+  if (wasBottom) body.scrollTop = body.scrollHeight;
+}
+
+async function sendMsg() {
+  if (!_activeConv) return;
+  const input = document.getElementById('msgInput');
+  const content = input.value.trim();
+  if (!content) return;
+  input.value = '';
+  await apiCall('POST', `/api/messages/${_activeConv}`, { content });
+  fetchMsgs(_activeConv);
+}
+
+document.getElementById('msgInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); sendMsg(); }
+});
+
+function msgUser(userId, name) {
+  setView('messages');
+  setTimeout(() => openConv(userId, name), 150);
+}
+
+async function pollUnread() {
+  const { ok, data } = await apiCall('GET', '/api/messages/unread-count');
+  if (ok) updateMsgBadge(data.count || 0);
+}
+
+function updateMsgBadge(n) {
+  const b = document.getElementById('msgBadge');
+  if (!b) return;
+  b.textContent = n; b.style.display = n > 0 ? 'inline' : 'none';
+}
+
+// ── Find Workers ──────────────────────────────
+function syncWorkerJobSel() {
+  const sel = document.getElementById('workerJobSel');
+  const open = S.jobs.filter(j => j.isActive);
+  if (!open.length) {
+    sel.innerHTML = '<option value="">Post a job first</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Select job posting</option>' +
+    open.map(j => `<option value="${j.id}">${escapeHtml(j.title)}</option>`).join('');
+}
+
+function initWorkers() {
+  if (S.loaded) syncWorkerJobSel();
+}
+
 async function searchWorkers() {
-  const el       = document.getElementById('workersList');
-  const search   = document.getElementById('workerSearch').value.trim();
-  const province = document.getElementById('workerProvince').value;
-  const avail    = document.getElementById('workerAvail').value;
+  const jobId = document.getElementById('workerJobSel').value;
+  const avail = document.getElementById('workerAvail').value;
+  const el    = document.getElementById('workersList');
 
-  el.innerHTML = '<div style="text-align:center;padding:30px;"><div class="spinner"></div></div>';
+  if (!jobId) {
+    el.innerHTML = '<div class="empty"><p>Select a job posting to find matched workers</p></div>'; return;
+  }
 
-  const q = new URLSearchParams();
-  if (search)   q.set('search', search);
-  if (province) q.set('province', province);
-  if (avail)    q.set('availability', avail);
+  skel('workersList', 5);
+  const q = new URLSearchParams({ jobId, limit: '10' });
+  if (avail) q.set('availability', avail);
 
   const { ok, data } = await apiCall('GET', `/api/workers?${q}`);
-  if (!ok) { el.innerHTML = `<p style="color:var(--red);padding:20px;">${data.error}</p>`; return; }
+  if (!ok) {
+    console.error('[workers]', data);
+    errBox('workersList', data?.error || 'Failed to load workers', searchWorkers); return;
+  }
 
-  const workers = data.workers || [];
+  const workers = (data.workers || []).slice(0, 10);
   if (!workers.length) {
-    el.innerHTML = `<div class="empty-state" style="padding:40px;"><p>No workers found matching your criteria.</p></div>`;
+    el.innerHTML = '<div class="empty"><div class="empty-icon">👷</div><p>No matched workers found for this posting.<br>Workers must opt in to appear here.</p></div>';
     return;
   }
 
   el.innerHTML = workers.map(w => {
-    const initials = (w.user?.name || '?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
-    const skills   = (w.skills || []).slice(0, 6);
-    return `<div class="applicant-card" style="margin-bottom:10px;">
-      <div class="applicant-header">
-        <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
-          <div style="width:44px;height:44px;border-radius:50%;background:#0f172a;color:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;">${initials}</div>
-          <div style="flex:1;min-width:0;">
-            <div class="applicant-name">${escapeHtml(w.user?.name || 'Worker')}</div>
-            <div class="applicant-meta">
-              ${w.headline ? `<span style="color:var(--blue);font-weight:600;">${escapeHtml(w.headline)}</span>` : ''}
-              ${w.city ? ` · 📍 ${escapeHtml(w.city)}${w.province?', '+w.province:''}` : ''}
-              ${w.yearsExperience ? ` · ${w.yearsExperience} yrs exp` : ''}
-              ${w.availability ? ` · ${escapeHtml(w.availability)}` : ''}
-            </div>
-          </div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="empMsgApplicant('${w.user?.id}','${escapeHtml(w.user?.name||'')}')">💬 Message</button>
+    const name  = w.user?.name || 'Worker';
+    const init  = name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2);
+    const loc   = [w.city, w.province].filter(Boolean).join(', ');
+    return `<div class="row">
+      <div style="width:36px;height:36px;border-radius:50%;background:#0f172a;color:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${init}</div>
+      <div class="row-main">
+        <div class="row-title">${escapeHtml(name)}</div>
+        <div class="row-meta">${loc ? '📍 ' + escapeHtml(loc) : ''}${w.yearsExperience ? ` · ${w.yearsExperience} yrs exp` : ''}${w.availability ? ` · ${escapeHtml(w.availability)}` : ''}</div>
       </div>
-      ${skills.length ? `<div class="applicant-skills">${skills.map(s=>`<span class="kw-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
-      ${w.openToRelocation ? `<div style="font-size:12px;color:var(--green);margin-top:4px;">✓ Open to relocation</div>` : ''}
+      <button class="btn btn-sm" onclick="msgUser('${w.user?.id}','${escapeHtml(name)}')">Message</button>
     </div>`;
   }).join('');
 }
 
-// ── ANALYTICS ─────────────────────────────────
-async function loadAnalytics() {
-  const el = document.getElementById('analyticsWrap');
-  el.innerHTML = '<div style="text-align:center;padding:40px;"><div class="spinner"></div></div>';
-
-  const { ok, data } = await apiCall('GET', '/api/analytics/employer');
-  if (!ok) { el.innerHTML = `<p style="color:var(--red);padding:20px;">${data.error}</p>`; return; }
-
-  const { summary, jobs, statusBreakdown, atsDistribution } = data;
-  const statusColors = { APPLIED:'#3b82f6', VIEWED:'#f59e0b', SHORTLISTED:'#16a34a', REJECTED:'#dc2626' };
-  const atsColors    = { excellent:'#16a34a', good:'#3b82f6', fair:'#f59e0b', poor:'#dc2626' };
-
-  el.innerHTML = `
-    <!-- Summary cards -->
-    <div class="stats-row" style="margin-bottom:20px;">
-      <div class="stat-card"><div class="stat-card-num">${summary.totalJobs}</div><div class="stat-card-label">Total Jobs</div></div>
-      <div class="stat-card"><div class="stat-card-num">${summary.totalViews}</div><div class="stat-card-label">Job Views</div></div>
-      <div class="stat-card"><div class="stat-card-num">${summary.totalApps}</div><div class="stat-card-label">Applications</div></div>
-      <div class="stat-card"><div class="stat-card-num">${summary.totalViews>0?Math.round(summary.totalApps/summary.totalViews*100):0}%</div><div class="stat-card-label">Apply Rate</div></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-      <!-- Application status breakdown -->
-      <div class="card">
-        <div class="card-title" style="margin-bottom:12px;">Application Status</div>
-        ${Object.entries(statusBreakdown).map(([s, count]) => `
-          <div style="margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
-              <span style="font-weight:600;">${s.charAt(0)+s.slice(1).toLowerCase()}</span>
-              <span style="font-weight:700;color:${statusColors[s]||'#666'};">${count}</span>
-            </div>
-            <div style="background:var(--gray-100);border-radius:100px;height:8px;overflow:hidden;">
-              <div style="height:100%;border-radius:100px;background:${statusColors[s]||'#666'};width:${summary.totalApps>0?Math.round(count/summary.totalApps*100):0}%;transition:width .6s;"></div>
-            </div>
-          </div>`).join('')}
-      </div>
-
-      <!-- ATS score distribution -->
-      <div class="card">
-        <div class="card-title" style="margin-bottom:12px;">Candidate Match Scores</div>
-        ${Object.entries(atsDistribution).map(([level, count]) => {
-          const total = Object.values(atsDistribution).reduce((a,b)=>a+b,0);
-          return `<div style="margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
-              <span style="font-weight:600;text-transform:capitalize;">${level}</span>
-              <span style="font-weight:700;color:${atsColors[level]};">${count}</span>
-            </div>
-            <div style="background:var(--gray-100);border-radius:100px;height:8px;overflow:hidden;">
-              <div style="height:100%;border-radius:100px;background:${atsColors[level]};width:${total>0?Math.round(count/total*100):0}%;transition:width .6s;"></div>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- Per-job table -->
-    <div class="card">
-      <div class="card-title" style="margin-bottom:12px;">Performance by Job</div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead>
-            <tr style="border-bottom:2px solid var(--gray-200);">
-              <th style="text-align:left;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Job Title</th>
-              <th style="text-align:center;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Views</th>
-              <th style="text-align:center;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Apps</th>
-              <th style="text-align:center;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Apply Rate</th>
-              <th style="text-align:center;padding:8px 10px;font-weight:700;color:var(--gray-500);font-size:11px;text-transform:uppercase;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${jobs.map(j => `
-              <tr style="border-bottom:1px solid var(--gray-100);">
-                <td style="padding:10px;font-weight:600;">${escapeHtml(j.title)}</td>
-                <td style="padding:10px;text-align:center;">${j.views}</td>
-                <td style="padding:10px;text-align:center;">${j.applications}</td>
-                <td style="padding:10px;text-align:center;">${j.conversionRate}%</td>
-                <td style="padding:10px;text-align:center;"><span class="badge ${j.isActive?'badge-green':'badge-gray'}">${j.isActive?'Active':'Closed'}</span></td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-}
-
-// ── INTERVIEW SCHEDULING ──────────────────────
-let _interviewAppId = null;
-
-function openInterviewModal(appId, workerName) {
-  _interviewAppId = appId;
-  document.getElementById('interviewWorkerName').textContent = workerName;
-  document.getElementById('interviewMsg').innerHTML = '';
-  document.getElementById('interviewDates').innerHTML = dateSlotRow();
-  document.getElementById('interviewLocation').value = '';
-  document.getElementById('interviewNotes').value = '';
+// ── Interview ─────────────────────────────────
+function openInterview(appId, name) {
+  _ivAppId = appId;
+  document.getElementById('ivName').textContent = name;
+  document.getElementById('ivErr').style.display = 'none';
+  ['ivLink','ivDate','ivLocation','ivNotes'].forEach(id => document.getElementById(id).value = '');
+  // Set min datetime to now
+  const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('ivDate').min = now.toISOString().slice(0, 16);
   document.getElementById('interviewModal').classList.add('open');
 }
 
-function closeInterviewModal() {
-  document.getElementById('interviewModal').classList.remove('open');
-}
-
-function dateSlotRow() {
-  return `<div class="date-slot" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-    <input type="datetime-local" class="form-input interview-date-input" style="flex:1;" />
-    <button onclick="this.parentElement.remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--gray-400);">×</button>
-  </div>`;
-}
-
-function addDateSlot() {
-  document.getElementById('interviewDates').insertAdjacentHTML('beforeend', dateSlotRow());
-}
+function closeInterview() { document.getElementById('interviewModal').classList.remove('open'); }
 
 async function submitInterview() {
-  const dates = [...document.querySelectorAll('.interview-date-input')]
-    .map(i => i.value).filter(Boolean);
-  if (!dates.length) { Toast.warn('Add at least one proposed date/time'); return; }
-
-  const location = document.getElementById('interviewLocation').value.trim();
-  const notes    = document.getElementById('interviewNotes').value.trim();
-
-  const { ok, data } = await apiCall('POST', '/api/interviews', {
-    applicationId: _interviewAppId,
-    proposedDates: dates,
-    location: location || null,
-    notes:    notes    || null
-  });
-
-  if (ok) {
-    Toast.success('Interview invitation sent!');
-    closeInterviewModal();
-    // Update button in applicant card
-    const btn = document.getElementById(`interview-btn-${_interviewAppId}`);
-    if (btn) { btn.textContent = '📅 Reschedule'; btn.style.background = '#f0fdf4'; btn.style.color = '#16a34a'; }
-  } else {
-    document.getElementById('interviewMsg').innerHTML = `<div class="alert alert-error" style="margin-bottom:8px;">${data?.error||'Failed to send'}</div>`;
+  const link = document.getElementById('ivLink').value.trim();
+  const date = document.getElementById('ivDate').value;
+  const errEl = document.getElementById('ivErr');
+  if (!link || !date) {
+    errEl.textContent = 'Meeting link and date/time are required'; errEl.style.display = 'block'; return;
   }
+  const { ok, data } = await apiCall('POST', '/api/interviews', {
+    applicationId: _ivAppId,
+    proposedDates: [date],
+    location: document.getElementById('ivLocation').value.trim() || null,
+    notes: [link, document.getElementById('ivNotes').value.trim()].filter(Boolean).join('\n\nMeeting link: ')
+  });
+  if (!ok) {
+    console.error('[interview]', data);
+    errEl.textContent = data?.error || 'Failed to send invitation'; errEl.style.display = 'block'; return;
+  }
+  Toast.success('Interview invitation sent!');
+  closeInterview();
+  const a = S.apps.find(x => x.id === _ivAppId);
+  if (a) { a.status = 'SHORTLISTED'; renderCandidates(); renderOverview(); }
 }
+
+// ── Helpers ───────────────────────────────────
+function skel(elId, n, returnHtml = false) {
+  const h = Array(n).fill(`<div class="skel"><div class="skel-bar"></div><div class="skel-bar s"></div></div>`).join('');
+  if (returnHtml) return h;
+  const el = document.getElementById(elId); if (el) el.innerHTML = h;
+}
+
+function errBox(elId, msg, retryFn) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = `<div class="err-box"><p>${escapeHtml(msg)}</p><button class="btn" onclick="(${retryFn.toString()})()">Retry</button></div>`;
+}
+
+function emptyHtml(title, sub, cta = '') {
+  return `<div class="empty"><div class="empty-icon">—</div><p><strong>${title}</strong>${sub ? '<br>' + sub : ''}</p>${cta}</div>`;
+}
+
+// Auto-refresh every 60s when on overview
+setInterval(() => {
+  if (document.getElementById('view-overview').classList.contains('active')) {
+    loadAll();
+  }
+}, 60000);
 </script>
-
-<!-- Interview Modal -->
-<div class="modal-overlay" id="interviewModal">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-header">
-      <h2>Schedule Interview</h2>
-      <button class="modal-close" onclick="closeInterviewModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">Proposing interview times for <strong id="interviewWorkerName"></strong></p>
-      <div id="interviewMsg"></div>
-      <div class="form-group">
-        <label class="form-label">Proposed Date(s) & Time(s)</label>
-        <div id="interviewDates"></div>
-        <button type="button" onclick="addDateSlot()" class="btn btn-ghost btn-sm" style="margin-top:4px;">+ Add another time slot</button>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Location / Format</label>
-        <input class="form-input" id="interviewLocation" placeholder="e.g. Zoom, 123 Main St Toronto, Phone call" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Message to Candidate <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
-        <textarea class="form-textarea" id="interviewNotes" rows="3" placeholder="Any instructions or notes for the candidate..."></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeInterviewModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitInterview()">Send Invitation</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
