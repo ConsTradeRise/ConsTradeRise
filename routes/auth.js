@@ -99,6 +99,9 @@ router.post('/register', async (req, res) => {
     const verifyToken  = crypto.randomBytes(32).toString('hex');
     const verifyExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+    // If email is not configured, skip verification entirely
+    const emailConfigured = !!process.env.EMAIL_USER;
+
     // Create user + profile in one transaction
     const user = await prisma.user.create({
       data: {
@@ -106,9 +109,9 @@ router.post('/register', async (req, res) => {
         email: email.toLowerCase().trim(),
         passwordHash,
         role: userRole,
-        emailVerified: false,
-        emailVerifyToken: verifyToken,
-        emailVerifyExpiry: verifyExpiry,
+        emailVerified: !emailConfigured, // auto-verify when email not set up
+        emailVerifyToken: emailConfigured ? verifyToken : null,
+        emailVerifyExpiry: emailConfigured ? verifyExpiry : null,
         profile: {
           create: {} // empty profile — user fills it in onboarding
         }
@@ -122,32 +125,35 @@ router.post('/register', async (req, res) => {
       }
     });
 
-    // Send verification email (non-blocking — don't fail registration if email fails)
-    const baseUrl   = process.env.APP_URL || 'http://localhost:3001';
-    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${verifyToken}`;
-
-    sendEmail({
-      to: user.email,
-      subject: 'Verify your ConsTradeHire email',
-      html: baseTemplate('Verify Your Email Address', `
-        <p>Hi ${user.name},</p>
-        <p>Thanks for joining ConsTradeHire! Click the button below to verify your email address and activate your account.</p>
-        <p style="text-align:center;margin:28px 0;">
-          <a href="${verifyUrl}" class="btn">Verify My Email →</a>
-        </p>
-        <p style="font-size:12px;color:#94a3b8;">
-          This link expires in 24 hours. If you didn't create this account, you can safely ignore this email.
-        </p>
-        <p style="font-size:12px;color:#94a3b8;">
-          If the button doesn't work, copy and paste this link into your browser:<br>
-          <a href="${verifyUrl}" style="color:#f97316;word-break:break-all;">${verifyUrl}</a>
-        </p>
-      `)
-    }).catch(() => {});
+    // Send verification email only if email is configured
+    if (emailConfigured) {
+      const baseUrl   = process.env.APP_URL || 'http://localhost:3001';
+      const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${verifyToken}`;
+      sendEmail({
+        to: user.email,
+        subject: 'Verify your ConsTradeHire email',
+        html: baseTemplate('Verify Your Email Address', `
+          <p>Hi ${user.name},</p>
+          <p>Thanks for joining ConsTradeHire! Click the button below to verify your email address and activate your account.</p>
+          <p style="text-align:center;margin:28px 0;">
+            <a href="${verifyUrl}" class="btn">Verify My Email →</a>
+          </p>
+          <p style="font-size:12px;color:#94a3b8;">
+            This link expires in 24 hours. If you didn't create this account, you can safely ignore this email.
+          </p>
+          <p style="font-size:12px;color:#94a3b8;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verifyUrl}" style="color:#f97316;word-break:break-all;">${verifyUrl}</a>
+          </p>
+        `)
+      }).catch(() => {});
+    }
 
     res.status(201).json({
-      message: 'Account created! Please check your email to verify your account.',
-      requiresVerification: true,
+      message: emailConfigured
+        ? 'Account created! Please check your email to verify your account.'
+        : 'Account created! You can now log in.',
+      requiresVerification: emailConfigured,
       email: user.email
     });
 
@@ -295,9 +301,11 @@ router.post('/login', async (req, res) => {
     }
 
     // ── Email verification check ──────────────────
+    // Skip enforcement if email sending is not configured (EMAIL_USER not set)
+    const emailConfigured = !!process.env.EMAIL_USER;
     if (!user.emailVerified) {
-      // Old accounts (created before this feature) have no emailVerifyToken — auto-verify them
-      if (!user.emailVerifyToken) {
+      if (!user.emailVerifyToken || !emailConfigured) {
+        // Auto-verify: old account with no token, OR email not configured on server
         await prisma.user.update({
           where: { id: user.id },
           data: { emailVerified: true }
