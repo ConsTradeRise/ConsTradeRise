@@ -611,7 +611,7 @@ app.post('/api/resume', aiLimiter, requireAI, async (req, res) => {
 // POST /api/applications/cover-letter/upload  — returns extracted text
 const uploadCL = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 4 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -619,7 +619,12 @@ const uploadCL = multer({
     else cb(new Error('Only PDF and Word files are allowed'));
   }
 });
-app.post('/api/applications/cover-letter/upload', requireAuth, uploadCL.single('file'), async (req, res) => {
+app.post('/api/applications/cover-letter/upload', requireAuth, (req, res, next) => {
+  uploadCL.single('file')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'File too large. Max 4MB.' : err.message });
+    next();
+  });
+}, async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   try {
     let text = '';
@@ -647,7 +652,7 @@ app.post('/api/applications/cover-letter/upload', requireAuth, uploadCL.single('
 // POST /api/resume/upload  (multipart/form-data, field: "resume")
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB — stays under Vercel's 4.5MB request limit
   fileFilter: (req, file, cb) => {
     const allowed = [
       'application/pdf',
@@ -664,7 +669,17 @@ const upload = multer({
   }
 });
 
-app.post('/api/resume/upload', requireAuth, upload.single('resume'), async (req, res) => {
+app.post('/api/resume/upload', requireAuth, (req, res, next) => {
+  upload.single('resume')(req, res, (err) => {
+    if (err) {
+      const msg = err.code === 'LIMIT_FILE_SIZE'
+        ? 'File too large. Maximum size is 4MB.'
+        : err.message || 'Upload failed';
+      return res.status(400).json({ error: msg });
+    }
+    next();
+  });
+}, async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   try {
