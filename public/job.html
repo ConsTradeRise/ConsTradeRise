@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkAlreadyApplied(id);
     loadATSScore(currentJob);
   }
+  renderSaveBtn(id);
 });
 
 async function checkAlreadyApplied(jobId) {
@@ -255,6 +256,7 @@ function renderJob(job) {
               ` : `
                 <button class="btn btn-primary btn-full btn-lg" onclick="openApplyModal()">Apply Now</button>
               `}
+              <button id="saveJobBtn" class="btn btn-ghost btn-full" style="margin-top:8px;" onclick="toggleSaveJob('${job.id}')"></button>
             ` : `
               <div style="text-align:center;color:var(--gray-500);font-size:13px;">Employer account</div>
             `}
@@ -394,6 +396,24 @@ async function genCoverLetter() {
 
 function closeApplyModal() {
   document.getElementById('applyModal').classList.remove('open');
+}
+
+// ── Save job ──────────────────────────────────
+function getSavedJobs() { try { return JSON.parse(localStorage.getItem('ctr_saved')||'[]'); } catch { return []; } }
+function renderSaveBtn(jobId) {
+  const btn = document.getElementById('saveJobBtn');
+  if (!btn) return;
+  const saved = getSavedJobs().includes(String(jobId));
+  btn.textContent = saved ? '❤️ Saved' : '🤍 Save Job';
+  btn.style.color = saved ? 'var(--red,#dc2626)' : '';
+}
+function toggleSaveJob(jobId) {
+  const saved = getSavedJobs();
+  const idx = saved.indexOf(String(jobId));
+  if (idx >= 0) saved.splice(idx, 1); else saved.push(String(jobId));
+  localStorage.setItem('ctr_saved', JSON.stringify(saved));
+  renderSaveBtn(jobId);
+  Toast.success(idx >= 0 ? 'Removed from saved' : 'Job saved!');
 }
 
 async function submitApplication() {
