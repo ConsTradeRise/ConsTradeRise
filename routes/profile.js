@@ -45,7 +45,7 @@ router.put('/me', requireAuth, async (req, res) => {
       // Structured
       experiences, educations, certifications,
       // Preferences
-      visibleToEmployers, openToMatching, travelRadius,
+      visibleToEmployers, openToMatching,
       // Employer
       companyName, companySize, industry, website
     } = req.body;
@@ -81,7 +81,6 @@ router.put('/me', requireAuth, async (req, res) => {
       ...(certifications  !== undefined && { certifications }),
       ...(visibleToEmployers !== undefined && { visibleToEmployers }),
       ...(openToMatching     !== undefined && { openToMatching }),
-      ...(travelRadius    !== undefined && { travelRadius: parseInt(travelRadius) || null }),
       ...(companyName  !== undefined && { companyName }),
       ...(companySize  !== undefined && { companySize }),
       ...(industry     !== undefined && { industry }),

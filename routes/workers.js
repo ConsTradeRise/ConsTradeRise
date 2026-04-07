@@ -10,43 +10,69 @@ const prisma  = new PrismaClient();
 // GET /api/workers
 router.get('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res) => {
   try {
-    const { search, province, skill, availability, page = 1 } = req.query;
-    const limit = Math.min(parseInt(req.query.limit) || 20, 50); // cap at 50
+    const { search, province, skill, availability, jobId, page = 1 } = req.query;
+    const limit = Math.min(parseInt(req.query.limit) || 10, 10);
     const skip = (Math.max(parseInt(page), 1) - 1) * limit;
 
-    // Build Prisma where on Profile
-    const where = {
-      visibleToEmployers: true,
-      user: { role: 'WORKER' }
-    };
-    if (province)     where.province    = { equals: province, mode: 'insensitive' };
+    // If jobId provided, derive filters from the job posting
+    let jobSkills = [];
+    let jobProvince = province || null;
+    let jobKeywords = search || null;
+    if (jobId) {
+      const job = await prisma.job.findUnique({
+        where: { id: jobId },
+        select: { skills: true, province: true, city: true, title: true, description: true }
+      });
+      if (!job) return res.status(404).json({ error: 'Job not found' });
+      // Only employer's own jobs
+      if (req.user.role === 'EMPLOYER') {
+        const owned = await prisma.job.count({ where: { id: jobId, employerId: req.user.id } });
+        if (!owned) return res.status(403).json({ error: 'Access denied' });
+      }
+      jobSkills = job.skills || [];
+      if (!jobProvince && job.province) jobProvince = job.province;
+      if (!jobKeywords) jobKeywords = job.title;
+    }
+
+    const where = { visibleToEmployers: true, user: { role: 'WORKER' } };
+    if (jobProvince) where.province = { equals: jobProvince, mode: 'insensitive' };
     if (availability) where.availability = { equals: availability, mode: 'insensitive' };
-    if (skill)        where.skills       = { has: skill };
+    if (skill) where.skills = { has: skill };
 
-    const [profiles, total] = await Promise.all([
-      prisma.profile.findMany({
-        where,
-        skip,
-        take: parseInt(limit),
-        orderBy: { updatedAt: 'desc' },
-        include: {
-          user: { select: { id: true, name: true, createdAt: true } }
-        }
-      }),
-      prisma.profile.count({ where })
-    ]);
+    const profiles = await prisma.profile.findMany({
+      where,
+      skip,
+      take: limit * 5, // over-fetch for JS skill scoring
+      orderBy: { updatedAt: 'desc' },
+      include: { user: { select: { id: true, name: true, createdAt: true } } }
+    });
 
-    // Text search filter (headline / skills) — done in JS since Postgres array search is limited
+    // Score and sort by skill overlap with job
     let filtered = profiles;
-    if (search) {
-      const q = search.toLowerCase();
-      filtered = profiles.filter(p =>
+    if (jobSkills.length > 0) {
+      const jobSkillsLc = jobSkills.map(s => s.toLowerCase());
+      filtered = profiles
+        .map(p => {
+          const workerSkills = (p.skills || []).map(s => s.toLowerCase());
+          const overlap = jobSkillsLc.filter(s => workerSkills.includes(s)).length;
+          return { ...p, _score: overlap };
+        })
+        .filter(p => p._score > 0)
+        .sort((a, b) => b._score - a._score);
+    }
+
+    // Keyword filter on top
+    if (jobKeywords) {
+      const q = jobKeywords.toLowerCase();
+      const kwFiltered = filtered.filter(p =>
         p.headline?.toLowerCase().includes(q) ||
-        p.summary?.toLowerCase().includes(q) ||
         p.skills?.some(s => s.toLowerCase().includes(q)) ||
         p.user?.name?.toLowerCase().includes(q)
       );
+      if (kwFiltered.length > 0) filtered = kwFiltered;
     }
+
+    filtered = filtered.slice(0, limit);
 
     // Increment profile views — bulk update, fire-and-forget
     if (filtered.length > 0) {
