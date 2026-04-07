@@ -64,6 +64,14 @@
     .prof-edit-btn { background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.2); font-size:12px; padding:6px 14px; border-radius:8px; cursor:pointer; flex-shrink:0; align-self:flex-start; }
     .prof-edit-btn:hover { background:rgba(255,255,255,.2); }
     @media(max-width:768px){ .prof-3col{grid-template-columns:1fr!important;} .prof-2col{grid-template-columns:1fr!important;} }
+
+    /* Mobile nav */
+    .dash-mobile-nav { display:none; overflow-x:auto; white-space:nowrap; background:var(--gray-900); padding:0 8px; scrollbar-width:none; border-bottom:1px solid rgba(255,255,255,.08); position:sticky; top:60px; z-index:50; }
+    .dash-mobile-nav::-webkit-scrollbar { display:none; }
+    .dash-mobile-nav-item { display:inline-flex; align-items:center; gap:5px; padding:11px 12px; font-size:12px; font-weight:600; color:#94a3b8; cursor:pointer; border-bottom:2px solid transparent; transition:all .15s; white-space:nowrap; }
+    .dash-mobile-nav-item.active { color:#fff; border-bottom-color:var(--blue); }
+    .dash-mobile-nav-item:hover  { color:#fff; }
+    @media(max-width:768px) { .dash-mobile-nav { display:block; } .dash-main { padding:20px 16px 80px; } }
   </style>
 </head>
 <body>
@@ -130,6 +138,20 @@
   <!-- Main content -->
   <main class="dash-main">
 
+    <!-- Mobile nav (hidden on desktop, shown ≤768px) -->
+    <div class="dash-mobile-nav" id="dashMobileNav">
+      <span class="dash-mobile-nav-item active" data-tab="overview">📊 Overview</span>
+      <span class="dash-mobile-nav-item" data-tab="applications">📋 Apps</span>
+      <span class="dash-mobile-nav-item" data-tab="profile">👤 Profile</span>
+      <span class="dash-mobile-nav-item" data-tab="resume">📄 Resume</span>
+      <span class="dash-mobile-nav-item" data-tab="saved">❤️ Saved</span>
+      <span class="dash-mobile-nav-item" data-tab="interviews">📅 Interviews</span>
+      <span class="dash-mobile-nav-item" data-tab="messages">💬 Messages</span>
+      <span class="dash-mobile-nav-item" data-tab="alerts">🔔 Alerts</span>
+      <span class="dash-mobile-nav-item" data-tab="analytics">📈 Stats</span>
+      <span class="dash-mobile-nav-item" data-tab="settings">⚙️ Settings</span>
+    </div>
+
     <!-- Header -->
     <div class="dash-header">
       <div>
@@ -152,7 +174,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-card-num" id="statViewed">—</div>
-          <div class="stat-card-label">Profile Views</div>
+          <div class="stat-card-label">Employer Views</div>
         </div>
         <div class="stat-card" onclick="window.location.href='/jobs.html'" style="cursor:pointer;">
           <div class="stat-card-num" id="statSaved">—</div>
@@ -330,10 +352,23 @@
           <div class="card-title" style="margin:0;">Upload Resume</div>
           <button class="btn btn-primary btn-sm" onclick="document.getElementById('resumeFile').click()">+ Upload New</button>
         </div>
-        <p style="font-size:14px;color:var(--gray-500);margin-bottom:12px;">Upload a PDF or Word file — your profile is updated automatically.</p>
-        <p class="form-hint">Accepted: PDF, Word (.docx) — max 5MB</p>
+        <p style="font-size:14px;color:var(--gray-500);margin-bottom:12px;">Upload a PDF or Word file — fields are extracted and your profile is updated automatically.</p>
+        <p class="form-hint">Accepted: PDF, Word (.docx) — max 5MB · Text extracted · No AI</p>
         <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" />
         <div id="resumeVersionsList" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- Skill search in profile -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">Search Your Skills</div>
+        </div>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:10px;">Find keywords in your profile skills — exact match only.</p>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input class="form-input" id="skillSearchInput" placeholder="e.g. HeavyBid, Procore, Bluebeam" style="flex:1;" oninput="searchProfileSkills()" />
+          <button class="btn" onclick="searchProfileSkills()">Search</button>
+        </div>
+        <div id="skillSearchResults"></div>
       </div>
 
     </div>
@@ -502,7 +537,7 @@
     <div class="modal-body" id="modalBody">
       <div class="upload-progress">
         <div class="spinner" style="width:36px;height:36px;border-width:3px;"></div>
-        <p>AI is reading your resume...<br/>This takes about 10 seconds.</p>
+        <p>Reading your resume…<br/>This takes a few seconds.</p>
       </div>
     </div>
     <div class="modal-footer hidden" id="modalFooter">
@@ -530,12 +565,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Tab switching
-document.querySelectorAll('.dash-sidebar-item').forEach(item => {
+document.querySelectorAll('.dash-sidebar-item, .dash-mobile-nav-item').forEach(item => {
   item.addEventListener('click', () => switchTab(item.dataset.tab));
 });
 
 function switchTab(tab) {
   document.querySelectorAll('.dash-sidebar-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
+  document.querySelectorAll('.dash-mobile-nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
   if (tab === 'applications') loadAllApplications();
   if (tab === 'saved')        loadSavedJobs();
@@ -544,6 +580,8 @@ function switchTab(tab) {
   if (tab === 'alerts')       loadAlerts();
   if (tab === 'interviews')   loadInterviews();
   if (tab === 'analytics')    loadWorkerAnalytics();
+  const mobileItem = document.querySelector(`.dash-mobile-nav-item[data-tab="${tab}"]`);
+  if (mobileItem) mobileItem.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
 }
 
 // Recommended jobs based on profile skills
@@ -622,25 +660,31 @@ async function loadSavedJobs() {
   }
   el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
 
-  const results = await Promise.allSettled(ids.map(id => apiCall('GET', `/api/jobs/${id}`)));
-  const jobs = results.filter(r => r.status==='fulfilled' && r.value.ok).map(r => r.value.data.job);
+  const [jobResults, appsRes] = await Promise.all([
+    Promise.allSettled(ids.map(id => apiCall('GET', `/api/jobs/${id}`))),
+    apiCall('GET', '/api/applications/mine')
+  ]);
+  const jobs = jobResults.filter(r => r.status==='fulfilled' && r.value.ok).map(r => r.value.data.job);
+  const appliedJobIds = new Set((appsRes.ok ? appsRes.data.applications || [] : []).map(a => a.jobId || a.job?.id));
 
   if (!jobs.length) {
     el.innerHTML = `<div class="empty-state"><p class="text-gray">Could not load saved jobs. They may have been removed.</p></div>`;
     return;
   }
-  el.innerHTML = jobs.map(j => `
-    <div class="app-row">
+  el.innerHTML = jobs.map(j => {
+    const applied = appliedJobIds.has(j.id);
+    return `<div class="app-row">
       <div class="app-info">
-        <div class="app-title">${escapeHtml(j.title)}</div>
+        <div class="app-title">${escapeHtml(j.title)}${applied ? ' <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;margin-left:6px;">Applied</span>' : ''}</div>
         <div class="app-company">${escapeHtml(j.companyName||j.employer?.name||'Company')} · ${escapeHtml(j.city||j.location||'Canada')}</div>
         <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">${escapeHtml(j.jobType||'Full-time')}${j.salary?' · '+escapeHtml(j.salary):''} · Posted ${formatDate(j.postedAt)}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">
-        <a href="/jobs.html?id=${j.id}" class="btn btn-sm btn-primary">Apply →</a>
+        <a href="/jobs.html?id=${j.id}" class="btn btn-sm ${applied?'btn-outline':'btn-primary'}">${applied?'View →':'Apply →'}</a>
         <button onclick="unsaveJob('${j.id}')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;">Remove ❤️</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function unsaveJob(id) {
@@ -678,12 +722,18 @@ let allApplicationsCache = [];
 function appRow(a) {
   const statusColors = { APPLIED:'badge-blue', VIEWED:'badge-yellow', SHORTLISTED:'badge-green', REJECTED:'badge-red' };
   const s = a.status || 'APPLIED';
+  const empId   = a.job?.employerId || a.job?.employer?.id || '';
+  const empName = a.job?.companyName || a.job?.employer?.name || 'Employer';
   return `<div class="app-row">
     <div class="app-info">
       <div class="app-title">${escapeHtml(a.job?.title || 'Job')}</div>
       <div class="app-company">${escapeHtml(a.job?.companyName || 'Company')}${a.job?.location ? ' · ' + escapeHtml(a.job.location) : ''}</div>
       <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Applied ${formatDate(a.appliedAt)} · ${escapeHtml(a.job?.jobType || '')}</div>
       ${statusPipeline(s)}
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        ${empId ? `<button onclick="dashMsgEmployer('${empId}','${escapeHtml(empName)}')" style="font-size:11px;padding:3px 10px;background:none;border:1px solid var(--gray-200);border-radius:6px;cursor:pointer;color:var(--gray-600);">💬 Message</button>` : ''}
+        ${s === 'SHORTLISTED' ? `<button onclick="switchTab('interviews')" style="font-size:11px;padding:3px 10px;background:var(--green-light);border:1px solid #bbf7d0;border-radius:6px;cursor:pointer;color:var(--green);font-weight:600;">📅 View Interview</button>` : ''}
+      </div>
     </div>
     <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
       <span class="badge ${statusColors[s] || 'badge-gray'}">${s.charAt(0)+s.slice(1).toLowerCase()}</span>
@@ -692,6 +742,11 @@ function appRow(a) {
       ${a.job?.isActive === false ? `<span style="font-size:11px;color:var(--gray-400);">Job closed</span>` : ''}
     </div>
   </div>`;
+}
+
+function dashMsgEmployer(userId, name) {
+  switchTab('messages');
+  setTimeout(() => dashOpenConv(userId, name), 150);
 }
 
 function filterApplications() {
@@ -1171,7 +1226,7 @@ function openModal(title) {
   document.getElementById('modalBody').innerHTML = `
     <div class="upload-progress">
       <div class="spinner" style="width:36px;height:36px;border-width:3px;"></div>
-      <p>Reading resume and saving to your profile…<br/>This takes a few seconds.</p>
+      <p>Extracting text and mapping fields…<br/>This takes a few seconds.</p>
     </div>`;
   document.getElementById('modalFooter').classList.add('hidden');
   document.getElementById('resumeModal').classList.add('open');
@@ -1527,6 +1582,48 @@ async function deleteAlert(id) {
   if (ok) { Toast.success('Alert deleted'); loadAlerts(); }
 }
 
+// Render notes with clickable URLs
+function formatNotes(text) {
+  return escapeHtml(text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--blue);word-break:break-all;">$1</a>').replace(/\n/g, '<br>');
+}
+
+// ── SKILL SEARCH ──────────────────────────────
+function searchProfileSkills() {
+  const q = (document.getElementById('skillSearchInput').value || '').trim().toLowerCase();
+  const el = document.getElementById('skillSearchResults');
+  if (!q) { el.innerHTML = ''; return; }
+
+  const skills = (_profData.skills || []);
+  const matchedSkills = skills.filter(s => s.toLowerCase().includes(q));
+
+  const expMatches = (_profData.experiences || []).filter(e =>
+    (e.title || '').toLowerCase().includes(q) ||
+    (e.company || '').toLowerCase().includes(q) ||
+    (e.bullets || []).some(b => b.toLowerCase().includes(q))
+  );
+
+  const certMatches = (_profData.certifications || []).filter(c =>
+    (c.name || '').toLowerCase().includes(q)
+  );
+
+  if (!matchedSkills.length && !expMatches.length && !certMatches.length) {
+    el.innerHTML = `<p style="font-size:13px;color:var(--gray-400);padding:8px 0;">No matches for "<strong>${escapeHtml(q)}</strong>"</p>`;
+    return;
+  }
+
+  let html = '';
+  if (matchedSkills.length) {
+    html += `<div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Skills</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${matchedSkills.map(s => `<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:600;">${escapeHtml(s)}</span>`).join('')}</div></div>`;
+  }
+  if (expMatches.length) {
+    html += `<div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Experience</div>${expMatches.map(e => `<div style="font-size:13px;padding:4px 0;color:var(--gray-300);">${escapeHtml(e.title || '')}${e.company ? ` · ${escapeHtml(e.company)}` : ''}</div>`).join('')}</div>`;
+  }
+  if (certMatches.length) {
+    html += `<div><div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Certifications</div>${certMatches.map(c => `<div style="font-size:13px;padding:4px 0;color:var(--gray-300);">${escapeHtml(c.name || '')}</div>`).join('')}</div>`;
+  }
+  el.innerHTML = html;
+}
+
 // ── INTERVIEWS ────────────────────────────────
 async function loadInterviews() {
   const el = document.getElementById('interviewsList');
@@ -1565,7 +1662,7 @@ async function loadInterviews() {
       </div>
 
       ${iv.location ? `<div style="font-size:13px;margin-bottom:8px;">📍 <strong>Location:</strong> ${escapeHtml(iv.location)}</div>` : ''}
-      ${iv.notes   ? `<div style="font-size:13px;color:var(--gray-600);margin-bottom:12px;padding:10px;background:var(--gray-50);border-radius:var(--radius);">${escapeHtml(iv.notes)}</div>` : ''}
+      ${iv.notes   ? `<div style="font-size:13px;color:var(--gray-600);margin-bottom:12px;padding:10px;background:var(--gray-50);border-radius:var(--radius);">${formatNotes(iv.notes)}</div>` : ''}
 
       ${iv.status === 'PENDING' && dates.length ? `
         <div style="margin-bottom:12px;">
