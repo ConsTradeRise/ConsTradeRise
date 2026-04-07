@@ -88,7 +88,7 @@ router.get('/', requireAuth, requireRole('EMPLOYER', 'ADMIN'), async (req, res) 
 
     // Strip private contact fields before sending to employer
     const safeWorkers = filtered.map(({ phone, email, linkedin, ...pub }) => pub);
-    res.json({ workers: safeWorkers, total, page: Math.max(parseInt(page), 1) });
+    res.json({ workers: safeWorkers, total: safeWorkers.length, page: Math.max(parseInt(page), 1) });
   } catch (e) {
     console.error('[workers/browse]', e.message);
     res.status(500).json({ error: 'Failed to fetch workers' });
