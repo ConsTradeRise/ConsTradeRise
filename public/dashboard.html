@@ -1050,7 +1050,7 @@ async function saveProfileSection() {
       city:              document.getElementById('pm_city').value.trim(),
       province:          document.getElementById('pm_province').value,
       headline:          document.getElementById('pm_headline').value.trim(),
-      yearsExperience:   document.getElementById('pm_years').value,
+      yearsExperience:   parseInt(document.getElementById('pm_years').value) || undefined,
       availability:      document.getElementById('pm_availability').value,
       driversLicence:    document.getElementById('pm_drivers').value,
       openToRelocation:  document.getElementById('pm_relocation').checked,
@@ -1326,7 +1326,7 @@ function showParsedModal(p, fileName, profileSaved) {
         </div>
         <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
           <span class="text-gray text-sm">Job Title</span>
-          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.role || '—')}</div>
+          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.headline || '—')}</div>
         </div>
         <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
           <span class="text-gray text-sm">LinkedIn</span>
@@ -1350,8 +1350,8 @@ function showParsedModal(p, fileName, profileSaved) {
         <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
           <div style="font-weight:700;font-size:14px;">${escapeHtml(exp.title || '')}</div>
           <div style="font-size:13px;color:var(--gray-600);margin:2px 0;">${escapeHtml(exp.company || '')} ${exp.location ? '· ' + escapeHtml(exp.location) : ''}</div>
-          <div style="font-size:12px;color:var(--gray-400);margin-bottom:6px;">${escapeHtml(exp.dates || '')}</div>
-          ${exp.bullets ? `<div style="font-size:13px;color:var(--gray-600);white-space:pre-line;">${escapeHtml(exp.bullets)}</div>` : ''}
+          <div style="font-size:12px;color:var(--gray-400);margin-bottom:6px;">${escapeHtml([exp.startDate, exp.isCurrent ? 'Present' : exp.endDate].filter(Boolean).join(' – '))}</div>
+          ${Array.isArray(exp.bullets) && exp.bullets.length ? `<div style="font-size:13px;color:var(--gray-600);white-space:pre-line;">${escapeHtml(exp.bullets.join('\n'))}</div>` : exp.bullets ? `<div style="font-size:13px;color:var(--gray-600);white-space:pre-line;">${escapeHtml(exp.bullets)}</div>` : ''}
         </div>`).join('')}
     </div>` : ''}
 
@@ -1363,7 +1363,7 @@ function showParsedModal(p, fileName, profileSaved) {
         <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
           <div style="font-weight:700;font-size:14px;">${escapeHtml(edu.degree || '')}</div>
           <div style="font-size:13px;color:var(--gray-600);">${escapeHtml(edu.institution || '')} ${edu.location ? '· ' + escapeHtml(edu.location) : ''}</div>
-          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml(edu.year || '')}</div>
+          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml([edu.startDate, edu.endDate].filter(Boolean).join(' – ') || '')}</div>
         </div>`).join('')}
     </div>` : ''}
 
@@ -1377,7 +1377,7 @@ function showParsedModal(p, fileName, profileSaved) {
             <div style="font-weight:600;font-size:13px;">${escapeHtml(c.name || '')}</div>
             <div style="font-size:12px;color:var(--gray-500);">${escapeHtml(c.issuer || '')}</div>
           </div>
-          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml(c.date || '')}</div>
+          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml(c.year || c.date || '')}</div>
         </div>`).join('')}
     </div>` : ''}
 
