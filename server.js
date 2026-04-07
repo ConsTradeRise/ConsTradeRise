@@ -46,6 +46,17 @@ const app    = express();
 const prisma = new PrismaClient();
 const PORT   = process.env.PORT || 3000;
 
+// Supabase storage — for resume file uploads
+let supabaseAdmin = null;
+try {
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+    const { createClient } = require('@supabase/supabase-js');
+    supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY, {
+      auth: { persistSession: false }
+    });
+  }
+} catch (_) { /* supabase-js not installed */ }
+
 // Claude client — only used for premium AI features (cover letter, interview prep, etc.)
 // Set ANTHROPIC_API_KEY in .env to enable; leave blank to disable premium features
 let client = null;
@@ -705,6 +716,7 @@ app.post('/api/resume/upload', requireAuth, (req, res, next) => {
 
     // ── Auto-save parsed data to user profile ─────────────
     let profileSaved = false;
+    let fileUrl = null;
     try {
       const skills = Array.isArray(parsed.skills) ? parsed.skills : [];
       const rawCity = parsed.city || '';
@@ -737,12 +749,31 @@ app.post('/api/resume/upload', requireAuth, (req, res, next) => {
         create: { userId: req.user.id, ...profileData }
       });
 
+      // Upload file to Supabase storage if configured
+      if (supabaseAdmin) {
+        try {
+          const ext      = path.extname(req.file.originalname).toLowerCase();
+          const filePath = `${req.user.id}/${Date.now()}${ext}`;
+          const { error: upErr } = await supabaseAdmin.storage
+            .from('resumes')
+            .upload(filePath, req.file.buffer, {
+              contentType: req.file.mimetype,
+              upsert: false
+            });
+          if (!upErr) {
+            const { data: urlData } = supabaseAdmin.storage.from('resumes').getPublicUrl(filePath);
+            fileUrl = urlData?.publicUrl || null;
+          }
+        } catch (_) { /* storage optional */ }
+      }
+
       // Store resume record (keep last 5 per user)
       await prisma.resume.create({
         data: {
           userId:      req.user.id,
           name:        req.file.originalname,
           content:     text.substring(0, 10000),
+          fileUrl:     fileUrl,
           aiGenerated: false
         }
       });
@@ -752,7 +783,7 @@ app.post('/api/resume/upload', requireAuth, (req, res, next) => {
       console.warn('[resume/upload] profile save failed:', dbErr.message);
     }
 
-    res.json({ parsed, rawText: text.substring(0, 3000), profileSaved });
+    res.json({ parsed, rawText: text.substring(0, 3000), profileSaved, fileUrl: fileUrl || null });
 
   } catch (e) {
     console.error('[resume/upload]', e.message);
