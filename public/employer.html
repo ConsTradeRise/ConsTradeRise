@@ -944,7 +944,7 @@ async function submitInterview() {
     applicationId: _ivAppId,
     proposedDates: [date],
     location: document.getElementById('ivLocation').value.trim() || null,
-    notes: [link, document.getElementById('ivNotes').value.trim()].filter(Boolean).join('\n\nMeeting link: ')
+    notes: [`Meeting link: ${link}`, document.getElementById('ivNotes').value.trim()].filter(Boolean).join('\n\n')
   });
   if (!ok) {
     console.error('[interview]', data);
