@@ -132,6 +132,7 @@ function initNavbar() {
 
 function injectNotificationBell(links) {
   if (!links) return;
+  if (document.getElementById('notifBtn')) return;
   const bell = document.createElement('div');
   bell.style.cssText = 'position:relative;display:inline-flex;align-items:center;cursor:pointer;';
   bell.innerHTML = `
@@ -164,6 +165,7 @@ function injectNotificationBell(links) {
 }
 
 async function fetchNotifCount() {
+  if (!Auth.isLoggedIn()) return;
   const { ok, data } = await apiCall('GET', '/api/notifications');
   if (!ok) return;
   const el = document.getElementById('notifCount');
@@ -483,6 +485,7 @@ function renderJobCard(job, isSaved = false) {
 }
 
 async function toggleSaveJob(jobId, btn) {
+  if (!btn) return;
   const isSaved = btn.textContent.includes('Saved');
   btn.disabled = true;
   const method = isSaved ? 'DELETE' : 'POST';

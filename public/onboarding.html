@@ -228,9 +228,12 @@ async function processFile(file) {
       headers: { 'Authorization': 'Bearer ' + Auth.getToken() },
       body: fd
     });
+    if (!res.ok) {
+      let errMsg = 'Failed to parse resume.';
+      try { const e = await res.json(); errMsg = e.error || errMsg; } catch {}
+      spinner.style.display = 'none'; msg.textContent = errMsg; return;
+    }
     const data = await res.json();
-
-    if (!res.ok) { spinner.style.display = 'none'; msg.textContent = data.error || 'Failed to parse resume.'; return; }
 
     _obParsed = data.parsed;
     spinner.style.display = 'none';
