@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#f97316" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="ConsTradeHire" />
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/style.css?v=3" />
   <style>
     .tab-bar { display:flex; gap:4px; border-bottom:1px solid var(--gray-200); margin-bottom:24px; }
     .tab-btn { padding:10px 16px; font-size:13px; font-weight:600; color:var(--gray-500); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
@@ -27,17 +27,18 @@
     .app-title { font-size:14px; font-weight:700; color:var(--gray-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .app-company { font-size:12px; color:var(--gray-500); }
 
-    /* Resume upload modal */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+    /* Resume upload modal — dark */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px); }
     .modal-overlay.open { display:flex; }
-    .modal { background:#fff; border-radius:var(--radius-lg); width:100%; max-width:600px; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow-lg); }
-    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid var(--gray-200); }
-    .modal-header h2 { font-size:18px; font-weight:800; }
-    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--gray-400); line-height:1; }
+    .modal { background:rgba(10,15,28,.97); border:1px solid var(--border); border-radius:var(--radius-lg); width:100%; max-width:600px; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow-lg),0 0 0 1px rgba(59,130,246,.08); backdrop-filter:blur(24px); }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid var(--border); }
+    .modal-header h2 { font-size:18px; font-weight:800; color:#fff; }
+    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--gray-400); line-height:1; transition:color .15s; }
+    .modal-close:hover { color:#fff; }
     .modal-body { padding:24px; }
-    .modal-footer { padding:16px 24px; border-top:1px solid var(--gray-200); display:flex; gap:10px; justify-content:flex-end; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
     .parsed-section { margin-bottom:20px; }
-    .parsed-section h4 { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--gray-500); margin-bottom:10px; }
+    .parsed-section h4 { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--gray-400); margin-bottom:10px; }
     .upload-progress { text-align:center; padding:40px 20px; }
     .upload-progress p { color:var(--gray-500); margin-top:12px; font-size:14px; }
 
@@ -66,7 +67,7 @@
     @media(max-width:768px){ .prof-3col{grid-template-columns:1fr!important;} .prof-2col{grid-template-columns:1fr!important;} }
 
     /* Mobile nav */
-    .dash-mobile-nav { display:none; overflow-x:auto; white-space:nowrap; background:var(--gray-900); padding:0 8px; scrollbar-width:none; border-bottom:1px solid rgba(255,255,255,.08); position:sticky; top:60px; z-index:50; }
+    .dash-mobile-nav { display:none; overflow-x:auto; white-space:nowrap; background:rgba(8,12,20,.95); backdrop-filter:blur(16px); padding:0 8px; scrollbar-width:none; border-bottom:1px solid var(--border); position:sticky; top:60px; z-index:50; }
     .dash-mobile-nav::-webkit-scrollbar { display:none; }
     .dash-mobile-nav-item { display:inline-flex; align-items:center; gap:5px; padding:11px 12px; font-size:12px; font-weight:600; color:#94a3b8; cursor:pointer; border-bottom:2px solid transparent; transition:all .15s; white-space:nowrap; }
     .dash-mobile-nav-item.active { color:#fff; border-bottom-color:var(--blue); }
@@ -93,45 +94,102 @@
 <div class="dash-layout">
 
   <!-- Sidebar -->
-  <aside class="dash-sidebar">
-    <div class="dash-sidebar-item active" data-tab="overview">
-      <span class="dash-sidebar-icon">📊</span> Overview
+  <aside class="dash-sidebar" id="dashSidebar">
+    <div class="sidebar-toggle">
+      <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" title="Toggle sidebar">◀</button>
     </div>
-    <div class="dash-sidebar-item" data-tab="applications">
-      <span class="dash-sidebar-icon">📋</span> Applications
+
+    <!-- Overview -->
+    <div class="dash-sidebar-item active" data-tab="overview" data-tooltip="Overview">
+      <span class="dash-sidebar-icon">📊</span><span class="sidebar-label">Overview</span>
     </div>
-    <div class="dash-sidebar-item" data-tab="profile">
-      <span class="dash-sidebar-icon">👤</span> My Profile
+
+    <!-- Jobs group -->
+    <div class="sidebar-group open" id="sgJobs">
+      <div class="sidebar-group-header" onclick="toggleSidebarGroup('sgJobs')" data-tooltip="Jobs">
+        <span class="dash-sidebar-icon">💼</span>
+        <span class="sidebar-label">Jobs</span>
+        <span class="sidebar-label sidebar-chevron">›</span>
+      </div>
+      <div class="sidebar-group-body">
+        <a href="/jobs.html" class="dash-sidebar-item sidebar-sub-item" data-tooltip="Browse Jobs">
+          <span class="dash-sidebar-icon" style="font-size:14px;">🔍</span>
+          <span class="sidebar-label">Browse</span>
+        </a>
+        <div class="dash-sidebar-item sidebar-sub-item" data-tab="saved" data-tooltip="Saved Jobs">
+          <span class="dash-sidebar-icon" style="font-size:14px;">❤️</span>
+          <span class="sidebar-label">Saved</span>
+          <span id="savedBadge" class="sidebar-badge" style="display:none;background:var(--orange);color:#fff;border-radius:100px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto;"></span>
+        </div>
+        <div class="dash-sidebar-item sidebar-sub-item" data-tab="applications" data-tooltip="Applications">
+          <span class="dash-sidebar-icon" style="font-size:14px;">📋</span>
+          <span class="sidebar-label">Applied</span>
+        </div>
+      </div>
     </div>
-    <div class="dash-sidebar-item" data-tab="resume">
-      <span class="dash-sidebar-icon">📄</span> Resume
+
+    <!-- Resume group -->
+    <div class="sidebar-group" id="sgResume">
+      <div class="sidebar-group-header" onclick="toggleSidebarGroup('sgResume')" data-tooltip="Resume">
+        <span class="dash-sidebar-icon">📄</span>
+        <span class="sidebar-label">Resume</span>
+        <span class="sidebar-label sidebar-chevron">›</span>
+      </div>
+      <div class="sidebar-group-body">
+        <a href="/resume-builder.html" target="_blank" class="dash-sidebar-item sidebar-sub-item" data-tooltip="Build Resume">
+          <span class="dash-sidebar-icon" style="font-size:14px;">✏️</span>
+          <span class="sidebar-label">Create</span>
+        </a>
+        <div class="dash-sidebar-item sidebar-sub-item" data-tab="resume" data-tooltip="Upload Resume">
+          <span class="dash-sidebar-icon" style="font-size:14px;">⬆️</span>
+          <span class="sidebar-label">Upload</span>
+        </div>
+      </div>
     </div>
-    <div class="dash-sidebar-item" data-tab="saved">
-      <span class="dash-sidebar-icon">❤️</span> Saved Jobs
-      <span id="savedBadge" style="display:none;background:var(--orange);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
+
+    <!-- Interviews group -->
+    <div class="sidebar-group" id="sgInterviews">
+      <div class="sidebar-group-header" onclick="toggleSidebarGroup('sgInterviews')" data-tooltip="Interviews">
+        <span class="dash-sidebar-icon">📅</span>
+        <span class="sidebar-label">Interviews</span>
+        <span class="sidebar-label sidebar-chevron">›</span>
+        <span id="interviewBadge" class="sidebar-badge" style="display:none;background:var(--orange);color:#fff;border-radius:100px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;"></span>
+      </div>
+      <div class="sidebar-group-body">
+        <div class="dash-sidebar-item sidebar-sub-item" data-tab="int-schedule" data-tooltip="Scheduled">
+          <span class="dash-sidebar-icon" style="font-size:14px;">📆</span>
+          <span class="sidebar-label">Scheduled</span>
+        </div>
+        <div class="dash-sidebar-item sidebar-sub-item" data-tab="int-prep" data-tooltip="AI Prep">
+          <span class="dash-sidebar-icon" style="font-size:14px;">🤖</span>
+          <span class="sidebar-label">AI Prep</span>
+        </div>
+      </div>
     </div>
-    <div class="dash-sidebar-item" data-tab="interviews">
-      <span class="dash-sidebar-icon">📅</span> Interviews
-      <span id="interviewBadge" style="display:none;background:var(--orange);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
+
+    <!-- Messages -->
+    <div class="dash-sidebar-item" data-tab="messages" data-tooltip="Messages">
+      <span class="dash-sidebar-icon">💬</span><span class="sidebar-label">Messages</span>
+      <span id="msgBadge" class="sidebar-badge" style="display:none;background:var(--blue);color:#fff;border-radius:100px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto;"></span>
     </div>
-    <div class="dash-sidebar-item" data-tab="interview-prep">
-      <span class="dash-sidebar-icon">🤖</span> AI Interview Prep
+
+    <!-- Profile -->
+    <div class="dash-sidebar-item" data-tab="profile" data-tooltip="My Profile">
+      <span class="dash-sidebar-icon">👤</span><span class="sidebar-label">My Profile</span>
     </div>
-    <div class="dash-sidebar-item" data-tab="alerts">
-      <span class="dash-sidebar-icon">🔔</span> Job Alerts
+
+    <!-- Alerts -->
+    <div class="dash-sidebar-item" data-tab="alerts" data-tooltip="Job Alerts">
+      <span class="dash-sidebar-icon">🔔</span><span class="sidebar-label">Job Alerts</span>
     </div>
-    <div class="dash-sidebar-item" data-tab="messages">
-      <span class="dash-sidebar-icon">💬</span> Messages
-      <span id="msgBadge" style="display:none;background:var(--blue);color:#fff;border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;"></span>
+
+    <!-- Settings -->
+    <div class="dash-sidebar-item" data-tab="settings" data-tooltip="Settings">
+      <span class="dash-sidebar-icon">⚙️</span><span class="sidebar-label">Settings</span>
     </div>
-    <div class="dash-sidebar-item" data-tab="analytics">
-      <span class="dash-sidebar-icon">📈</span> My Stats
-    </div>
-    <div class="dash-sidebar-item" data-tab="settings">
-      <span class="dash-sidebar-icon">⚙️</span> Settings
-    </div>
-    <div style="margin-top:auto; padding:20px;">
-      <a href="/jobs.html" class="btn btn-primary btn-full btn-sm">Browse Jobs</a>
+
+    <div style="margin-top:auto;padding:16px;" class="dash-sidebar-bottom">
+      <a href="/jobs.html" class="btn btn-primary btn-full btn-sm">Find Jobs</a>
     </div>
   </aside>
 
@@ -146,7 +204,7 @@
       <span class="dash-mobile-nav-item" data-tab="resume">📄 Resume</span>
       <span class="dash-mobile-nav-item" data-tab="saved">❤️ Saved</span>
       <span class="dash-mobile-nav-item" data-tab="interviews">📅 Interviews</span>
-      <span class="dash-mobile-nav-item" data-tab="messages">💬 Messages</span>
+      <span class="dash-mobile-nav-item" data-tab="messages">💬 Msgs</span>
       <span class="dash-mobile-nav-item" data-tab="alerts">🔔 Alerts</span>
       <span class="dash-mobile-nav-item" data-tab="analytics">📈 Stats</span>
       <span class="dash-mobile-nav-item" data-tab="settings">⚙️ Settings</span>
@@ -234,7 +292,7 @@
       <div class="card">
         <div class="flex-between mb-2">
           <div class="card-title" style="margin-bottom:0;">My Applications</div>
-          <select id="appStatusFilter" onchange="filterApplications()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:var(--radius);background:#fff;">
+          <select id="appStatusFilter" onchange="filterApplications()" class="form-select" style="font-size:12px;padding:4px 8px;width:auto;">
             <option value="">All Status</option>
             <option value="APPLIED">Applied</option>
             <option value="VIEWED">Viewed</option>
@@ -378,28 +436,32 @@
 
     <!-- ── INTERVIEWS TAB ── -->
     <div class="tab-panel" id="tab-interviews">
-      <div id="interviewsList"><div style="text-align:center;padding:40px;"><div class="spinner"></div></div></div>
-    </div>
-
-    <!-- ── INTERVIEW PREP TAB ── -->
-    <div class="tab-panel" id="tab-interview-prep">
-      <div class="card" style="max-width:700px;">
-        <div class="card-title">🤖 AI Interview Prep</div>
-        <p style="font-size:14px;color:var(--gray-500);margin-bottom:20px;">Paste a job description and get 8 tailored interview Q&amp;As with strong model answers.</p>
-        <div class="form-group">
-          <label class="form-label">Job Title</label>
-          <input class="form-input" id="ip_title" placeholder="e.g. Senior Estimator" />
+      <div class="tab-bar" style="margin-bottom:20px;">
+        <button class="tab-btn active" id="intSubBtnSchedule" onclick="switchIntSubTab('schedule')">📅 Scheduled</button>
+        <button class="tab-btn" id="intSubBtnPrep" onclick="switchIntSubTab('prep')">🤖 AI Prep</button>
+      </div>
+      <div id="intSubSchedule">
+        <div id="interviewsList"><div style="text-align:center;padding:40px;"><div class="spinner"></div></div></div>
+      </div>
+      <div id="intSubPrep" style="display:none;">
+        <div class="card" style="max-width:700px;">
+          <div class="card-title">🤖 AI Interview Prep</div>
+          <p style="font-size:14px;color:var(--gray-500);margin-bottom:20px;">Paste a job description and get 8 tailored interview Q&amp;As with strong model answers.</p>
+          <div class="form-group">
+            <label class="form-label">Job Title</label>
+            <input class="form-input" id="ip_title" placeholder="e.g. Senior Estimator" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Company</label>
+            <input class="form-input" id="ip_company" placeholder="e.g. PCL Construction" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Job Description</label>
+            <textarea class="form-textarea" id="ip_desc" rows="6" placeholder="Paste the job description here..."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="runInterviewPrep()" id="ipBtn">✨ Generate Interview Q&amp;As</button>
+          <div id="ipResults" style="margin-top:24px;"></div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Company</label>
-          <input class="form-input" id="ip_company" placeholder="e.g. PCL Construction" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Job Description</label>
-          <textarea class="form-textarea" id="ip_desc" rows="6" placeholder="Paste the job description here..."></textarea>
-        </div>
-        <button class="btn btn-primary" onclick="runInterviewPrep()" id="ipBtn">✨ Generate Interview Q&amp;As</button>
-        <div id="ipResults" style="margin-top:24px;"></div>
       </div>
     </div>
 
@@ -552,11 +614,48 @@
 
 <script src="/app.js"></script>
 <script>
+// ── SIDEBAR TOGGLE ────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('dashSidebar');
+  const btn = document.getElementById('sidebarToggleBtn');
+  const collapsed = sidebar.classList.toggle('collapsed');
+  btn.textContent = collapsed ? '▶' : '◀';
+  localStorage.setItem('ctr_sidebar', collapsed ? '1' : '0');
+}
+
+function toggleSidebarGroup(id) {
+  const sidebar = document.getElementById('dashSidebar');
+  if (sidebar.classList.contains('collapsed')) {
+    toggleSidebar();
+    setTimeout(() => {
+      const g = document.getElementById(id);
+      if (g) g.classList.add('open');
+    }, 220);
+    return;
+  }
+  const group = document.getElementById(id);
+  if (group) group.classList.toggle('open');
+}
+
+// ── INTERVIEW SUB-TABS ───────────────────────
+function switchIntSubTab(tab) {
+  document.getElementById('intSubBtnSchedule').classList.toggle('active', tab === 'schedule');
+  document.getElementById('intSubBtnPrep').classList.toggle('active', tab === 'prep');
+  document.getElementById('intSubSchedule').style.display = tab === 'schedule' ? '' : 'none';
+  document.getElementById('intSubPrep').style.display = tab === 'prep' ? '' : 'none';
+}
+
 // Auth guard
 document.addEventListener('DOMContentLoaded', () => {
   if (Auth.redirectIfNotAuth()) return;
   const user = Auth.getUser();
   if (user?.role === 'EMPLOYER') { window.location.href = '/employer.html'; return; }
+
+  // Restore sidebar state
+  if (localStorage.getItem('ctr_sidebar') === '1') {
+    document.getElementById('dashSidebar').classList.add('collapsed');
+    document.getElementById('sidebarToggleBtn').textContent = '▶';
+  }
 
   document.getElementById('dashWelcome').textContent = `Welcome back, ${user?.name?.split(' ')[0] || 'there'}`;
   loadDashboard();
@@ -569,21 +668,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Tab switching
 document.querySelectorAll('.dash-sidebar-item, .dash-mobile-nav-item').forEach(item => {
-  item.addEventListener('click', () => switchTab(item.dataset.tab));
+  if (item.dataset.tab) item.addEventListener('click', () => switchTab(item.dataset.tab));
 });
 
 function switchTab(tab) {
-  document.querySelectorAll('.dash-sidebar-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
-  document.querySelectorAll('.dash-mobile-nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
-  if (tab === 'applications') loadAllApplications();
-  if (tab === 'saved')        loadSavedJobs();
-  if (tab === 'messages')     dashLoadInbox();
-  if (tab === 'resume')       loadResumeVersions();
-  if (tab === 'alerts')       loadAlerts();
-  if (tab === 'interviews')   loadInterviews();
-  if (tab === 'analytics')    loadWorkerAnalytics();
-  const mobileItem = document.querySelector(`.dash-mobile-nav-item[data-tab="${tab}"]`);
+  // int-schedule / int-prep are virtual tabs mapping to the interviews panel
+  const realTab = (tab === 'int-schedule' || tab === 'int-prep') ? 'interviews' : tab;
+
+  // Update sidebar active state
+  document.querySelectorAll('.dash-sidebar-item').forEach(i => i.classList.remove('active'));
+  const activeItem = document.querySelector(`.dash-sidebar-item[data-tab="${tab}"]`);
+  if (activeItem) {
+    activeItem.classList.add('active');
+    // Open parent accordion group if this is a sub-item
+    const parentGroup = activeItem.closest('.sidebar-group');
+    if (parentGroup) parentGroup.classList.add('open');
+  }
+
+  document.querySelectorAll('.dash-mobile-nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === realTab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${realTab}`));
+
+  if (tab === 'int-schedule') { loadInterviews(); switchIntSubTab('schedule'); }
+  if (tab === 'int-prep')     switchIntSubTab('prep');
+  if (realTab === 'applications') loadAllApplications();
+  if (realTab === 'saved')        loadSavedJobs();
+  if (realTab === 'messages')     dashLoadInbox();
+  if (realTab === 'resume')       loadResumeVersions();
+  if (realTab === 'alerts')       loadAlerts();
+  if (realTab === 'interviews' && tab === 'interviews') loadInterviews();
+  if (realTab === 'analytics')    loadWorkerAnalytics();
+
+  const mobileItem = document.querySelector(`.dash-mobile-nav-item[data-tab="${realTab}"]`);
   if (mobileItem) mobileItem.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
 }
 
@@ -722,6 +837,15 @@ function statusPipeline(s) {
 
 let allApplicationsCache = [];
 
+function atsBar(score) {
+  if (score == null) return '';
+  const cls = score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red';
+  return `<div class="ats-bar-wrap">
+    <div class="ats-bar-row"><span>ATS Match</span><span class="ats-bar-pct ${cls}">${score}%</span></div>
+    <div class="ats-bar-track"><div class="ats-bar-fill ${cls}" style="width:${score}%"></div></div>
+  </div>`;
+}
+
 function appRow(a) {
   const statusColors = { APPLIED:'badge-blue', VIEWED:'badge-yellow', SHORTLISTED:'badge-green', REJECTED:'badge-red' };
   const s = a.status || 'APPLIED';
@@ -740,7 +864,7 @@ function appRow(a) {
     </div>
     <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
       <span class="badge ${statusColors[s] || 'badge-gray'}">${s.charAt(0)+s.slice(1).toLowerCase()}</span>
-      ${a.atsScore != null ? `<span style="font-size:11px;font-weight:700;color:${a.atsScore>=70?'var(--green)':a.atsScore>=50?'var(--blue)':'var(--orange)'};">ATS ${a.atsScore}%</span>` : ''}
+      ${atsBar(a.atsScore)}
       ${a.job?.id ? `<a href="/jobs.html?id=${a.job.id}" style="font-size:11px;color:var(--blue);">View →</a>` : ''}
       ${a.job?.isActive === false ? `<span style="font-size:11px;color:var(--gray-400);">Job closed</span>` : ''}
     </div>
@@ -1023,7 +1147,7 @@ async function saveProfileSection() {
       city:              document.getElementById('pm_city').value.trim(),
       province:          document.getElementById('pm_province').value,
       headline:          document.getElementById('pm_headline').value.trim(),
-      yearsExperience:   document.getElementById('pm_years').value,
+      yearsExperience:   parseInt(document.getElementById('pm_years').value) || undefined,
       availability:      document.getElementById('pm_availability').value,
       driversLicence:    document.getElementById('pm_drivers').value,
       openToRelocation:  document.getElementById('pm_relocation').checked,
@@ -1299,7 +1423,7 @@ function showParsedModal(p, fileName, profileSaved) {
         </div>
         <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
           <span class="text-gray text-sm">Job Title</span>
-          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.role || '—')}</div>
+          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.headline || '—')}</div>
         </div>
         <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
           <span class="text-gray text-sm">LinkedIn</span>
@@ -1323,8 +1447,8 @@ function showParsedModal(p, fileName, profileSaved) {
         <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
           <div style="font-weight:700;font-size:14px;">${escapeHtml(exp.title || '')}</div>
           <div style="font-size:13px;color:var(--gray-600);margin:2px 0;">${escapeHtml(exp.company || '')} ${exp.location ? '· ' + escapeHtml(exp.location) : ''}</div>
-          <div style="font-size:12px;color:var(--gray-400);margin-bottom:6px;">${escapeHtml(exp.dates || '')}</div>
-          ${exp.bullets ? `<div style="font-size:13px;color:var(--gray-600);white-space:pre-line;">${escapeHtml(exp.bullets)}</div>` : ''}
+          <div style="font-size:12px;color:var(--gray-400);margin-bottom:6px;">${escapeHtml([exp.startDate, exp.isCurrent ? 'Present' : exp.endDate].filter(Boolean).join(' – '))}</div>
+          ${Array.isArray(exp.bullets) && exp.bullets.length ? `<div style="font-size:13px;color:var(--gray-600);white-space:pre-line;">${escapeHtml(exp.bullets.join('\n'))}</div>` : exp.bullets ? `<div style="font-size:13px;color:var(--gray-600);white-space:pre-line;">${escapeHtml(exp.bullets)}</div>` : ''}
         </div>`).join('')}
     </div>` : ''}
 
@@ -1336,7 +1460,7 @@ function showParsedModal(p, fileName, profileSaved) {
         <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
           <div style="font-weight:700;font-size:14px;">${escapeHtml(edu.degree || '')}</div>
           <div style="font-size:13px;color:var(--gray-600);">${escapeHtml(edu.institution || '')} ${edu.location ? '· ' + escapeHtml(edu.location) : ''}</div>
-          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml(edu.year || '')}</div>
+          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml([edu.startDate, edu.endDate].filter(Boolean).join(' – ') || '')}</div>
         </div>`).join('')}
     </div>` : ''}
 
@@ -1350,7 +1474,7 @@ function showParsedModal(p, fileName, profileSaved) {
             <div style="font-weight:600;font-size:13px;">${escapeHtml(c.name || '')}</div>
             <div style="font-size:12px;color:var(--gray-500);">${escapeHtml(c.issuer || '')}</div>
           </div>
-          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml(c.date || '')}</div>
+          <div style="font-size:12px;color:var(--gray-400);">${escapeHtml(c.year || c.date || '')}</div>
         </div>`).join('')}
     </div>` : ''}
 
