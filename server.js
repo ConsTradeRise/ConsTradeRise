@@ -40,6 +40,7 @@ const alertRoutes         = require('./routes/alerts');
 const interviewRoutes     = require('./routes/interviews');
 const workerRoutes        = require('./routes/workers');
 const analyticsRoutes     = require('./routes/analytics');
+const resumeRoutes        = require('./routes/resumes');
 const { sendJobDigest, sendEmail, baseTemplate } = require('./utils/email');
 
 const app    = express();
@@ -210,6 +211,7 @@ app.use('/api/alerts',      alertRoutes);
 app.use('/api/interviews',  interviewRoutes);
 app.use('/api/workers',     workerRoutes);
 app.use('/api/analytics',   analyticsRoutes);
+app.use('/api/resumes',     resumeRoutes);
 app.use('/api',             externalRoutes);
 
 // ============================================================
