@@ -247,7 +247,7 @@ function renderJob(job) {
         <div class="card">
           <div id="applyBtnWrap">
             ${!isLoggedIn ? `
-              <a href="/login.html?next=/job.html?id=${job.id}" class="btn btn-primary btn-full btn-lg">Login to Apply</a>
+              <a href="/login.html?next=${encodeURIComponent('/job.html?id=' + job.id)}" class="btn btn-primary btn-full btn-lg">Login to Apply</a>
               <p style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:8px;">New? <a href="/register.html" style="color:var(--blue);">Create free account</a></p>
             ` : isWorker ? `
               ${isExternal ? `

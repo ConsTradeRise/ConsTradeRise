@@ -75,7 +75,9 @@
         <div class="upload-zone" id="uploadZone" onclick="document.getElementById('onboardFile').click()">
           <div style="font-size:40px;margin-bottom:12px;">📄</div>
           <div style="font-size:15px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">Drop your resume here</div>
-          <div style="font-size:13px;color:var(--gray-400);">PDF or Word — max 5MB</div>
+          <div style="font-size:13px;color:var(--gray-500);margin-bottom:12px;">or click to browse from your device</div>
+          <span style="display:inline-block;padding:6px 16px;background:var(--blue);color:#fff;border-radius:var(--radius);font-size:13px;font-weight:600;pointer-events:none;">Choose File</span>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:10px;">PDF or Word · max 4MB</div>
           <input type="file" id="onboardFile" accept=".pdf,.doc,.docx" style="display:none;" onchange="handleResumeUpload(this)" />
         </div>
 
@@ -188,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupUploadZone() {
   const zone = document.getElementById('uploadZone');
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('dragover'); });
   zone.addEventListener('drop', e => {
     e.preventDefault(); zone.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
@@ -202,12 +204,18 @@ function handleResumeUpload(input) {
 }
 
 async function processFile(file) {
+  const allowed = ['.pdf', '.doc', '.docx'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  if (!allowed.includes(ext)) { alert('Only PDF or Word files (.pdf, .doc, .docx) are allowed.'); return; }
+  if (file.size > 4 * 1024 * 1024) { alert('File too large. Maximum size is 4MB.'); return; }
+
   const status  = document.getElementById('uploadStatus');
   const spinner = document.getElementById('uploadSpinner');
   const msg     = document.getElementById('uploadMsg');
   const preview = document.getElementById('parsedPreview');
 
   status.style.display = 'block';
+  spinner.style.display = '';
   preview.style.display = 'none';
   msg.textContent = 'Parsing resume...';
 
@@ -220,9 +228,12 @@ async function processFile(file) {
       headers: { 'Authorization': 'Bearer ' + Auth.getToken() },
       body: fd
     });
+    if (!res.ok) {
+      let errMsg = 'Failed to parse resume.';
+      try { const e = await res.json(); errMsg = e.error || errMsg; } catch {}
+      spinner.style.display = 'none'; msg.textContent = errMsg; return;
+    }
     const data = await res.json();
-
-    if (!res.ok) { msg.textContent = data.error || 'Failed to parse resume.'; return; }
 
     _obParsed = data.parsed;
     spinner.style.display = 'none';
@@ -244,6 +255,7 @@ async function processFile(file) {
     // Pre-fill step 2
     prefillStep2(_obParsed);
   } catch {
+    spinner.style.display = 'none';
     msg.textContent = 'Upload failed. Please try again.';
   }
 }

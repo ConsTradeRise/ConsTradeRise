@@ -402,6 +402,7 @@ async function searchJobsWithJooble(keywords, location) {
         } catch { resolve([]); }
       });
     });
+    req.setTimeout(8000, () => { req.destroy(); resolve([]); });
     req.on('error', () => resolve([]));
     req.write(body);
     req.end();
