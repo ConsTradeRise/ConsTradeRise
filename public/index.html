@@ -20,8 +20,8 @@
   {"@context":"https://schema.org","@type":"WebSite","name":"ConsTradeHire","url":"https://constradehire.com","potentialAction":{"@type":"SearchAction","target":"https://constradehire.com/jobs.html?search={search_term_string}","query-input":"required name=search_term_string"}}
   </script>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS (local vendor for offline/preview support) -->
+  <script src="/vendor/tailwind-cdn.js"></script>
   <script>
     tailwind.config = {
       corePlugins: { preflight: false },
@@ -42,8 +42,13 @@
     }
   </script>
 
+  <!-- React + ReactDOM + Framer Motion (UMD) -->
+  <script src="/vendor/react.min.js"></script>
+  <script src="/vendor/react-dom.min.js"></script>
+  <script src="/vendor/framer-motion.js"></script>
+
   <!-- Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="/vendor/babel.min.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,10 +70,10 @@
 <body>
   <div id="root"></div>
 
-  <script type="text/babel" data-type="module">
-    import { useState, useEffect, useRef, useCallback } from 'https://esm.sh/react@18';
-    import { createRoot } from 'https://esm.sh/react-dom@18/client';
-    import { motion, useInView, AnimatePresence } from 'https://esm.sh/framer-motion@11';
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const { createRoot } = ReactDOM;
+    const { motion, useInView, AnimatePresence } = Motion;
 
     // ── Hooks ─────────────────────────────────────
     function useCountUp(target, duration = 1500, active = true) {
