@@ -82,11 +82,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:     ["'self'"],
-      scriptSrc:      ["'self'", "'unsafe-inline'"],  // inline scripts in HTML pages
-      styleSrc:       ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+      scriptSrc:      ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://cdn.tailwindcss.com', 'https://esm.sh'],
+      styleSrc:       ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'https://cdn.tailwindcss.com'],
       fontSrc:        ["'self'", 'fonts.gstatic.com'],
       imgSrc:         ["'self'", 'data:', 'https:'],
-      connectSrc:     ["'self'", 'https://api.adzuna.com'],
+      connectSrc:     ["'self'", 'https://api.adzuna.com', 'https://esm.sh', 'https://*.supabase.co'],
       frameSrc:       ["'none'"],
       objectSrc:      ["'none'"],
       upgradeInsecureRequests: []

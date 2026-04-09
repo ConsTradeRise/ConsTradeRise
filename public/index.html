@@ -6,355 +6,848 @@
   <title>ConsTradeHire — AI-Powered Construction Jobs in Canada</title>
   <meta name="description" content="Find construction jobs across Canada — Estimators, Project Coordinators, Labourers, Electricians, Welders and more. AI-powered job matching for the trades." />
   <link rel="canonical" href="https://constradehire.com/" />
-
-  <!-- Open Graph -->
   <meta property="og:type"        content="website" />
   <meta property="og:url"         content="https://constradehire.com/" />
   <meta property="og:title"       content="ConsTradeHire — AI-Powered Construction Jobs in Canada" />
-  <meta property="og:description" content="Find construction jobs across Canada. AI-powered matching for Estimators, Project Coordinators, Labourers, and all trades." />
+  <meta property="og:description" content="Find construction jobs across Canada. AI-powered matching for all trades." />
   <meta property="og:image"       content="https://constradehire.com/og-image.png" />
+  <meta name="twitter:card"       content="summary_large_image" />
+  <meta name="theme-color"        content="#080c14" />
+  <link rel="manifest"            href="/manifest.json" />
+  <link rel="icon"                href="/icon.svg" type="image/svg+xml" />
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card"        content="summary_large_image" />
-  <meta name="twitter:title"       content="ConsTradeHire — Construction Jobs Canada" />
-  <meta name="twitter:description" content="AI-powered construction job board for Canada. Find your next trade job today." />
-  <meta name="twitter:image"       content="https://constradehire.com/og-image.png" />
-
-  <!-- JSON-LD: Organization -->
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "ConsTradeHire",
-    "url": "https://constradehire.com",
-    "description": "AI-powered construction job board for Canada",
-    "areaServed": "CA",
-    "knowsAbout": ["Construction Jobs", "Trade Jobs", "Estimating", "Project Management"]
-  }
+  {"@context":"https://schema.org","@type":"WebSite","name":"ConsTradeHire","url":"https://constradehire.com","potentialAction":{"@type":"SearchAction","target":"https://constradehire.com/jobs.html?search={search_term_string}","query-input":"required name=search_term_string"}}
   </script>
 
-  <!-- JSON-LD: WebSite (enables Google Sitelinks search) -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "ConsTradeHire",
-    "url": "https://constradehire.com",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://constradehire.com/jobs.html?search={search_term_string}",
-      "query-input": "required name=search_term_string"
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      corePlugins: { preflight: false },
+      theme: {
+        extend: {
+          colors: {
+            brand: { blue: '#3b82f6', green: '#10b981', orange: '#f59e0b', bg: '#080c14', bg2: '#0d1220', card: '#111827' }
+          },
+          animation: {
+            'float': 'float 6s ease-in-out infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4,0,0.6,1) infinite',
+          },
+          keyframes: {
+            float: { '0%,100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-20px)' } }
+          }
+        }
+      }
     }
-  }
   </script>
 
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#f97316" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="ConsTradeHire" />
-  <link rel="stylesheet" href="/style.css" />
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: #080c14; color: #f1f5f9; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+    #root { min-height: 100vh; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #080c14; }
+    ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
+    .gradient-text { background: linear-gradient(135deg, #3b82f6, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+    .glow-blue { box-shadow: 0 0 40px rgba(59,130,246,0.15); }
+    .glow-green { box-shadow: 0 0 40px rgba(16,185,129,0.15); }
+    @keyframes countUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
+  </style>
 </head>
 <body>
+  <div id="root"></div>
 
-<!-- ─── NAVBAR ─────────────────────────────── -->
-<nav class="navbar">
-  <div class="container nav-inner">
-    <a href="/" class="logo">ConsTradeHire</a>
-    <div class="nav-links" id="navLinks">
-      <a href="/jobs.html">Browse Jobs</a>
-      <a href="#" id="navDashboardLink" style="display:none">Dashboard</a>
-      <a href="#" id="navLogoutBtn" style="display:none" class="btn btn-ghost">Logout</a>
-      <a href="/login.html" id="navLoginBtn" class="btn btn-ghost">Login</a>
-      <a href="/register.html" id="navRegisterBtn" class="btn btn-primary">Get Started</a>
-      <button id="pwaInstallBtn" onclick="promptInstall()" style="display:none;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--gray-200);border-radius:var(--radius);background:#fff;font-size:13px;font-weight:600;cursor:pointer;">📲 Install App</button>
-    </div>
-    <button class="nav-toggle" id="navToggle" aria-label="Menu">&#9776;</button>
-  </div>
-</nav>
+  <script type="text/babel" data-type="module">
+    import { useState, useEffect, useRef, useCallback } from 'https://esm.sh/react@18';
+    import { createRoot } from 'https://esm.sh/react-dom@18/client';
+    import { motion, useInView, AnimatePresence } from 'https://esm.sh/framer-motion@11';
 
-<!-- ─── HERO ──────────────────────────────── -->
-<section class="hero">
-  <div class="container hero-inner">
-    <div class="hero-badge">Canada's #1 Construction Job Platform</div>
-    <h1 class="hero-title">
-      Find Your Next<br/>
-      <span class="highlight">Construction Job</span><br/>
-      With AI
-    </h1>
-    <p class="hero-sub">
-      Get your ATS match score for every job. AI builds your resume.
-      Thousands of trades, construction &amp; civil engineering jobs across Canada.
-    </p>
-    <!-- Quick search -->
-    <div style="display:flex;gap:8px;max-width:580px;margin:0 auto 24px;flex-wrap:wrap;">
-      <input id="heroSearch" type="text" placeholder="Job title or keyword..." class="form-input" style="flex:1;min-width:200px;background:rgba(255,255,255,.95);" />
-      <button onclick="heroSearch()" class="btn btn-primary btn-lg" style="background:#fff;color:var(--blue);font-weight:700;">Search Jobs</button>
-    </div>
-    <div class="hero-actions">
-      <a href="/register.html?role=worker" class="btn btn-primary btn-lg">Get Started — Free</a>
-      <a href="/register.html?role=employer" class="btn btn-outline btn-lg">Post a Job</a>
-    </div>
-    <div class="hero-stats">
-      <div class="stat"><span class="stat-num" id="statJobs">—</span><span class="stat-label">Jobs Available</span></div>
-      <div class="stat"><span class="stat-num">AI</span><span class="stat-label">ATS Scoring</span></div>
-      <div class="stat"><span class="stat-num">Free</span><span class="stat-label">For Workers</span></div>
-    </div>
-  </div>
-</section>
+    // ── Hooks ─────────────────────────────────────
+    function useCountUp(target, duration = 1500, active = true) {
+      const [count, setCount] = useState(0);
+      useEffect(() => {
+        if (!active) return;
+        let start = null;
+        const step = (ts) => {
+          if (!start) start = ts;
+          const prog = Math.min((ts - start) / duration, 1);
+          setCount(Math.floor(prog * target));
+          if (prog < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }, [active, target, duration]);
+      return count;
+    }
 
-<!-- ─── ATS FEATURE HIGHLIGHT ─────────────── -->
-<section class="section-alt">
-  <div class="container">
-    <div class="feature-banner">
-      <div class="feature-banner-text">
-        <div class="section-badge">Core Feature</div>
-        <h2>Know Your Match Score Before You Apply</h2>
-        <p>
-          ConsTradeHire's AI reads every job description and scores your resume against it —
-          so you know exactly where you stand before hitting Apply.
-        </p>
-        <ul class="feature-list">
-          <li><span class="check">✓</span> ATS match score 0–100 on every job</li>
-          <li><span class="check">✓</span> See missing keywords instantly</li>
-          <li><span class="check">✓</span> AI suggests exactly what to add</li>
-          <li><span class="check">✓</span> Tailor your resume to any job in seconds</li>
-        </ul>
-        <a href="/register.html" class="btn btn-primary">Get Your Score Free</a>
-      </div>
-      <div class="feature-banner-card">
-        <div class="ats-demo-card">
-          <div class="ats-demo-header">
-            <span class="ats-demo-job">Senior Estimator — PCL Construction</span>
-            <span class="ats-score-badge score-good">82%</span>
+    // ── Data ──────────────────────────────────────
+    const SAMPLE_JOBS = [
+      { title: 'Senior Estimator', company: 'PCL Construction', location: 'Toronto, ON', salary: '$95K–$120K', score: 87, type: 'Full-time', badge: 'Hot' },
+      { title: 'Site Supervisor', company: 'EllisDon', location: 'Calgary, AB', salary: '$85K–$105K', score: 74, type: 'Full-time', badge: null },
+      { title: 'Project Coordinator', company: 'Graham Construction', location: 'Vancouver, BC', salary: '$70K–$90K', score: 63, type: 'Contract', badge: 'New' },
+    ];
+
+    const FEATURES = [
+      {
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+          </svg>
+        ),
+        title: 'Instant ATS Score',
+        desc: 'See exactly how your resume scores against any job in seconds — no guessing.',
+        color: '#3b82f6',
+        bg: 'rgba(59,130,246,0.1)',
+      },
+      {
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        ),
+        title: 'AI Resume Tailoring',
+        desc: 'Our AI rewrites your resume to match each job — keywords, bullets, everything.',
+        color: '#10b981',
+        bg: 'rgba(16,185,129,0.1)',
+      },
+      {
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        ),
+        title: 'Smart Job Matching',
+        desc: 'Jobs ranked by your skill match — find the right fit faster across all of Canada.',
+        color: '#f59e0b',
+        bg: 'rgba(245,158,11,0.1)',
+      },
+    ];
+
+    const STEPS = [
+      { num: '01', title: 'Upload Your Resume', desc: 'Drop your PDF or Word file. We parse it instantly — no forms to fill.' },
+      { num: '02', title: 'Get Your ATS Score', desc: 'See how you match every job. Find gaps before employers do.' },
+      { num: '03', title: 'Apply with Confidence', desc: 'Tailor in one click. Apply directly from the platform.' },
+    ];
+
+    const STATS = [
+      { value: 2400, label: 'Jobs Posted', suffix: '+' },
+      { value: 94, label: 'Match Accuracy', suffix: '%' },
+      { value: 180, label: 'Employers', suffix: '+' },
+      { value: 3, label: 'Faster Interviews', suffix: 'x' },
+    ];
+
+    const MISSING_KEYWORDS = ['Procore', 'Bluebeam', 'LEED', 'RFI Management', 'Primavera P6'];
+    const MATCHED_KEYWORDS = ['Estimating', 'AutoCAD', 'Project Management', 'Budget Control', 'Site Supervision', 'OHSA'];
+
+    // ── Score color ───────────────────────────────
+    function scoreColor(s) {
+      if (s >= 80) return '#10b981';
+      if (s >= 65) return '#3b82f6';
+      if (s >= 50) return '#f59e0b';
+      return '#ef4444';
+    }
+    function scoreLabel(s) {
+      if (s >= 80) return 'Excellent';
+      if (s >= 65) return 'Good';
+      if (s >= 50) return 'Fair';
+      return 'Poor';
+    }
+
+    // ── Navbar ────────────────────────────────────
+    function Navbar() {
+      const [scrolled, setScrolled] = useState(false);
+      const [open, setOpen] = useState(false);
+      const user = (() => { try { return JSON.parse(localStorage.getItem('tu_user')); } catch { return null; } })();
+
+      useEffect(() => {
+        const fn = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', fn, { passive: true });
+        return () => window.removeEventListener('scroll', fn);
+      }, []);
+
+      return (
+        <motion.nav
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+            background: scrolled ? 'rgba(8,12,20,0.92)' : 'transparent',
+            backdropFilter: scrolled ? 'blur(16px)' : 'none',
+            borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
+            transition: 'all 0.3s ease',
+            padding: '0 24px',
+          }}
+        >
+          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
+            <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+              <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg,#3b82f6,#10b981)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#fff' }}>C</div>
+              <span style={{ fontWeight: 700, fontSize: 18, color: '#f1f5f9', letterSpacing: '-0.3px' }}>ConsTradeHire</span>
+            </a>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <a href="/jobs.html" style={{ padding: '8px 16px', color: '#94a3b8', fontSize: 14, textDecoration: 'none', borderRadius: 8, transition: 'color 0.2s' }}
+                onMouseEnter={e => e.target.style.color='#f1f5f9'} onMouseLeave={e => e.target.style.color='#94a3b8'}>
+                Jobs
+              </a>
+              {user ? (
+                <a href={user.role === 'EMPLOYER' ? '/employer.html' : '/dashboard.html'}
+                  style={{ padding: '8px 18px', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', fontSize: 14, textDecoration: 'none', borderRadius: 8, border: '1px solid rgba(59,130,246,0.3)', fontWeight: 600 }}>
+                  Dashboard
+                </a>
+              ) : (
+                <>
+                  <a href="/login.html" style={{ padding: '8px 16px', color: '#94a3b8', fontSize: 14, textDecoration: 'none', borderRadius: 8 }}
+                    onMouseEnter={e => e.target.style.color='#f1f5f9'} onMouseLeave={e => e.target.style.color='#94a3b8'}>
+                    Sign In
+                  </a>
+                  <motion.a
+                    href="/register.html"
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{ padding: '9px 20px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', fontSize: 14, textDecoration: 'none', borderRadius: 8, fontWeight: 600, boxShadow: '0 4px 15px rgba(59,130,246,0.3)' }}>
+                    Get Started
+                  </motion.a>
+                </>
+              )}
+            </div>
           </div>
-          <div class="ats-progress-bar">
-            <div class="ats-progress-fill" style="width:82%"></div>
+        </motion.nav>
+      );
+    }
+
+    // ── Hero ──────────────────────────────────────
+    function HeroSection() {
+      const [query, setQuery] = useState('');
+
+      return (
+        <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingTop: 64 }}>
+          {/* Animated blobs */}
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.35, 0.55, 0.35] }}
+            transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
+            style={{ position: 'absolute', top: '10%', left: '5%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)', pointerEvents: 'none' }}
+          />
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.25, 0.45, 0.25] }}
+            transition={{ repeat: Infinity, duration: 10, ease: 'easeInOut', delay: 2 }}
+            style={{ position: 'absolute', bottom: '5%', right: '5%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)', pointerEvents: 'none' }}
+          />
+          <motion.div
+            animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }}
+            transition={{ repeat: Infinity, duration: 12, ease: 'easeInOut', delay: 4 }}
+            style={{ position: 'absolute', top: '40%', right: '20%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%)', pointerEvents: 'none' }}
+          />
+
+          {/* Grid pattern */}
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }} />
+
+          <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 24px', maxWidth: 800, margin: '0 auto' }}>
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 100, marginBottom: 28, fontSize: 13, color: '#93c5fd', fontWeight: 500 }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3b82f6', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+              AI-Powered · Canada's #1 Construction Job Board
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              style={{ fontSize: 'clamp(38px, 7vw, 76px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-2px', color: '#f8fafc', marginBottom: 20 }}
+            >
+              Get Hired in the<br />
+              <span className="gradient-text">Trades Faster</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              style={{ fontSize: 19, color: '#94a3b8', lineHeight: 1.6, marginBottom: 40, maxWidth: 560, margin: '0 auto 40px' }}
+            >
+              See your ATS score, tailor your resume with AI, and apply to top construction jobs — all in one place.
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}
+            >
+              <motion.a
+                href="/register.html"
+                whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(59,130,246,0.4)' }}
+                whileTap={{ scale: 0.97 }}
+                style={{ padding: '15px 32px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', textDecoration: 'none', borderRadius: 12, fontWeight: 700, fontSize: 16, boxShadow: '0 4px 20px rgba(59,130,246,0.3)', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+              >
+                Get Your ATS Score
+                <svg viewBox="0 0 20 20" fill="currentColor" style={{ width: 18, height: 18 }}>
+                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                </svg>
+              </motion.a>
+              <motion.a
+                href="/jobs.html"
+                whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.08)' }}
+                whileTap={{ scale: 0.97 }}
+                style={{ padding: '15px 32px', background: 'rgba(255,255,255,0.05)', color: '#f1f5f9', textDecoration: 'none', borderRadius: 12, fontWeight: 600, fontSize: 16, border: '1px solid rgba(255,255,255,0.12)' }}
+              >
+                Browse Jobs
+              </motion.a>
+            </motion.div>
+
+            {/* Search bar */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              style={{ display: 'flex', maxWidth: 560, margin: '0 auto', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, overflow: 'hidden', backdropFilter: 'blur(10px)' }}
+            >
+              <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center', color: '#64748b' }}>
+                <svg viewBox="0 0 20 20" fill="currentColor" style={{ width: 20, height: 20 }}>
+                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
+                </svg>
+              </div>
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (window.location.href = '/jobs.html?search=' + encodeURIComponent(query))}
+                placeholder="Estimator, Electrician, Project Manager..."
+                style={{ flex: 1, padding: '16px 0', background: 'none', border: 'none', outline: 'none', color: '#f1f5f9', fontSize: 15 }}
+              />
+              <motion.button
+                onClick={() => window.location.href = '/jobs.html?search=' + encodeURIComponent(query)}
+                whileHover={{ background: '#2563eb' }}
+                style={{ padding: '0 24px', background: '#3b82f6', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14, transition: 'background 0.2s' }}
+              >
+                Search
+              </motion.button>
+            </motion.div>
+
+            {/* Social proof */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              style={{ marginTop: 24, fontSize: 13, color: '#475569' }}
+            >
+              2,400+ jobs across Ontario, BC, Alberta & more
+            </motion.p>
           </div>
-          <p class="ats-strength">Good Match</p>
-          <div class="ats-keywords">
-            <div class="keyword-section">
-              <span class="kw-label match">✓ Matched</span>
-              <div class="kw-tags">
-                <span class="kw-tag">HeavyBid</span>
-                <span class="kw-tag">Bluebeam</span>
-                <span class="kw-tag">ICI</span>
-                <span class="kw-tag">Estimating</span>
+        </section>
+      );
+    }
+
+    // ── ATS Demo ──────────────────────────────────
+    function AtsDemoSection() {
+      const ref = useRef(null);
+      const inView = useInView(ref, { once: true, margin: '-100px' });
+      const score = useCountUp(82, 1400, inView);
+
+      return (
+        <section ref={ref} style={{ padding: '100px 24px', maxWidth: 1100, margin: '0 auto' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+            style={{ textAlign: 'center', marginBottom: 60 }}
+          >
+            <div style={{ display: 'inline-block', padding: '5px 14px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 100, fontSize: 12, color: '#60a5fa', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+              Live Demo
+            </div>
+            <h2 style={{ fontSize: 'clamp(28px,5vw,44px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 12 }}>
+              See Your Resume Score
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: 17, maxWidth: 480, margin: '0 auto' }}>
+              Know exactly where you stand before you apply
+            </p>
+          </motion.div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+            {/* Score card */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={inView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="glass"
+              style={{ borderRadius: 20, padding: 36, position: 'relative', overflow: 'hidden' }}
+            >
+              <div className="shimmer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.4 }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <div>
+                  <p style={{ fontSize: 13, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>ATS Match Score</p>
+                  <p style={{ fontSize: 12, color: '#475569' }}>Senior Estimator @ PCL Construction</p>
+                </div>
+                <div style={{ padding: '4px 12px', borderRadius: 100, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', fontSize: 12, color: '#34d399', fontWeight: 600 }}>
+                  {scoreLabel(score)}
+                </div>
+              </div>
+
+              {/* Big score */}
+              <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                <motion.div
+                  style={{ fontSize: 88, fontWeight: 900, letterSpacing: '-4px', lineHeight: 1, color: scoreColor(score), filter: `drop-shadow(0 0 20px ${scoreColor(score)}50)` }}
+                >
+                  {score}
+                  <span style={{ fontSize: 36, fontWeight: 600, color: '#64748b' }}>%</span>
+                </motion.div>
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
+                  <span style={{ color: '#94a3b8' }}>Match strength</span>
+                  <span style={{ color: '#10b981', fontWeight: 600 }}>82 / 100</span>
+                </div>
+                <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 100, overflow: 'hidden' }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={inView ? { width: '82%' } : {}}
+                    transition={{ duration: 1.4, delay: 0.4, ease: 'easeOut' }}
+                    style={{ height: '100%', background: 'linear-gradient(90deg,#3b82f6,#10b981)', borderRadius: 100 }}
+                  />
+                </div>
+              </div>
+
+              {/* Sub scores */}
+              {[['Keywords', 79], ['Skills Match', 88], ['Experience', 84], ['Formatting', 100]].map(([label, val], i) => (
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 12 }}>
+                    <span style={{ color: '#64748b' }}>{label}</span>
+                    <span style={{ color: '#94a3b8' }}>{val}%</span>
+                  </div>
+                  <div style={{ height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 100 }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={inView ? { width: `${val}%` } : {}}
+                      transition={{ duration: 1, delay: 0.5 + i * 0.1, ease: 'easeOut' }}
+                      style={{ height: '100%', background: val >= 80 ? '#10b981' : val >= 60 ? '#3b82f6' : '#f59e0b', borderRadius: 100 }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Keywords panel */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={inView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+            >
+              {/* Matched */}
+              <div className="glass" style={{ borderRadius: 20, padding: 28, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8' }}>Matched Keywords</h3>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, color: '#10b981', fontWeight: 600 }}>{MATCHED_KEYWORDS.length} found</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {MATCHED_KEYWORDS.map((kw, i) => (
+                    <motion.span
+                      key={kw}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={inView ? { opacity: 1, scale: 1 } : {}}
+                      transition={{ delay: 0.4 + i * 0.07 }}
+                      style={{ padding: '5px 12px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 100, fontSize: 12, color: '#34d399', fontWeight: 500 }}
+                    >
+                      ✓ {kw}
+                    </motion.span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Missing */}
+              <div className="glass" style={{ borderRadius: 20, padding: 28, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8' }}>Missing Keywords</h3>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, color: '#f87171', fontWeight: 600 }}>{MISSING_KEYWORDS.length} gaps</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                  {MISSING_KEYWORDS.map((kw, i) => (
+                    <motion.span
+                      key={kw}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={inView ? { opacity: 1, scale: 1 } : {}}
+                      transition={{ delay: 0.5 + i * 0.08 }}
+                      style={{ padding: '5px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 100, fontSize: 12, color: '#f87171', fontWeight: 500 }}
+                    >
+                      ✗ {kw}
+                    </motion.span>
+                  ))}
+                </div>
+                <motion.a
+                  href="/register.html"
+                  whileHover={{ scale: 1.03, boxShadow: '0 8px 25px rgba(59,130,246,0.3)' }}
+                  whileTap={{ scale: 0.97 }}
+                  style={{ display: 'block', textAlign: 'center', padding: '12px 24px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', textDecoration: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14 }}
+                >
+                  Fix My Resume with AI →
+                </motion.a>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      );
+    }
+
+    // ── Features ──────────────────────────────────
+    function FeaturesSection() {
+      const ref = useRef(null);
+      const inView = useInView(ref, { once: true, margin: '-80px' });
+
+      return (
+        <section ref={ref} style={{ padding: '80px 24px', background: 'rgba(255,255,255,0.015)' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              style={{ textAlign: 'center', marginBottom: 56 }}
+            >
+              <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 12 }}>
+                Everything You Need to Get Hired
+              </h2>
+              <p style={{ color: '#64748b', fontSize: 16 }}>Built specifically for Canada's construction and trades industry</p>
+            </motion.div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+              {FEATURES.map((f, i) => (
+                <motion.div
+                  key={f.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={inView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.5, delay: i * 0.15 }}
+                  whileHover={{ y: -8, boxShadow: `0 20px 50px ${f.color}20` }}
+                  className="glass"
+                  style={{ borderRadius: 20, padding: 32, cursor: 'default', transition: 'box-shadow 0.3s' }}
+                >
+                  <motion.div
+                    whileHover={{ rotate: [0, -8, 8, 0], transition: { duration: 0.4 } }}
+                    style={{ width: 56, height: 56, borderRadius: 14, background: f.bg, border: `1px solid ${f.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: f.color, marginBottom: 20 }}
+                  >
+                    {f.icon}
+                  </motion.div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9', marginBottom: 10 }}>{f.title}</h3>
+                  <p style={{ color: '#64748b', fontSize: 15, lineHeight: 1.6 }}>{f.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // ── How It Works ──────────────────────────────
+    function HowItWorksSection() {
+      const ref = useRef(null);
+      const inView = useInView(ref, { once: true, margin: '-80px' });
+
+      return (
+        <section ref={ref} style={{ padding: '100px 24px', maxWidth: 1100, margin: '0 auto' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            style={{ textAlign: 'center', marginBottom: 60 }}
+          >
+            <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 12 }}>
+              Three Steps to Your Next Job
+            </h2>
+            <p style={{ color: '#64748b', fontSize: 16 }}>From upload to offer — faster than any other platform</p>
+          </motion.div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24, position: 'relative' }}>
+            {STEPS.map((step, i) => (
+              <motion.div
+                key={step.num}
+                initial={{ opacity: 0, y: 30 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.5, delay: i * 0.2 }}
+                className="glass"
+                style={{ borderRadius: 20, padding: 32, position: 'relative', overflow: 'hidden' }}
+              >
+                <motion.div
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={inView ? { scale: 1, opacity: 1 } : {}}
+                  transition={{ duration: 0.5, delay: i * 0.2 + 0.2, type: 'spring' }}
+                  style={{ fontSize: 48, fontWeight: 900, color: 'rgba(59,130,246,0.12)', position: 'absolute', top: 20, right: 24, lineHeight: 1, letterSpacing: '-2px', userSelect: 'none' }}
+                >
+                  {step.num}
+                </motion.div>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg,#3b82f6,#2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, fontWeight: 800, fontSize: 16, color: '#fff' }}>
+                  {i + 1}
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9', marginBottom: 10 }}>{step.title}</h3>
+                <p style={{ color: '#64748b', fontSize: 15, lineHeight: 1.6 }}>{step.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    // ── Job Preview ───────────────────────────────
+    function JobPreviewSection() {
+      const ref = useRef(null);
+      const inView = useInView(ref, { once: true, margin: '-80px' });
+
+      return (
+        <section ref={ref} style={{ padding: '80px 24px', background: 'rgba(255,255,255,0.015)' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40, flexWrap: 'wrap', gap: 16 }}
+            >
+              <div>
+                <h2 style={{ fontSize: 'clamp(24px,4vw,36px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 6 }}>
+                  Latest Construction Jobs
+                </h2>
+                <p style={{ color: '#64748b', fontSize: 15 }}>Updated every 4 hours from top employers across Canada</p>
+              </div>
+              <motion.a
+                href="/jobs.html"
+                whileHover={{ scale: 1.04 }}
+                style={{ padding: '10px 22px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 10, color: '#60a5fa', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}
+              >
+                View All Jobs →
+              </motion.a>
+            </motion.div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+              {SAMPLE_JOBS.map((job, i) => (
+                <motion.div
+                  key={job.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={inView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.4, delay: i * 0.12 }}
+                  whileHover={{ scale: 1.02, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
+                  className="glass"
+                  style={{ borderRadius: 18, padding: 24, cursor: 'pointer', transition: 'box-shadow 0.2s' }}
+                  onClick={() => window.location.href = '/jobs.html'}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9' }}>{job.title}</h3>
+                        {job.badge && (
+                          <span style={{ padding: '2px 8px', background: job.badge === 'Hot' ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)', border: `1px solid ${job.badge === 'Hot' ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`, borderRadius: 100, fontSize: 11, color: job.badge === 'Hot' ? '#f87171' : '#60a5fa', fontWeight: 600 }}>
+                            {job.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: 13, color: '#64748b' }}>{job.company}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: scoreColor(job.score) }}>{job.score}%</div>
+                      <div style={{ fontSize: 11, color: '#475569' }}>match</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+                    {[job.location, job.salary, job.type].map((tag, ti) => (
+                      <span key={ti} style={{ fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {ti === 0 && '📍'}{ti === 1 && '💰'}{ti === 2 && '⏱'} {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Score bar */}
+                  <div style={{ height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 100, overflow: 'hidden' }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={inView ? { width: `${job.score}%` } : {}}
+                      transition={{ duration: 1, delay: 0.4 + i * 0.15, ease: 'easeOut' }}
+                      style={{ height: '100%', background: `linear-gradient(90deg,${scoreColor(job.score)}80,${scoreColor(job.score)})`, borderRadius: 100 }}
+                    />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // ── Trust Stats ───────────────────────────────
+    function TrustSection() {
+      const ref = useRef(null);
+      const inView = useInView(ref, { once: true, margin: '-80px' });
+
+      return (
+        <section ref={ref} style={{ padding: '100px 24px', maxWidth: 1100, margin: '0 auto' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            style={{ textAlign: 'center', marginBottom: 60 }}
+          >
+            <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 12 }}>
+              Trusted by Canada's Trades
+            </h2>
+          </motion.div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+            {STATS.map((stat, i) => {
+              const count = useCountUp(stat.value, 1800, inView);
+              return (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={inView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className="glass"
+                  style={{ borderRadius: 20, padding: 32, textAlign: 'center' }}
+                >
+                  <div style={{ fontSize: 44, fontWeight: 900, color: '#f8fafc', letterSpacing: '-2px', lineHeight: 1, marginBottom: 8 }}>
+                    {count.toLocaleString()}<span style={{ color: '#3b82f6' }}>{stat.suffix}</span>
+                  </div>
+                  <div style={{ fontSize: 14, color: '#64748b', fontWeight: 500 }}>{stat.label}</div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </section>
+      );
+    }
+
+    // ── Final CTA ─────────────────────────────────
+    function FinalCTA() {
+      const ref = useRef(null);
+      const inView = useInView(ref, { once: true, margin: '-80px' });
+
+      return (
+        <section ref={ref} style={{ padding: '80px 24px' }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={inView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 0.6 }}
+            style={{ maxWidth: 800, margin: '0 auto', borderRadius: 28, padding: '64px 48px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,rgba(59,130,246,0.15),rgba(16,185,129,0.08))', border: '1px solid rgba(59,130,246,0.2)' }}
+          >
+            {/* Background glow */}
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle,rgba(59,130,246,0.1) 0%,transparent 70%)', pointerEvents: 'none' }} />
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.2 }}
+              style={{ position: 'relative', zIndex: 1 }}
+            >
+              <h2 style={{ fontSize: 'clamp(28px,5vw,52px)', fontWeight: 900, color: '#f8fafc', letterSpacing: '-2px', lineHeight: 1.1, marginBottom: 16 }}>
+                Start Getting Hired<br />
+                <span className="gradient-text">Faster Today</span>
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: 17, marginBottom: 36, maxWidth: 420, margin: '0 auto 36px' }}>
+                Free to join. No credit card. Just results.
+              </p>
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <motion.a
+                  href="/register.html"
+                  whileHover={{ scale: 1.06, boxShadow: '0 15px 40px rgba(59,130,246,0.4)' }}
+                  whileTap={{ scale: 0.97 }}
+                  style={{ padding: '16px 36px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', textDecoration: 'none', borderRadius: 14, fontWeight: 700, fontSize: 17, boxShadow: '0 6px 25px rgba(59,130,246,0.35)' }}
+                >
+                  Get Started — It's Free
+                </motion.a>
+                <motion.a
+                  href="/jobs.html"
+                  whileHover={{ scale: 1.04 }}
+                  style={{ padding: '16px 36px', background: 'rgba(255,255,255,0.06)', color: '#f1f5f9', textDecoration: 'none', borderRadius: 14, fontWeight: 600, fontSize: 17, border: '1px solid rgba(255,255,255,0.12)' }}
+                >
+                  Browse Jobs
+                </motion.a>
+              </div>
+            </motion.div>
+          </motion.div>
+        </section>
+      );
+    }
+
+    // ── Footer ────────────────────────────────────
+    function Footer() {
+      return (
+        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '48px 24px 32px', marginTop: 20 }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 32, marginBottom: 40 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <div style={{ width: 30, height: 30, background: 'linear-gradient(135deg,#3b82f6,#10b981)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>C</div>
+                  <span style={{ fontWeight: 700, color: '#f1f5f9', fontSize: 15 }}>ConsTradeHire</span>
+                </div>
+                <p style={{ color: '#475569', fontSize: 13, lineHeight: 1.6 }}>Canada's AI-powered construction job board.</p>
+              </div>
+              <div>
+                <h4 style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 14 }}>Platform</h4>
+                {[['Jobs', '/jobs.html'], ['For Workers', '/register.html'], ['For Employers', '/register.html?role=employer']].map(([label, href]) => (
+                  <a key={label} href={href} style={{ display: 'block', color: '#475569', fontSize: 14, textDecoration: 'none', marginBottom: 8, transition: 'color 0.2s' }}
+                    onMouseEnter={e => e.target.style.color='#94a3b8'} onMouseLeave={e => e.target.style.color='#475569'}>
+                    {label}
+                  </a>
+                ))}
+              </div>
+              <div>
+                <h4 style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 14 }}>Account</h4>
+                {[['Sign In', '/login.html'], ['Register', '/register.html'], ['Dashboard', '/dashboard.html']].map(([label, href]) => (
+                  <a key={label} href={href} style={{ display: 'block', color: '#475569', fontSize: 14, textDecoration: 'none', marginBottom: 8, transition: 'color 0.2s' }}
+                    onMouseEnter={e => e.target.style.color='#94a3b8'} onMouseLeave={e => e.target.style.color='#475569'}>
+                    {label}
+                  </a>
+                ))}
+              </div>
+              <div>
+                <h4 style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 14 }}>Legal</h4>
+                {[['Privacy Policy', '/privacy.html'], ['Terms of Service', '/terms.html']].map(([label, href]) => (
+                  <a key={label} href={href} style={{ display: 'block', color: '#475569', fontSize: 14, textDecoration: 'none', marginBottom: 8 }}
+                    onMouseEnter={e => e.target.style.color='#94a3b8'} onMouseLeave={e => e.target.style.color='#475569'}>
+                    {label}
+                  </a>
+                ))}
               </div>
             </div>
-            <div class="keyword-section">
-              <span class="kw-label missing">✗ Missing</span>
-              <div class="kw-tags">
-                <span class="kw-tag missing">Procore</span>
-                <span class="kw-tag missing">P6</span>
-              </div>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <p style={{ color: '#334155', fontSize: 13 }}>© 2026 ConsTradeHire. All rights reserved.</p>
+              <p style={{ color: '#334155', fontSize: 13 }}>PIPEDA compliant · Canada 🇨🇦</p>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+        </footer>
+      );
+    }
 
-<!-- ─── HOW IT WORKS ──────────────────────── -->
-<section class="section">
-  <div class="container">
-    <div class="section-header">
-      <div class="section-badge">How It Works</div>
-      <h2>Hired Faster — 3 Steps</h2>
-    </div>
-    <div class="steps-grid">
-      <div class="step-card">
-        <div class="step-num">1</div>
-        <h3>Upload or Build Resume</h3>
-        <p>Upload your existing resume or let AI build one from your experience. Takes 2 minutes.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">2</div>
-        <h3>Browse &amp; Score Jobs</h3>
-        <p>See your ATS match score on every job. Know which ones you'll get interviews for.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">3</div>
-        <h3>Apply with Confidence</h3>
-        <p>Tailor your resume, attach a cover letter, and apply directly on the platform.</p>
-      </div>
-    </div>
-  </div>
-</section>
+    // ── App ───────────────────────────────────────
+    function App() {
+      return (
+        <>
+          <Navbar />
+          <HeroSection />
+          <AtsDemoSection />
+          <FeaturesSection />
+          <HowItWorksSection />
+          <JobPreviewSection />
+          <TrustSection />
+          <FinalCTA />
+          <Footer />
+        </>
+      );
+    }
 
-<!-- ─── JOB CATEGORIES ────────────────────── -->
-<section class="section-alt">
-  <div class="container">
-    <div class="section-header">
-      <div class="section-badge">Categories</div>
-      <h2>Jobs for Every Trade</h2>
-    </div>
-    <div class="categories-grid">
-      <a href="/jobs.html?search=estimator" class="category-card">
-        <span class="cat-icon">📐</span>
-        <span class="cat-name">Estimators</span>
-      </a>
-      <a href="/jobs.html?search=project+manager" class="category-card">
-        <span class="cat-icon">📋</span>
-        <span class="cat-name">Project Managers</span>
-      </a>
-      <a href="/jobs.html?search=electrician" class="category-card">
-        <span class="cat-icon">⚡</span>
-        <span class="cat-name">Electricians</span>
-      </a>
-      <a href="/jobs.html?search=carpenter" class="category-card">
-        <span class="cat-icon">🔨</span>
-        <span class="cat-name">Carpenters</span>
-      </a>
-      <a href="/jobs.html?search=civil+engineer" class="category-card">
-        <span class="cat-icon">🏗️</span>
-        <span class="cat-name">Civil Engineers</span>
-      </a>
-      <a href="/jobs.html?search=site+supervisor" class="category-card">
-        <span class="cat-icon">🦺</span>
-        <span class="cat-name">Site Supervisors</span>
-      </a>
-      <a href="/jobs.html?search=plumber" class="category-card">
-        <span class="cat-icon">🔧</span>
-        <span class="cat-name">Plumbers</span>
-      </a>
-      <a href="/jobs.html?search=labourer" class="category-card">
-        <span class="cat-icon">👷</span>
-        <span class="cat-name">Labourers</span>
-      </a>
-    </div>
-  </div>
-</section>
+    createRoot(document.getElementById('root')).render(<App />);
+  </script>
 
-<!-- ─── FOR EMPLOYERS ─────────────────────── -->
-<section class="section employer-section">
-  <div class="container">
-    <div class="employer-split">
-      <div class="employer-text">
-        <div class="section-badge">For Employers</div>
-        <h2>Hire Faster. See Ranked Candidates.</h2>
-        <p>Post your job and get AI-ranked candidates instantly. See ATS scores so you spend time only on the best fits.</p>
-        <ul class="feature-list">
-          <li><span class="check">✓</span> Post jobs in minutes</li>
-          <li><span class="check">✓</span> Candidates ranked by match score</li>
-          <li><span class="check">✓</span> Filter by skills, experience, location</li>
-          <li><span class="check">✓</span> Message candidates directly</li>
-        </ul>
-        <a href="/register.html?role=employer" class="btn btn-primary">Post a Job — Get Started</a>
-      </div>
-      <div class="employer-card">
-        <div class="emp-demo">
-          <div class="emp-demo-header">Applicants — Senior Estimator</div>
-          <div class="emp-candidate">
-            <div class="emp-cand-info">
-              <span class="emp-cand-name">J. Smith</span>
-              <span class="emp-cand-loc">Toronto, ON · 8 yrs exp</span>
-            </div>
-            <span class="ats-score-badge score-great">94%</span>
-          </div>
-          <div class="emp-candidate">
-            <div class="emp-cand-info">
-              <span class="emp-cand-name">M. Patel</span>
-              <span class="emp-cand-loc">Mississauga, ON · 5 yrs exp</span>
-            </div>
-            <span class="ats-score-badge score-good">78%</span>
-          </div>
-          <div class="emp-candidate">
-            <div class="emp-cand-info">
-              <span class="emp-cand-name">R. Chen</span>
-              <span class="emp-cand-loc">Brampton, ON · 3 yrs exp</span>
-            </div>
-            <span class="ats-score-badge score-fair">61%</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── CTA ───────────────────────────────── -->
-<section class="section cta-section">
-  <div class="container cta-inner">
-    <h2>Ready to Find Your Next Job?</h2>
-    <p>Join construction workers across Ontario using ConsTradeHire to get hired faster.</p>
-    <div class="cta-actions">
-      <a href="/register.html?role=worker" class="btn btn-primary btn-lg">Create Free Account</a>
-      <a href="/jobs.html" class="btn btn-ghost btn-lg">Browse Jobs</a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── INDUSTRY NEWS ────────────────────── -->
-<section class="section-alt" id="newsSection" style="display:none">
-  <div class="container">
-    <div class="section-header">
-      <div class="section-badge">Industry News</div>
-      <h2>Canadian Construction News</h2>
-    </div>
-    <div id="newsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;"></div>
-  </div>
-</section>
-
-<!-- ─── FOOTER ────────────────────────────── -->
-<footer class="footer">
-  <div class="container footer-inner">
-    <div class="footer-brand">
-      <a href="/" class="logo">ConsTradeHire</a>
-      <p>AI-powered construction jobs platform. Built for Canadian trades professionals.</p>
-    </div>
-    <div class="footer-links">
-      <div class="footer-col">
-        <h4>Platform</h4>
-        <a href="/jobs.html">Browse Jobs</a>
-        <a href="/register.html">Create Account</a>
-        <a href="/login.html">Login</a>
-      </div>
-      <div class="footer-col">
-        <h4>Legal</h4>
-        <a href="/privacy.html">Privacy Policy</a>
-        <a href="/terms.html">Terms of Service</a>
-      </div>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <div class="container">
-      <p>&copy; 2026 ConsTradeHire. All rights reserved. PIPEDA compliant. Ontario, Canada.</p>
-    </div>
-  </div>
-</footer>
-
-<script src="/app.js"></script>
-<script>
-function heroSearch() {
-  const q = document.getElementById('heroSearch').value.trim();
-  if (q) window.location.href = '/jobs.html?search=' + encodeURIComponent(q);
-  else window.location.href = '/jobs.html';
-}
-document.getElementById('heroSearch').addEventListener('keydown', e => {
-  if (e.key === 'Enter') heroSearch();
-});
-
-// Load construction news (Mediastack)
-(async () => {
-  try {
-    const res  = await fetch('/api/news');
-    const data = await res.json();
-    if (!data.articles?.length) return;
-    document.getElementById('newsSection').style.display = '';
-    document.getElementById('newsGrid').innerHTML = data.articles.map(a => `
-      <a href="${encodeURI(a.url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
-        <div style="background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-lg);overflow:hidden;height:100%;transition:box-shadow .15s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow=''">
-          ${a.image ? `<img src="${encodeURI(a.image)}" alt="" style="width:100%;height:160px;object-fit:cover;" onerror="this.style.display='none'">` : ''}
-          <div style="padding:16px;">
-            <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">${a.source || 'News'}</div>
-            <div style="font-size:14px;font-weight:700;color:var(--gray-900);line-height:1.4;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${a.title}</div>
-            <div style="font-size:12px;color:var(--gray-500);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${a.description || ''}</div>
-          </div>
-        </div>
-      </a>`).join('');
-  } catch (_) {}
-})();
-</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
 </body>
 </html>
