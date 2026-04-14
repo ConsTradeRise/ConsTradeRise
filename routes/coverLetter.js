@@ -6,11 +6,10 @@
 
 'use strict';
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router  = express.Router();
-const prisma  = new PrismaClient();
 
 function templateCoverLetter(profile, job, user) {
   const fullName  = user.name || '';

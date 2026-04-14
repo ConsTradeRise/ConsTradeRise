@@ -12,11 +12,10 @@
 
 'use strict';
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // All admin routes require ADMIN role
 router.use(requireAuth, requireRole('ADMIN'));

@@ -1,12 +1,11 @@
 'use strict';
 const express   = require('express');
 const rateLimit = require('express-rate-limit');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { sendNewMessageAlert } = require('../utils/email');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // 10 messages per minute per user (applied only to send route)
 const sendLimiter = rateLimit({

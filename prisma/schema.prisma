@@ -35,6 +35,8 @@ model User {
   resumes             Resume[]
   savedJobs           SavedJob[]
 
+  @@index([role])
+  @@index([emailVerified])
   @@map("users")
 }
 
@@ -70,6 +72,8 @@ model Profile {
   profileViews       Int      @default(0)
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([province])
+  @@index([visibleToEmployers])
   @@map("profiles")
 }
 
@@ -140,6 +144,12 @@ model Job {
   matches      Match[]
   savedBy      SavedJob[]
 
+  @@index([isActive, postedAt])
+  @@index([isActive, isFeatured, postedAt])
+  @@index([employerId])
+  @@index([province])
+  @@index([source])
+  @@index([externalUrl])
   @@map("jobs")
 }
 
@@ -159,6 +169,10 @@ model Application {
   interview   Interview?
 
   @@unique([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
+  @@index([status])
+  @@index([jobId, status])
   @@map("applications")
 }
 
@@ -200,6 +214,8 @@ model AtsResult {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, jobId, resumeId])
+  @@index([userId])
+  @@index([jobId])
   @@map("ats_results")
 }
 
@@ -212,6 +228,7 @@ model Match {
   job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@unique([jobId, userId])
+  @@index([userId])
   @@map("matches")
 }
 
@@ -225,6 +242,9 @@ model Message {
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
+  @@index([senderId, receiverId])
+  @@index([receiverId, read])
+  @@index([createdAt])
   @@map("messages")
 }
 
@@ -239,6 +259,8 @@ model Notification {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, read])
+  @@index([userId, createdAt])
   @@map("notifications")
 }
 
@@ -253,6 +275,7 @@ model JobReport {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([jobId, userId])
+  @@index([resolved])
   @@map("job_reports")
 }
 
@@ -265,6 +288,7 @@ model SavedJob {
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, jobId])
+  @@index([userId])
   @@map("saved_jobs")
 }
 
@@ -278,6 +302,7 @@ model JobAlert {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, active])
   @@map("job_alerts")
 }
 

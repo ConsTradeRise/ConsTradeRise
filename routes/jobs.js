@@ -9,13 +9,12 @@
 
 'use strict';
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 const { requireAuth, requireRole } = require('../middleware/auth');
 // Lazy-load to avoid circular dependency (server.js requires this file)
 function getApp() { try { return require('../server'); } catch { return null; } }
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Simple in-memory TTL cache for public jobs list (60s TTL)
 const jobsCache = new Map();

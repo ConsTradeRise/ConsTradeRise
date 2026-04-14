@@ -14,12 +14,11 @@
 const express  = require('express');
 const bcrypt   = require('bcryptjs');
 const crypto   = require('crypto');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 const { generateToken, requireAuth } = require('../middleware/auth');
 const { sendEmail, baseTemplate } = require('../utils/email');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // In-memory login failure tracker — locks account for 15 min after 10 failed attempts
 const loginFailures = new Map(); // email -> { count, lockedUntil }

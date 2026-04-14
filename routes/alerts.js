@@ -8,11 +8,10 @@
 
 'use strict';
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
-const prisma  = new PrismaClient();
 
 // All alert routes require a logged-in WORKER
 router.use(requireAuth, requireRole('WORKER'));

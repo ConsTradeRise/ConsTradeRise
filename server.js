@@ -17,7 +17,7 @@ const https        = require('https');
 const fs           = require('fs');
 const path         = require('path');
 const multer       = require('multer');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('./utils/prisma');
 
 // Free utilities — no AI credits
 const { parseResume } = require('./utils/resumeParser');
@@ -43,9 +43,8 @@ const analyticsRoutes     = require('./routes/analytics');
 const resumeRoutes        = require('./routes/resumes');
 const { sendJobDigest, sendEmail, baseTemplate } = require('./utils/email');
 
-const app    = express();
-const prisma = new PrismaClient();
-const PORT   = process.env.PORT || 3000;
+const app  = express();
+const PORT = process.env.PORT || 3000;
 
 // Supabase storage — for resume file uploads
 let supabaseAdmin = null;
@@ -262,38 +261,31 @@ app.get('/sitemap.xml', async (req, res) => {
 });
 
 // ============================================================
-//  DEDUPLICATION STORE (legacy job cache)
+//  DEDUPLICATION — DB-backed via externalUrl uniqueness
+//  In-memory Set is a fast cache; DB is the source of truth
+//  and survives process restarts / Railway redeploys.
 // ============================================================
-const DATA_DIR   = path.join(__dirname, 'data');
-const DEDUP_FILE = path.join(DATA_DIR, 'seen-jobs.json');
 let seenFingerprints = new Set();
 
-function loadDedupStore() {
+async function loadDedupStore() {
   try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    if (fs.existsSync(DEDUP_FILE)) {
-      const data = JSON.parse(fs.readFileSync(DEDUP_FILE, 'utf8'));
-      seenFingerprints = new Set(data.fingerprints || []);
-      console.log(`[dedup] Loaded ${seenFingerprints.size} seen fingerprints.`);
-    }
+    const existing = await prisma.job.findMany({
+      where: { source: 'API', externalUrl: { not: null } },
+      select: { externalUrl: true }
+    });
+    seenFingerprints = new Set(existing.map(j => j.externalUrl));
+    console.log(`[dedup] Loaded ${seenFingerprints.size} seen URLs from DB.`);
   } catch (e) {
-    console.warn('[dedup] Could not load store:', e.message);
+    console.warn('[dedup] Could not load from DB:', e.message);
   }
 }
 
-function saveDedupStore() {
-  try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(DEDUP_FILE, JSON.stringify({
-      fingerprints: [...seenFingerprints],
-      savedAt: new Date().toISOString()
-    }, null, 2));
-  } catch (e) {
-    console.warn('[dedup] Could not save store:', e.message);
-  }
-}
+// saveDedupStore is no longer needed — DB writes happen in persistLiveJobsToDB
+function saveDedupStore() {}
 
 function makeFingerprint(job) {
+  // Prefer stable externalUrl; fall back to title+company+location slug
+  if (job.externalUrl || job.url) return (job.externalUrl || job.url).slice(0, 500);
   return `${job.title || ''}-${job.company || ''}-${job.location || ''}`
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').slice(0, 80);
 }
@@ -926,7 +918,7 @@ app.get('*', (req, res) => {
 // ============================================================
 //  START (local dev) / EXPORT (Vercel serverless)
 // ============================================================
-loadDedupStore();
+loadDedupStore(); // async — populates seenFingerprints from DB before first auto-search
 
 if (require.main === module) {
   app.listen(PORT, () => {
