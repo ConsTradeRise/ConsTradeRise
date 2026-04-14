@@ -612,6 +612,29 @@
   </div>
 </div>
 
+<!-- Review modal (worker reviewing employer) -->
+<div class="modal-overlay" id="workerReviewModal" onclick="if(event.target===this)closeWorkerReview()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:360px;max-width:95vw;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;font-size:16px;" id="wRevTitle">Leave a Review</h3>
+      <button onclick="closeWorkerReview()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;">×</button>
+    </div>
+    <p id="wRevTargetName" style="font-weight:600;margin:0 0 12px;font-size:14px;"></p>
+    <div style="display:flex;gap:6px;margin-bottom:14px;" id="wStarRow">
+      <span class="wstar" data-v="1" onclick="setWRating(1)" style="font-size:28px;cursor:pointer;">☆</span>
+      <span class="wstar" data-v="2" onclick="setWRating(2)" style="font-size:28px;cursor:pointer;">☆</span>
+      <span class="wstar" data-v="3" onclick="setWRating(3)" style="font-size:28px;cursor:pointer;">☆</span>
+      <span class="wstar" data-v="4" onclick="setWRating(4)" style="font-size:28px;cursor:pointer;">☆</span>
+      <span class="wstar" data-v="5" onclick="setWRating(5)" style="font-size:28px;cursor:pointer;">☆</span>
+    </div>
+    <textarea id="wRevComment" placeholder="Optional comment…" rows="3" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:14px;resize:vertical;"></textarea>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+      <button onclick="closeWorkerReview()" style="padding:8px 16px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;background:#fff;">Cancel</button>
+      <button onclick="submitWorkerReview()" style="padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Submit</button>
+    </div>
+  </div>
+</div>
+
 <script src="/app.js"></script>
 <script>
 // ── SIDEBAR TOGGLE ────────────────────────────
@@ -856,6 +879,7 @@ function appRow(a) {
       <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
         ${empId ? `<button onclick="dashMsgEmployer('${empId}','${escapeHtml(empName)}')" style="font-size:11px;padding:3px 10px;background:none;border:1px solid var(--gray-200);border-radius:6px;cursor:pointer;color:var(--gray-600);">💬 Message</button>` : ''}
         ${s === 'SHORTLISTED' ? `<button onclick="switchTab('interviews')" style="font-size:11px;padding:3px 10px;background:var(--green-light);border:1px solid #bbf7d0;border-radius:6px;cursor:pointer;color:var(--green);font-weight:600;">📅 View Interview</button>` : ''}
+        ${empId ? `<button onclick="openWorkerReview('${empId}','${escapeHtml(empName)}')" style="font-size:11px;padding:3px 10px;background:none;border:1px solid var(--gray-200);border-radius:6px;cursor:pointer;color:var(--gray-600);">⭐ Review</button>` : ''}
       </div>
     </div>
     <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
@@ -1963,6 +1987,37 @@ async function runInterviewPrep() {
       </div>`;
     }).join('')}
     <button onclick="window.print()" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">🖨 Print / Save PDF</button>`;
+}
+
+// ── Employer Review (worker → employer) ──────
+let _wRevTargetId = null, _wRevRating = 0;
+
+function openWorkerReview(empId, empName) {
+  _wRevTargetId = empId;
+  _wRevRating = 0;
+  document.getElementById('wRevTargetName').textContent = empName;
+  document.getElementById('wRevComment').value = '';
+  setWRating(0);
+  const m = document.getElementById('workerReviewModal');
+  m.style.display = 'flex';
+}
+function closeWorkerReview() {
+  document.getElementById('workerReviewModal').style.display = 'none';
+}
+function setWRating(v) {
+  _wRevRating = v;
+  document.querySelectorAll('#wStarRow .wstar').forEach(s => {
+    s.textContent = parseInt(s.dataset.v) <= v ? '★' : '☆';
+    s.style.color  = parseInt(s.dataset.v) <= v ? '#f59e0b' : '#94a3b8';
+  });
+}
+async function submitWorkerReview() {
+  if (!_wRevRating) { Toast.error('Please select a rating'); return; }
+  const comment = document.getElementById('wRevComment').value.trim();
+  const { ok, data } = await apiCall('POST', '/api/reviews', { targetId: _wRevTargetId, rating: _wRevRating, comment: comment || undefined });
+  if (!ok) { Toast.error(data?.error || 'Failed to submit review'); return; }
+  Toast.success('Review submitted!');
+  closeWorkerReview();
 }
 </script>
 </body>

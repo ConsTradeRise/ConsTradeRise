@@ -34,6 +34,8 @@ model User {
   profile             Profile?
   resumes             Resume[]
   savedJobs           SavedJob[]
+  givenReviews        Review[]       @relation("GivenReviews")
+  receivedReviews     Review[]       @relation("ReceivedReviews")
 
   @@index([role])
   @@index([emailVerified])
@@ -304,6 +306,23 @@ model JobAlert {
 
   @@index([userId, active])
   @@map("job_alerts")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  reviewerId String
+  targetId   String
+  targetType String   // "employer" | "worker"
+  rating     Int      // 1-5
+  comment    String?
+  createdAt  DateTime @default(now())
+  reviewer   User     @relation("GivenReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  target     User     @relation("ReceivedReviews", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewerId, targetId])
+  @@index([targetId, targetType])
+  @@index([reviewerId])
+  @@map("reviews")
 }
 
 enum Role {

@@ -539,6 +539,30 @@
   </div>
 </div>
 
+<div class="modal-bg" id="reviewModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <h2>Leave a Review</h2>
+      <button class="modal-close" onclick="closeReview()">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="reviewTargetName" style="font-weight:600;margin:0 0 12px;"></p>
+      <div style="display:flex;gap:6px;margin-bottom:14px;" id="starRow">
+        <span class="star" data-v="1" onclick="setRating(1)" style="font-size:28px;cursor:pointer;">☆</span>
+        <span class="star" data-v="2" onclick="setRating(2)" style="font-size:28px;cursor:pointer;">☆</span>
+        <span class="star" data-v="3" onclick="setRating(3)" style="font-size:28px;cursor:pointer;">☆</span>
+        <span class="star" data-v="4" onclick="setRating(4)" style="font-size:28px;cursor:pointer;">☆</span>
+        <span class="star" data-v="5" onclick="setRating(5)" style="font-size:28px;cursor:pointer;">☆</span>
+      </div>
+      <textarea id="reviewComment" placeholder="Optional comment…" rows="3" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:14px;resize:vertical;"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeReview()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitReview()">Submit</button>
+    </div>
+  </div>
+</div>
+
 <script src="/app.js"></script>
 <script>
 // ── State ──────────────────────────────────────
@@ -721,6 +745,7 @@ function appRowHtml(a, actions = false) {
       ${a.status !== 'REJECTED' ? `<button class="btn btn-sm btn-danger" onclick="setStatus('${a.id}','REJECTED')">Reject</button>` : ''}
       <button class="btn btn-sm" onclick="openInterview('${a.id}','${escapeHtml(name)}')">Interview</button>
       ${a.user?.id ? `<button class="btn btn-sm btn-ghost" onclick="msgUser('${a.user.id}','${escapeHtml(name)}')">Message</button>` : ''}
+      ${a.user?.id ? `<button class="btn btn-sm btn-ghost" onclick="openReview('${a.user.id}','${escapeHtml(name)}')">⭐ Review</button>` : ''}
     </div>` : ''}
   </div>`;
 }
@@ -1005,6 +1030,36 @@ async function submitInterview() {
   closeInterview();
   // Also update application status to INTERVIEW via API
   await setStatus(_ivAppId, 'SHORTLISTED');
+}
+
+// ── Reviews ───────────────────────────────────
+let _reviewTargetId = null, _reviewRating = 0;
+
+function openReview(userId, name) {
+  _reviewTargetId = userId;
+  _reviewRating = 0;
+  document.getElementById('reviewTargetName').textContent = name;
+  document.getElementById('reviewComment').value = '';
+  setRating(0);
+  document.getElementById('reviewModal').classList.add('open');
+}
+function closeReview() { document.getElementById('reviewModal').classList.remove('open'); }
+
+function setRating(v) {
+  _reviewRating = v;
+  document.querySelectorAll('#starRow .star').forEach(s => {
+    s.textContent = parseInt(s.dataset.v) <= v ? '★' : '☆';
+    s.style.color = parseInt(s.dataset.v) <= v ? '#f59e0b' : '#94a3b8';
+  });
+}
+
+async function submitReview() {
+  if (!_reviewRating) { Toast.error('Please select a star rating'); return; }
+  const comment = document.getElementById('reviewComment').value.trim();
+  const { ok, data } = await apiCall('POST', '/api/reviews', { targetId: _reviewTargetId, rating: _reviewRating, comment: comment || undefined });
+  if (!ok) { Toast.error(data?.error || 'Failed to submit review'); return; }
+  Toast.success('Review submitted!');
+  closeReview();
 }
 
 // ── Helpers ───────────────────────────────────
