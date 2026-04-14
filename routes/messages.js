@@ -147,6 +147,17 @@ router.post('/:userId', requireAuth, sendLimiter, async (req, res) => {
       preview:      content.trim().substring(0, 120)
     }).catch(() => {});
 
+    // WebSocket push to recipient (real-time delivery)
+    try {
+      const app = require('../server');
+      if (app.wsBroadcast) {
+        app.wsBroadcast(req.params.userId, {
+          type:    'new_message',
+          message: { ...message, sender: { id: req.user.id, name: req.user.name } }
+        });
+      }
+    } catch {}
+
     res.status(201).json({ message });
   } catch (e) {
     console.error('[messages/send]', e.message);

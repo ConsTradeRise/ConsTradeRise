@@ -1593,13 +1593,13 @@ async function dashLoadInbox() {
 
 async function dashOpenConv(userId, name) {
   dashActiveConv = userId;
+  _dashActiveConv = userId;
   document.getElementById('dashChatEmpty').style.display = 'none';
   const area = document.getElementById('dashChatArea');
   area.style.display = 'flex';
   document.getElementById('dashChatHeader').textContent = name;
   await dashFetchMsgs(userId);
-  if (dashMsgPoll) clearInterval(dashMsgPoll);
-  dashMsgPoll = setInterval(() => dashFetchMsgs(userId), 5000);
+  if (dashMsgPoll) { clearInterval(dashMsgPoll); dashMsgPoll = null; }
   dashLoadInbox();
 }
 
@@ -1652,6 +1652,32 @@ async function pollUnread() {
 }
 pollUnread();
 setInterval(pollUnread, 30000);
+initDashWS();
+
+// ── WebSocket (real-time messages) ────────────
+let _dashWs = null;
+let _dashActiveConv = null; // track open conversation userId
+function initDashWS() {
+  const token = Auth.getToken();
+  if (!token) return;
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws?token=${token}`);
+  _dashWs = ws;
+  ws.onmessage = e => {
+    try {
+      const m = JSON.parse(e.data);
+      if (m.type === 'new_message') {
+        if (_dashActiveConv === m.message.senderId) {
+          dashFetchMsgs(_dashActiveConv);
+        } else {
+          pollUnread();
+          dashLoadInbox();
+        }
+      }
+    } catch {}
+  };
+  ws.onclose = () => { setTimeout(initDashWS, 5000); };
+}
 
 // ── RESUME VERSIONS ──────────────────────────
 async function loadResumeVersions() {

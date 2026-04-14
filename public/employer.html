@@ -599,7 +599,33 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAll();
   pollUnread();
   setInterval(pollUnread, 30000);
+  initWS();
 });
+
+// ── WebSocket (real-time messages) ────────────
+let _ws = null;
+function initWS() {
+  const token = Auth.getToken();
+  if (!token) return;
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws?token=${token}`);
+  _ws = ws;
+  ws.onmessage = e => {
+    try {
+      const m = JSON.parse(e.data);
+      if (m.type === 'new_message') {
+        // Refresh open conversation or update unread badge
+        if (_activeConv === m.message.senderId) {
+          fetchMsgs(_activeConv);
+        } else {
+          pollUnread();
+          loadInbox();
+        }
+      }
+    } catch {}
+  };
+  ws.onclose = () => { setTimeout(initWS, 5000); };
+}
 
 // ── View ──────────────────────────────────────
 function setView(v) {
@@ -887,8 +913,7 @@ async function openConv(userId, name) {
   active.style.display = 'flex';
   document.getElementById('chatHead').textContent = name;
   await fetchMsgs(userId);
-  if (_msgPoll) clearInterval(_msgPoll);
-  _msgPoll = setInterval(() => fetchMsgs(userId), 5000);
+  if (_msgPoll) { clearInterval(_msgPoll); _msgPoll = null; }
   loadInbox();
 }
 

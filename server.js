@@ -14,9 +14,11 @@ const cors         = require('cors');
 const helmet       = require('helmet');
 const rateLimit    = require('express-rate-limit');
 const https        = require('https');
+const http         = require('http');
 const fs           = require('fs');
 const path         = require('path');
 const multer       = require('multer');
+const { WebSocketServer } = require('ws');
 const prisma = require('./utils/prisma');
 
 // Free utilities — no AI credits
@@ -922,8 +924,75 @@ app.get('*', (req, res) => {
 // ============================================================
 loadDedupStore(); // async — populates seenFingerprints from DB before first auto-search
 
+// ============================================================
+//  WebSocket — Real-time messaging
+//  ws://host/ws?token=<jwt>
+//  Rooms: one Set<ws> per userId. Messages broadcast to recipient.
+// ============================================================
+const jwt = require('jsonwebtoken');
+
+/** @type {Map<string, Set<import('ws').WebSocket>>} userId → open sockets */
+const wsClients = new Map();
+
+function wsAddClient(userId, ws) {
+  if (!wsClients.has(userId)) wsClients.set(userId, new Set());
+  wsClients.get(userId).add(ws);
+}
+function wsRemoveClient(userId, ws) {
+  wsClients.get(userId)?.delete(ws);
+}
+function wsBroadcast(userId, payload) {
+  const conns = wsClients.get(userId);
+  if (!conns) return;
+  const msg = JSON.stringify(payload);
+  conns.forEach(ws => { if (ws.readyState === 1) ws.send(msg); });
+}
+
+/** Attach WS to an existing http.Server */
+function attachWebSocketServer(httpServer) {
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+
+  wss.on('connection', (ws, req) => {
+    const params = new URL(req.url, 'http://x').searchParams;
+    const token  = params.get('token');
+    let user;
+    try {
+      user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      ws.close(4001, 'Unauthorized');
+      return;
+    }
+
+    wsAddClient(user.id, ws);
+    ws.isAlive = true;
+    ws.on('pong', () => { ws.isAlive = true; });
+    ws.on('close', () => wsRemoveClient(user.id, ws));
+
+    // Client can send { type:'ping' } to keep alive
+    ws.on('message', data => {
+      try {
+        const m = JSON.parse(data);
+        if (m.type === 'ping') ws.send(JSON.stringify({ type: 'pong' }));
+      } catch {}
+    });
+  });
+
+  // Heartbeat every 30 s — terminate dead sockets
+  setInterval(() => {
+    wss.clients.forEach(ws => {
+      if (!ws.isAlive) { ws.terminate(); return; }
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30000);
+
+  return wss;
+}
+
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const httpServer = http.createServer(app);
+  attachWebSocketServer(httpServer);
+  httpServer.listen(PORT, () => {
     console.log('');
     console.log('╔══════════════════════════════════════════════╗');
     console.log('║   ConsTradeHire — Construction Job Platform  ║');
@@ -1056,5 +1125,6 @@ async function triggerJobAlerts(job) {
 
 // Attach to app so routes/jobs.js can call app.triggerJobAlerts(job)
 app.triggerJobAlerts = triggerJobAlerts;
+app.wsBroadcast = wsBroadcast;
 
 module.exports = app;
