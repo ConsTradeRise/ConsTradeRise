@@ -929,24 +929,8 @@ loadDedupStore(); // async — populates seenFingerprints from DB before first a
 //  ws://host/ws?token=<jwt>
 //  Rooms: one Set<ws> per userId. Messages broadcast to recipient.
 // ============================================================
-const jwt = require('jsonwebtoken');
-
-/** @type {Map<string, Set<import('ws').WebSocket>>} userId → open sockets */
-const wsClients = new Map();
-
-function wsAddClient(userId, ws) {
-  if (!wsClients.has(userId)) wsClients.set(userId, new Set());
-  wsClients.get(userId).add(ws);
-}
-function wsRemoveClient(userId, ws) {
-  wsClients.get(userId)?.delete(ws);
-}
-function wsBroadcast(userId, payload) {
-  const conns = wsClients.get(userId);
-  if (!conns) return;
-  const msg = JSON.stringify(payload);
-  conns.forEach(ws => { if (ws.readyState === 1) ws.send(msg); });
-}
+const jwt       = require('jsonwebtoken');
+const wsHub     = require('./utils/wsBroadcast');
 
 /** Attach WS to an existing http.Server */
 function attachWebSocketServer(httpServer) {
@@ -963,12 +947,11 @@ function attachWebSocketServer(httpServer) {
       return;
     }
 
-    wsAddClient(user.id, ws);
+    wsHub.addClient(user.id, ws);
     ws.isAlive = true;
     ws.on('pong', () => { ws.isAlive = true; });
-    ws.on('close', () => wsRemoveClient(user.id, ws));
+    ws.on('close', () => wsHub.removeClient(user.id, ws));
 
-    // Client can send { type:'ping' } to keep alive
     ws.on('message', data => {
       try {
         const m = JSON.parse(data);
@@ -1125,6 +1108,5 @@ async function triggerJobAlerts(job) {
 
 // Attach to app so routes/jobs.js can call app.triggerJobAlerts(job)
 app.triggerJobAlerts = triggerJobAlerts;
-app.wsBroadcast = wsBroadcast;
 
 module.exports = app;

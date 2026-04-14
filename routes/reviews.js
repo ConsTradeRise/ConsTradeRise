@@ -2,11 +2,11 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../utils/prisma');
-const { authenticateToken } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/auth');
 
 // POST /api/reviews — submit a review
 // Workers can review employers, employers can review workers (after a completed application)
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   const { targetId, rating, comment } = req.body;
   const reviewerId = req.user.id;
 
@@ -125,7 +125,7 @@ router.get('/:userId/summary', async (req, res) => {
 });
 
 // DELETE /api/reviews/:targetId — remove own review of a user
-router.delete('/:targetId', authenticateToken, async (req, res) => {
+router.delete('/:targetId', requireAuth, async (req, res) => {
   try {
     await prisma.review.delete({
       where: { reviewerId_targetId: { reviewerId: req.user.id, targetId: req.params.targetId } }

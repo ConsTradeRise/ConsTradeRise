@@ -1,7 +1,8 @@
 'use strict';
 const express   = require('express');
 const rateLimit = require('express-rate-limit');
-const prisma = require('../utils/prisma');
+const prisma    = require('../utils/prisma');
+const wsHub     = require('../utils/wsBroadcast');
 const { requireAuth } = require('../middleware/auth');
 const { sendNewMessageAlert } = require('../utils/email');
 
@@ -148,15 +149,10 @@ router.post('/:userId', requireAuth, sendLimiter, async (req, res) => {
     }).catch(() => {});
 
     // WebSocket push to recipient (real-time delivery)
-    try {
-      const app = require('../server');
-      if (app.wsBroadcast) {
-        app.wsBroadcast(req.params.userId, {
-          type:    'new_message',
-          message: { ...message, sender: { id: req.user.id, name: req.user.name } }
-        });
-      }
-    } catch {}
+    wsHub.broadcast(req.params.userId, {
+      type:    'new_message',
+      message: { ...message, sender: { id: req.user.id, name: req.user.name } }
+    });
 
     res.status(201).json({ message });
   } catch (e) {
