@@ -527,7 +527,7 @@ async function persistLiveJobsToDB(jobs) {
           jobType:     (job.type        || job.jobType || 'Full-time').substring(0, 50),
           companyName: (job.company     || job.companyName || 'Company').substring(0, 200),
           skills:      Array.isArray(job.skills) ? job.skills.slice(0, 20) : [],
-          source:      'EXTERNAL',
+          source:      'API',
           externalUrl: url.substring(0, 500),
           isActive:    true,
           expiresAt

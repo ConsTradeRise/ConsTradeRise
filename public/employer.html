@@ -542,7 +542,7 @@
 <script src="/app.js"></script>
 <script>
 // ── State ──────────────────────────────────────
-const S = { jobs: [], apps: [], loaded: false };
+const S = { jobs: [], apps: [], loaded: false, loadedAt: 0 };
 let _ivAppId = null;
 let _activeConv = null;
 let _msgPoll = null;
@@ -581,37 +581,60 @@ document.addEventListener('DOMContentLoaded', () => {
 function setView(v) {
   document.querySelectorAll('.sb-item[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === v));
   document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id === `view-${v}`));
-  if (v === 'jobs') renderJobs();
-  if (v === 'candidates') renderCandidates();
-  if (v === 'messages') loadInbox();
-  if (v === 'workers') initWorkers();
+  const stale = Date.now() - S.loadedAt > 60000;
+  if (v === 'jobs')       { if (stale) loadAll().then(renderJobs); else renderJobs(); }
+  if (v === 'candidates') { if (stale) loadAll().then(renderCandidates); else renderCandidates(); }
+  if (v === 'messages')   loadInbox();
+  if (v === 'workers')    initWorkers();
 }
 
 // ── Load all ──────────────────────────────────
 async function loadAll() {
   skel('overviewJobsList', 4);
   skel('overviewAppsList', 3);
-  const { ok, data } = await apiCall('GET', '/api/jobs/employer/mine');
-  if (!ok) { errBox('overviewJobsList', data?.error || 'Failed to load', loadAll); return; }
-  S.jobs = data.jobs || [];
-  S.apps = [];
-  await Promise.all(S.jobs.map(async j => {
-    const r = await apiCall('GET', `/api/applications/job/${j.id}`);
-    if (r.ok) (r.data.applications || []).forEach(a => S.apps.push({ ...a, _jid: j.id, _jtitle: j.title }));
+  // Reset stat displays so analytics fallback logic works correctly
+  ['statJobs','statApps','statShort'].forEach(id => { document.getElementById(id).textContent = '—'; });
+  const [jobsRes, appsRes] = await Promise.all([
+    apiCall('GET', '/api/jobs/employer/mine'),
+    apiCall('GET', '/api/applications/employer')
+  ]);
+  if (!jobsRes.ok) { errBox('overviewJobsList', jobsRes.data?.error || 'Failed to load', loadAll); return; }
+  S.jobs = jobsRes.data.jobs || [];
+  // Map applications with job title from S.jobs for display
+  const jobMap = {};
+  S.jobs.forEach(j => { jobMap[j.id] = j.title; });
+  S.apps = (appsRes.ok ? (appsRes.data.applications || []) : []).map(a => ({
+    ...a,
+    _jid:    a.jobId,
+    _jtitle: jobMap[a.jobId] || a.job?.title || ''
   }));
   S.loaded = true;
+  S.loadedAt = Date.now();
+  await loadAnalytics();
   renderOverview();
   syncWorkerJobSel();
   syncCandJobSel();
 }
 
+// ── Analytics ─────────────────────────────────
+async function loadAnalytics() {
+  const { ok, data } = await apiCall('GET', '/api/analytics/employer');
+  if (!ok) return; // fall back to local counts in renderOverview
+  if (data.openJobs    != null) document.getElementById('statJobs').textContent  = data.openJobs;
+  if (data.totalApps   != null) document.getElementById('statApps').textContent  = data.totalApps;
+  if (data.shortlisted != null) document.getElementById('statShort').textContent = data.shortlisted;
+}
+
 // ── Overview ──────────────────────────────────
 function renderOverview() {
   const open = S.jobs.filter(j => j.isActive);
-  document.getElementById('statJobs').textContent  = open.length;
-  document.getElementById('statApps').textContent  = S.apps.length;
-  document.getElementById('statShort').textContent = S.apps.filter(a => a.status === 'SHORTLISTED').length;
-  if (document.getElementById('welcomeSub').textContent === 'Manage your jobs and candidates') {}
+  // Only write local counts if analytics endpoint didn't already populate them
+  const statJobs  = document.getElementById('statJobs');
+  const statApps  = document.getElementById('statApps');
+  const statShort = document.getElementById('statShort');
+  if (statJobs.textContent  === '—') statJobs.textContent  = open.length;
+  if (statApps.textContent  === '—') statApps.textContent  = S.apps.length;
+  if (statShort.textContent === '—') statShort.textContent = S.apps.filter(a => a.status === 'SHORTLISTED').length;
 
   // Jobs list
   const jl = document.getElementById('overviewJobsList');
@@ -652,7 +675,10 @@ function jobRowHtml(j, actions = false) {
     <span class="badge ${j.isActive ? 'b-open' : 'b-closed'}">${j.isActive ? 'Open' : 'Closed'}</span>
     ${actions ? `<div class="row-actions">
       <button class="btn btn-sm" onclick="goToApplicants('${j.id}')">Applicants</button>
-      ${j.isActive ? `<button class="btn btn-sm btn-danger" onclick="closeJob('${j.id}')">Close</button>` : ''}
+      ${j.isActive
+        ? `<button class="btn btn-sm btn-danger" onclick="closeJob('${j.id}')">Close</button>`
+        : `<button class="btn btn-sm" onclick="reopenJob('${j.id}')">Reopen</button>`}
+      <button class="btn btn-sm btn-danger" onclick="deleteJob('${j.id}')">Delete</button>
     </div>` : ''}
   </div>`;
 }
@@ -690,7 +716,7 @@ function appRowHtml(a, actions = false) {
       ${a.status !== 'SHORTLISTED' ? `<button class="btn btn-sm" onclick="setStatus('${a.id}','SHORTLISTED')">Shortlist</button>` : ''}
       ${a.status !== 'REJECTED' ? `<button class="btn btn-sm btn-danger" onclick="setStatus('${a.id}','REJECTED')">Reject</button>` : ''}
       <button class="btn btn-sm" onclick="openInterview('${a.id}','${escapeHtml(name)}')">Interview</button>
-      <button class="btn btn-sm btn-ghost" onclick="msgUser('${a.user?.id}','${escapeHtml(name)}')">Message</button>
+      ${a.user?.id ? `<button class="btn btn-sm btn-ghost" onclick="msgUser('${a.user.id}','${escapeHtml(name)}')">Message</button>` : ''}
     </div>` : ''}
   </div>`;
 }
@@ -703,9 +729,25 @@ function goToApplicants(jobId) {
 // ── Actions ───────────────────────────────────
 async function closeJob(id) {
   if (!confirm('Close this job listing?')) return;
-  const { ok, data } = await apiCall('DELETE', `/api/jobs/${id}`);
+  const { ok, data } = await apiCall('PUT', `/api/jobs/${id}`, { isActive: false });
   if (!ok) { Toast.error(data?.error || 'Failed'); return; }
   Toast.success('Job closed');
+  await loadAll(); renderJobs();
+}
+
+async function deleteJob(id) {
+  if (!confirm('Permanently delete this job and all its applications? This cannot be undone.')) return;
+  const { ok, data } = await apiCall('DELETE', `/api/jobs/${id}`);
+  if (!ok) { Toast.error(data?.error || 'Failed'); return; }
+  Toast.success('Job deleted');
+  await loadAll(); renderJobs();
+}
+
+async function reopenJob(id) {
+  if (!confirm('Reopen this job listing?')) return;
+  const { ok, data } = await apiCall('PUT', `/api/jobs/${id}`, { isActive: true });
+  if (!ok) { Toast.error(data?.error || 'Failed'); return; }
+  Toast.success('Job reopened');
   await loadAll(); renderJobs();
 }
 
@@ -847,6 +889,11 @@ document.getElementById('msgInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); sendMsg(); }
 });
 
+// Backdrop click closes any open modal
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+});
+
 function msgUser(userId, name) {
   setView('messages');
   setTimeout(() => openConv(userId, name), 150);
@@ -914,7 +961,7 @@ async function searchWorkers() {
         <div class="row-title">${escapeHtml(name)}</div>
         <div class="row-meta">${loc ? '📍 ' + escapeHtml(loc) : ''}${w.yearsExperience ? ` · ${w.yearsExperience} yrs exp` : ''}${w.availability ? ` · ${escapeHtml(w.availability)}` : ''}</div>
       </div>
-      <button class="btn btn-sm" onclick="msgUser('${w.user?.id}','${escapeHtml(name)}')">Message</button>
+      ${w.user?.id ? `<button class="btn btn-sm" onclick="msgUser('${w.user.id}','${escapeHtml(name)}')">Message</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -952,8 +999,8 @@ async function submitInterview() {
   }
   Toast.success('Interview invitation sent!');
   closeInterview();
-  const a = S.apps.find(x => x.id === _ivAppId);
-  if (a) { a.status = 'SHORTLISTED'; renderCandidates(); renderOverview(); }
+  // Also update application status to INTERVIEW via API
+  await setStatus(_ivAppId, 'SHORTLISTED');
 }
 
 // ── Helpers ───────────────────────────────────

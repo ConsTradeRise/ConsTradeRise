@@ -398,22 +398,33 @@ function closeApplyModal() {
   document.getElementById('applyModal').classList.remove('open');
 }
 
-// ── Save job ──────────────────────────────────
-function getSavedJobs() { try { return JSON.parse(localStorage.getItem('ctr_saved')||'[]'); } catch { return []; } }
-function renderSaveBtn(jobId) {
+// ── Save job (DB API) ─────────────────────────
+let _jobIsSaved = false;
+
+async function renderSaveBtn(jobId) {
   const btn = document.getElementById('saveJobBtn');
-  if (!btn) return;
-  const saved = getSavedJobs().includes(String(jobId));
-  btn.textContent = saved ? '❤️ Saved' : '🤍 Save Job';
-  btn.style.color = saved ? 'var(--red,#dc2626)' : '';
+  if (!btn || !Auth.isLoggedIn()) return;
+  const { ok, data } = await apiCall('GET', '/api/jobs/saved');
+  _jobIsSaved = ok && (data.jobs || []).some(j => j.id === jobId);
+  btn.textContent = _jobIsSaved ? '❤️ Saved' : '🤍 Save Job';
+  btn.style.color  = _jobIsSaved ? 'var(--red,#dc2626)' : '';
 }
-function toggleSaveJob(jobId) {
-  const saved = getSavedJobs();
-  const idx = saved.indexOf(String(jobId));
-  if (idx >= 0) saved.splice(idx, 1); else saved.push(String(jobId));
-  localStorage.setItem('ctr_saved', JSON.stringify(saved));
-  renderSaveBtn(jobId);
-  Toast.success(idx >= 0 ? 'Removed from saved' : 'Job saved!');
+
+async function toggleSaveJob(jobId) {
+  if (!Auth.isLoggedIn()) { window.location.href = '/login.html'; return; }
+  const btn = document.getElementById('saveJobBtn');
+  if (btn) btn.disabled = true;
+  const method = _jobIsSaved ? 'DELETE' : 'POST';
+  const { ok } = await apiCall(method, `/api/jobs/${jobId}/save`);
+  if (ok) {
+    _jobIsSaved = !_jobIsSaved;
+    if (btn) {
+      btn.textContent = _jobIsSaved ? '❤️ Saved' : '🤍 Save Job';
+      btn.style.color  = _jobIsSaved ? 'var(--red,#dc2626)' : '';
+    }
+    Toast.success(_jobIsSaved ? 'Job saved!' : 'Removed from saved');
+  }
+  if (btn) btn.disabled = false;
 }
 
 async function submitApplication() {

@@ -160,7 +160,7 @@
       <div class="admin-tab" id="tab-users">
         <div class="admin-table-wrap">
           <div class="admin-table-toolbar">
-            <input type="text" id="userSearch" placeholder="Search name or email…" oninput="debounce(loadUsers, 400)()" />
+            <input type="text" id="userSearch" placeholder="Search name or email…" oninput="debouncedLoadUsers()" />
             <select id="userRoleFilter" onchange="loadUsers()">
               <option value="">All roles</option>
               <option value="WORKER">Job Seekers</option>
@@ -186,7 +186,7 @@
       <div class="admin-tab" id="tab-jobs">
         <div class="admin-table-wrap">
           <div class="admin-table-toolbar">
-            <input type="text" id="jobSearch" placeholder="Search title or location…" oninput="debounce(loadJobs, 400)()" />
+            <input type="text" id="jobSearch" placeholder="Search title or location…" oninput="debouncedLoadJobs()" />
             <span id="jobTotal" style="font-size:12px;color:var(--gray-400);margin-left:auto;"></span>
           </div>
           <table>
@@ -246,12 +246,12 @@
 <script>
 // ── Auth guard ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const user = Auth.getUser();
-  if (!Auth.isLoggedIn() || user?.role !== 'ADMIN') {
+  if (!Auth.isLoggedIn() || Auth.getRole() !== 'ADMIN') {
     window.location.href = '/login.html';
     return;
   }
-  document.getElementById('adminName').textContent = user.name || 'Admin';
+  const user = Auth.getUser();
+  document.getElementById('adminName').textContent = user?.name || 'Admin';
   loadStats();
 });
 
@@ -276,6 +276,9 @@ function debounce(fn, delay) {
   let t;
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
 }
+
+const debouncedLoadUsers = debounce(() => loadUsers(1), 400);
+const debouncedLoadJobs  = debounce(() => loadJobs(1), 400);
 
 // ── Stats ───────────────────────────────────────
 async function loadStats() {
@@ -307,8 +310,8 @@ async function loadUsers(page = 1) {
   tbody.innerHTML = data.users.map(u => {
     const banned = u.name.startsWith('[BANNED] ');
     return `<tr>
-      <td><strong>${esc(u.name)}</strong>${banned ? ' <span class="badge badge-red">BANNED</span>' : ''}</td>
-      <td style="color:var(--gray-500)">${esc(u.email)}</td>
+      <td><strong>${escapeHtml(u.name)}</strong>${banned ? ' <span class="badge badge-red">BANNED</span>' : ''}</td>
+      <td style="color:var(--gray-500)">${escapeHtml(u.email)}</td>
       <td><span class="badge ${STATUS_COLORS[u.role] || 'badge-gray'}">${u.role}</span></td>
       <td>${u._count.applications}</td>
       <td>${u._count.postedJobs}</td>
@@ -357,9 +360,9 @@ async function loadJobs(page = 1) {
   if (!data.jobs.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--gray-400);">No jobs found</td></tr>'; return; }
 
   tbody.innerHTML = data.jobs.map(j => `<tr>
-    <td><strong>${esc(j.title)}</strong></td>
-    <td>${esc(j.companyName || j.employer?.name || '—')}</td>
-    <td>${esc(j.location)}</td>
+    <td><strong>${escapeHtml(j.title)}</strong></td>
+    <td>${escapeHtml(j.companyName || j.employer?.name || '—')}</td>
+    <td>${escapeHtml(j.location)}</td>
     <td><span class="badge ${j.source === 'API' ? 'badge-blue' : 'badge-green'}">${j.source}</span></td>
     <td>${j._count.applications}</td>
     <td><span class="badge ${j.isActive ? 'badge-green' : 'badge-gray'}">${j.isActive ? 'Active' : 'Hidden'}</span></td>
@@ -374,7 +377,7 @@ async function loadJobs(page = 1) {
 }
 
 async function toggleJob(id, btn) {
-  const { ok, data } = await apiCall('PUT', `/api/admin/jobs/${id}/toggle`);
+  const { ok, data } = await apiCall('PUT', `/api/admin/jobs/${id}/active`);
   if (ok) { Toast.success(data.isActive ? 'Job activated.' : 'Job hidden.'); loadJobs(jobPage); }
 }
 
@@ -402,9 +405,9 @@ async function loadReports(page = 1) {
 
   tbody.innerHTML = data.reports.map(r => `<tr>
     <td style="font-size:11px;color:var(--gray-400)">${r.jobId.slice(0,8)}…</td>
-    <td><strong>${esc(r.user.name)}</strong><br><small style="color:var(--gray-400)">${esc(r.user.email)}</small></td>
+    <td><strong>${escapeHtml(r.user.name)}</strong><br><small style="color:var(--gray-400)">${escapeHtml(r.user.email)}</small></td>
     <td><span class="badge ${REASON_COLORS[r.reason] || 'badge-gray'}">${r.reason}</span></td>
-    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.details || '—')}</td>
+    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.details || '—')}</td>
     <td>${fmtDate(r.createdAt)}</td>
     <td><span class="badge ${r.resolved ? 'badge-green' : 'badge-orange'}">${r.resolved ? 'Resolved' : 'Open'}</span></td>
     <td style="display:flex;gap:6px;">
@@ -417,7 +420,7 @@ async function loadReports(page = 1) {
 }
 
 async function resolveReport(id, btn) {
-  const { ok } = await apiCall('PUT', `/api/admin/reports/${id}/resolve`);
+  const { ok } = await apiCall('PUT', `/api/admin/reports/${id}`, { resolved: true });
   if (ok) { Toast.success('Report resolved.'); loadReports(reportPage); }
 }
 
@@ -434,9 +437,9 @@ async function loadApps(page = 1) {
   if (!data.applications.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--gray-400);">No applications</td></tr>'; return; }
 
   tbody.innerHTML = data.applications.map(a => `<tr>
-    <td><strong>${esc(a.user.name)}</strong><br><small style="color:var(--gray-400)">${esc(a.user.email)}</small></td>
-    <td>${esc(a.job.title)}</td>
-    <td>${esc(a.job.companyName || '—')}</td>
+    <td><strong>${escapeHtml(a.user.name)}</strong><br><small style="color:var(--gray-400)">${escapeHtml(a.user.email)}</small></td>
+    <td>${escapeHtml(a.job.title)}</td>
+    <td>${escapeHtml(a.job.companyName || '—')}</td>
     <td><span class="badge ${STATUS_COLORS[a.status] || 'badge-gray'}">${a.status}</span></td>
     <td>${fmtDate(a.appliedAt)}</td>
   </tr>`).join('');
@@ -445,22 +448,31 @@ async function loadApps(page = 1) {
 }
 
 // ── Helpers ─────────────────────────────────────
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
 function fmtDate(d) {
   return d ? new Date(d).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' }) : '—';
 }
 
 function renderPagination(elId, current, total, onClick) {
   const el = document.getElementById(elId);
-  if (total <= 1) { el.innerHTML = ''; return; }
-  el.innerHTML = `
-    <button onclick="(${onClick.toString()})(${current - 1})" ${current <= 1 ? 'disabled' : ''}>← Prev</button>
-    <span>Page ${current} of ${total}</span>
-    <button onclick="(${onClick.toString()})(${current + 1})" ${current >= total ? 'disabled' : ''}>Next →</button>
-  `;
+  el.textContent = '';
+  if (total <= 1) return;
+
+  const prev = document.createElement('button');
+  prev.textContent = '← Prev';
+  prev.disabled = current <= 1;
+  prev.addEventListener('click', () => onClick(current - 1));
+
+  const label = document.createElement('span');
+  label.textContent = `Page ${current} of ${total}`;
+
+  const next = document.createElement('button');
+  next.textContent = 'Next →';
+  next.disabled = current >= total;
+  next.addEventListener('click', () => onClick(current + 1));
+
+  el.appendChild(prev);
+  el.appendChild(label);
+  el.appendChild(next);
 }
 
 function logout() {

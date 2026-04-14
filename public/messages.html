@@ -131,7 +131,7 @@
       <strong>Your Messages</strong>
       <p style="font-size:14px;">Select a conversation or start a new one from a job application.</p>
     </div>
-    <div id="chatArea" style="display:none;flex:1;flex-direction:column;display:none;">
+    <div id="chatArea" style="display:none;flex:1;flex-direction:column;">
       <div class="msg-header" id="chatHeader"></div>
       <div class="msg-body" id="chatBody"></div>
       <div class="msg-composer">
@@ -148,11 +148,15 @@
 let currentUserId  = null;
 let activeConvId   = null;
 let pollInterval   = null;
+let unreadInterval = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (Auth.redirectIfNotAuth()) return;
+  initNavbar();
   currentUserId = Auth.getUser()?.id;
   loadInbox();
+  pollUnreadCount();
+  unreadInterval = setInterval(pollUnreadCount, 30000);
 
   // Open conversation from URL param
   const params = new URLSearchParams(window.location.search);
@@ -166,6 +170,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('msgInput').addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+
+  // Cleanup intervals on page unload
+  window.addEventListener('beforeunload', () => {
+    if (pollInterval)   clearInterval(pollInterval);
+    if (unreadInterval) clearInterval(unreadInterval);
   });
 });
 
@@ -252,6 +262,18 @@ async function sendMessage() {
     input.style.height = 'auto';
     await fetchMessages(activeConvId);
     loadInbox();
+  }
+}
+
+async function pollUnreadCount() {
+  const { ok, data } = await apiCall('GET', '/api/messages/unread-count');
+  if (!ok) return;
+  // Update any unread badge in the sidebar header if present
+  const count = data.count ?? data.unreadCount ?? 0;
+  const badge = document.getElementById('unreadBadge');
+  if (badge) {
+    badge.textContent = count > 0 ? count : '';
+    badge.style.display = count > 0 ? 'inline-flex' : 'none';
   }
 }
 

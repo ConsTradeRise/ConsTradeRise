@@ -6,852 +6,1300 @@
   <title>ConsTradeHire — AI-Powered Construction Jobs in Canada</title>
   <meta name="description" content="Find construction jobs across Canada — Estimators, Project Coordinators, Labourers, Electricians, Welders and more. AI-powered job matching for the trades." />
   <link rel="canonical" href="https://constradehire.com/" />
-  <meta property="og:type"        content="website" />
-  <meta property="og:url"         content="https://constradehire.com/" />
-  <meta property="og:title"       content="ConsTradeHire — AI-Powered Construction Jobs in Canada" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://constradehire.com/" />
+  <meta property="og:title" content="ConsTradeHire — AI-Powered Construction Jobs in Canada" />
   <meta property="og:description" content="Find construction jobs across Canada. AI-powered matching for all trades." />
-  <meta property="og:image"       content="https://constradehire.com/og-image.png" />
-  <meta name="twitter:card"       content="summary_large_image" />
-  <meta name="theme-color"        content="#080c14" />
-  <link rel="manifest"            href="/manifest.json" />
-  <link rel="icon"                href="/icon.svg" type="image/svg+xml" />
+  <meta property="og:image" content="https://constradehire.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#09090f" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"WebSite","name":"ConsTradeHire","url":"https://constradehire.com","potentialAction":{"@type":"SearchAction","target":"https://constradehire.com/jobs.html?search={search_term_string}","query-input":"required name=search_term_string"}}
   </script>
 
-  <!-- Tailwind CSS (local vendor for offline/preview support) -->
-  <script src="/vendor/tailwind-cdn.js"></script>
-  <script>
-    tailwind.config = {
-      corePlugins: { preflight: false },
-      theme: {
-        extend: {
-          colors: {
-            brand: { blue: '#3b82f6', green: '#10b981', orange: '#f59e0b', bg: '#080c14', bg2: '#0d1220', card: '#111827' }
-          },
-          animation: {
-            'float': 'float 6s ease-in-out infinite',
-            'pulse-slow': 'pulse 4s cubic-bezier(0.4,0,0.6,1) infinite',
-          },
-          keyframes: {
-            float: { '0%,100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-20px)' } }
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- React + ReactDOM + Framer Motion (UMD) -->
-  <script src="/vendor/react.min.js"></script>
-  <script src="/vendor/react-dom.min.js"></script>
-  <script src="/vendor/framer-motion.js"></script>
-
-  <!-- Babel for JSX -->
-  <script src="/vendor/babel.min.js"></script>
-
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #09090f;
+      --bg2: #0f0f1a;
+      --surface: #13131f;
+      --surface2: #1a1a2e;
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.14);
+      --orange: #f97316;
+      --orange-dim: rgba(249,115,22,0.12);
+      --orange-glow: rgba(249,115,22,0.25);
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --text: #f1f5f9;
+      --text-muted: #64748b;
+      --text-sub: #94a3b8;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
     html { scroll-behavior: smooth; }
-    body { background: #080c14; color: #f1f5f9; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; overflow-x: hidden; }
-    #root { min-height: 100vh; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #080c14; }
-    ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
-    .gradient-text { background: linear-gradient(135deg, #3b82f6, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
-    .glow-blue { box-shadow: 0 0 40px rgba(59,130,246,0.15); }
-    .glow-green { box-shadow: 0 0 40px rgba(16,185,129,0.15); }
-    @keyframes countUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-    .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: #2a2a40; border-radius: 3px; }
+
+    /* ── Navbar ─────────────────────────────── */
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      padding: 0 24px;
+      transition: background 0.3s, backdrop-filter 0.3s, border-color 0.3s, box-shadow 0.3s;
+      border-bottom: 1px solid transparent;
+    }
+    #navbar.scrolled {
+      background: rgba(9,9,15,0.88);
+      backdrop-filter: blur(20px);
+      border-color: var(--border);
+      box-shadow: 0 1px 40px rgba(0,0,0,0.4);
+    }
+    .nav-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; flex-shrink: 0;
+    }
+    .nav-logo-icon {
+      width: 34px; height: 34px;
+      background: var(--orange);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px; color: #fff;
+      letter-spacing: -0.5px;
+      box-shadow: 0 0 18px var(--orange-glow);
+    }
+    .nav-logo-text {
+      font-weight: 700; font-size: 17px; color: var(--text);
+      letter-spacing: -0.4px;
+    }
+    .nav-links {
+      display: flex; align-items: center; gap: 4px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--text-sub); text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      padding: 7px 14px; border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .btn-ghost {
+      background: none; border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 14px; font-weight: 500;
+      padding: 8px 16px; border-radius: 9px; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      text-decoration: none; display: inline-flex; align-items: center;
+    }
+    .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
+    .btn-primary {
+      background: var(--orange); color: #fff;
+      font-size: 14px; font-weight: 600;
+      padding: 8px 18px; border-radius: 9px; cursor: pointer;
+      border: none; transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+      box-shadow: 0 0 20px var(--orange-glow);
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 24px var(--orange-glow); }
+    .burger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; background: none; border: none; }
+    .burger span { display: block; width: 22px; height: 2px; background: var(--text-sub); border-radius: 2px; transition: 0.3s; }
+    .mobile-menu {
+      display: none; position: fixed; top: 64px; left: 0; right: 0;
+      background: rgba(9,9,15,0.97); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); padding: 16px 24px 24px;
+      flex-direction: column; gap: 4px; z-index: 998;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      color: var(--text-sub); text-decoration: none; font-size: 15px;
+      font-weight: 500; padding: 12px 8px; border-bottom: 1px solid var(--border);
+      transition: color 0.2s;
+    }
+    .mobile-menu a:hover { color: var(--text); }
+    .mobile-menu .btn-primary { margin-top: 12px; justify-content: center; padding: 12px; }
+
+    /* ── Hero ───────────────────────────────── */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding: 80px 24px 40px;
+      position: relative; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 60% 50% at 70% 40%, rgba(249,115,22,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 20% 70%, rgba(59,130,246,0.05) 0%, transparent 70%);
+    }
+    .hero-grid-overlay {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+    }
+    .hero-inner {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+      position: relative; z-index: 1;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--orange-dim); border: 1px solid rgba(249,115,22,0.2);
+      color: var(--orange); font-size: 12px; font-weight: 600;
+      padding: 5px 12px; border-radius: 100px; margin-bottom: 24px;
+      letter-spacing: 0.4px; text-transform: uppercase;
+    }
+    .hero-badge-dot { width: 6px; height: 6px; background: var(--orange); border-radius: 50%; animation: pulse-dot 2s infinite; }
+    @keyframes pulse-dot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.4); } }
+    .hero-h1 {
+      font-size: clamp(38px, 5vw, 62px); font-weight: 800;
+      line-height: 1.08; letter-spacing: -2px; margin-bottom: 20px;
+      color: var(--text);
+    }
+    .hero-h1 em { font-style: normal; color: var(--orange); }
+    .hero-sub {
+      font-size: 17px; color: var(--text-sub); line-height: 1.65;
+      margin-bottom: 32px; max-width: 460px; font-weight: 400;
+    }
+    .hero-search {
+      display: flex; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 6px 6px 6px 16px;
+      margin-bottom: 32px; gap: 10px;
+      transition: border-color 0.2s;
+      max-width: 480px;
+    }
+    .hero-search:focus-within { border-color: rgba(249,115,22,0.4); }
+    .hero-search svg { color: var(--text-muted); flex-shrink: 0; }
+    .hero-search input {
+      background: none; border: none; outline: none;
+      color: var(--text); font-size: 14px; font-family: var(--font);
+      flex: 1; min-width: 0;
+    }
+    .hero-search input::placeholder { color: var(--text-muted); }
+    .hero-search button {
+      background: var(--orange); color: #fff; border: none;
+      padding: 9px 18px; border-radius: 8px; font-size: 13px;
+      font-weight: 600; cursor: pointer; white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+    .hero-search button:hover { opacity: 0.88; }
+    .hero-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .btn-lg {
+      background: var(--orange); color: #fff; border: none;
+      font-size: 15px; font-weight: 600; padding: 13px 26px;
+      border-radius: 11px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      box-shadow: 0 0 28px var(--orange-glow);
+      transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+    }
+    .btn-lg:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 6px 32px var(--orange-glow); }
+    .btn-outline-lg {
+      background: none; color: var(--text-sub); border: 1px solid var(--border);
+      font-size: 15px; font-weight: 500; padding: 12px 22px;
+      border-radius: 11px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: border-color 0.2s, color 0.2s;
+      text-decoration: none;
+    }
+    .btn-outline-lg:hover { border-color: var(--border-hover); color: var(--text); }
+    .hero-social-proof {
+      display: flex; align-items: center; gap: 12px; margin-top: 28px;
+    }
+    .hero-avatars {
+      display: flex;
+    }
+    .hero-avatars img, .hero-avatar-ph {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 2px solid var(--bg);
+      margin-left: -8px; object-fit: cover;
+    }
+    .hero-avatar-ph {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #fff;
+    }
+    .hero-avatars .hero-avatar-ph:nth-child(1) { background: #3b82f6; margin-left: 0; }
+    .hero-avatars .hero-avatar-ph:nth-child(2) { background: #22c55e; }
+    .hero-avatars .hero-avatar-ph:nth-child(3) { background: #f97316; }
+    .hero-avatars .hero-avatar-ph:nth-child(4) { background: #8b5cf6; }
+    .hero-social-text { font-size: 13px; color: var(--text-muted); }
+    .hero-social-text strong { color: var(--text-sub); }
+
+    /* ── Hero Right: Mockup ─────────────────── */
+    .hero-mockup {
+      position: relative;
+      animation: float-card 5s ease-in-out infinite;
+    }
+    @keyframes float-card {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    .mockup-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .mockup-header {
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 14px 18px; display: flex; align-items: center; gap: 8px;
+    }
+    .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-title { font-size: 12px; color: var(--text-muted); margin-left: 4px; font-weight: 500; }
+    .mockup-body { padding: 20px; }
+    .job-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 10px;
+      background: var(--bg2); margin-bottom: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .job-row:hover { border-color: var(--border-hover); background: rgba(255,255,255,0.03); }
+    .job-row.active { border-color: rgba(249,115,22,0.3); background: var(--orange-dim); }
+    .job-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .job-info { flex: 1; min-width: 0; }
+    .job-title { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .job-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .job-score { text-align: right; flex-shrink: 0; }
+    .score-num { font-size: 14px; font-weight: 700; }
+    .score-bar-wrap { width: 48px; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-top: 4px; }
+    .score-bar { height: 100%; border-radius: 2px; }
+    .mockup-ats {
+      margin-top: 12px; background: var(--bg2); border-radius: 12px;
+      border: 1px solid var(--border); padding: 14px;
+    }
+    .ats-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .ats-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+    .ats-val { font-size: 11px; font-weight: 600; }
+    .ats-progress { height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
+    .ats-progress-fill { height: 100%; border-radius: 2px; background: var(--orange); transition: width 1s ease; }
+    .mockup-badge-float {
+      position: absolute; bottom: -16px; left: -20px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 14px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .badge-icon { font-size: 18px; }
+    .badge-text { font-size: 12px; }
+    .badge-text strong { display: block; font-weight: 700; color: var(--text); }
+    .badge-text span { color: var(--text-muted); font-size: 11px; }
+    .mockup-badge-float2 {
+      position: absolute; top: -14px; right: -16px;
+      background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 10px; padding: 8px 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .badge2-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: pulse-dot 2s infinite; }
+    .badge2-text { font-size: 12px; font-weight: 600; color: #22c55e; }
+
+    /* ── Trust Strip ────────────────────────── */
+    #trust {
+      padding: 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+    #trust::before, #trust::after {
+      content: ''; position: absolute; top: 0; bottom: 0; width: 120px; z-index: 2;
+    }
+    #trust::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
+    #trust::after { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
+    .trust-track {
+      display: flex; align-items: center; gap: 0;
+      animation: marquee 28s linear infinite;
+      width: max-content;
+    }
+    @keyframes marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .trust-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 40px;
+      border-right: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .trust-item-icon { font-size: 18px; }
+    .trust-item-text { font-size: 14px; font-weight: 600; color: var(--text-sub); }
+    .trust-item-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .trust-stat { font-size: 20px; font-weight: 800; color: var(--orange); }
+
+    /* ── Section commons ────────────────────── */
+    section { padding: 80px 24px; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .section-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--orange);
+      background: var(--orange-dim); border: 1px solid rgba(249,115,22,0.15);
+      padding: 5px 12px; border-radius: 100px; margin-bottom: 16px;
+    }
+    .section-h2 {
+      font-size: clamp(28px, 3.5vw, 42px); font-weight: 800;
+      letter-spacing: -1.2px; line-height: 1.12; margin-bottom: 12px;
+    }
+    .section-sub { font-size: 16px; color: var(--text-sub); max-width: 480px; line-height: 1.6; }
+
+    /* ── Bento Features ─────────────────────── */
+    #features { background: var(--bg2); }
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 16px; margin-top: 48px;
+    }
+    .bento-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+      transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+      cursor: default; position: relative; overflow: hidden;
+    }
+    .bento-card::before {
+      content: ''; position: absolute; inset: 0;
+      opacity: 0; transition: opacity 0.3s;
+      border-radius: inherit;
+    }
+    .bento-card:hover { border-color: var(--border-hover); transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,0.3); }
+    .bento-card:hover::before { opacity: 1; }
+    .bento-card.span-2 { grid-column: span 2; }
+    .bento-card.tall { grid-row: span 2; }
+    .bento-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; font-size: 20px;
+    }
+    .bento-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; }
+    .bento-desc { font-size: 14px; color: var(--text-sub); line-height: 1.6; }
+    .bento-accent {
+      margin-top: 20px; padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .bento-stat-row { display: flex; gap: 24px; }
+    .bento-stat-val { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+    .bento-stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Resume preview inside bento */
+    .mini-resume {
+      margin-top: 16px; background: var(--bg2); border-radius: 10px;
+      border: 1px solid var(--border); padding: 14px; font-size: 11px;
+    }
+    .mini-resume-bar {
+      height: 6px; border-radius: 3px; margin-bottom: 6px;
+      background: var(--border);
+    }
+    .mini-resume-bar.fill { background: var(--orange); width: 80%; }
+    .mini-resume-bar.fill2 { background: var(--blue); width: 60%; }
+    .mini-resume-bar.fill3 { background: var(--green); width: 90%; }
+    .mini-resume-short { height: 6px; border-radius: 3px; background: var(--border); width: 40%; margin-bottom: 6px; }
+
+    /* Keyword tags */
+    .keyword-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .kw-tag {
+      font-size: 11px; padding: 4px 10px; border-radius: 100px;
+      font-weight: 500;
+    }
+    .kw-match { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+    .kw-miss { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.15); }
+
+    /* Steps mini */
+    .steps-mini { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    .step-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 500;
+      color: var(--text-sub);
+    }
+    .step-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
+
+    /* ── How It Works ───────────────────────── */
+    #how { background: var(--bg); }
+    .how-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 0; margin-top: 48px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .how-step {
+      padding: 32px 28px; position: relative;
+      border-right: 1px solid var(--border);
+      transition: background 0.25s;
+    }
+    .how-step:last-child { border-right: none; }
+    .how-step:hover { background: var(--surface); }
+    .how-num {
+      font-size: 11px; font-weight: 700; color: var(--orange);
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .how-num::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .how-icon-wrap {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 16px;
+    }
+    .how-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; }
+    .how-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .how-connector {
+      position: absolute; top: 50%; right: -13px;
+      width: 24px; height: 24px; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; z-index: 2; transform: translateY(-50%);
+      color: var(--orange);
+    }
+
+    /* ── Demo Modal ─────────────────────────── */
+    #demo-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    #demo-modal-overlay.open { display: flex; }
+    .demo-modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; width: 100%; max-width: 620px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+      animation: modal-in 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.94) translateY(16px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--surface2); border: none; color: var(--text-muted);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; transition: background 0.2s, color 0.2s;
+    }
+    .modal-close:hover { background: var(--border); color: var(--text); }
+    .modal-body { padding: 24px; }
+    .demo-job-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+      display: flex; gap: 14px; align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .demo-job-logo {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .demo-job-title { font-size: 16px; font-weight: 700; }
+    .demo-job-meta { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .demo-job-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .demo-tag {
+      font-size: 11px; padding: 3px 10px; border-radius: 100px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-sub); font-weight: 500;
+    }
+    .ats-score-block {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; margin-bottom: 16px;
+    }
+    .ats-score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .ats-score-label { font-size: 13px; font-weight: 600; }
+    .ats-score-pct { font-size: 28px; font-weight: 800; color: var(--orange); }
+    .ats-full-bar { height: 8px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; }
+    .ats-full-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--orange), #fb923c); width: 0; transition: width 1.2s cubic-bezier(0.34,1,0.64,1); }
+    .modal-kw-section { margin-bottom: 20px; }
+    .modal-kw-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions .btn-lg { flex: 1; justify-content: center; }
+    .modal-steps {
+      display: flex; gap: 0; margin-bottom: 20px;
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    }
+    .modal-step {
+      flex: 1; padding: 10px; text-align: center; font-size: 12px;
+      font-weight: 600; color: var(--text-muted); background: var(--bg2);
+      border-right: 1px solid var(--border); cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .modal-step:last-child { border-right: none; }
+    .modal-step.active { background: var(--orange-dim); color: var(--orange); }
+    .modal-step.done { color: var(--green); }
+
+    /* ── Interactive demo section ───────────── */
+    #demo { background: var(--bg2); }
+    .demo-preview {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 24px; margin-top: 48px; align-items: center;
+    }
+    .demo-copy {}
+    .demo-copy .section-h2 { font-size: clamp(24px, 3vw, 36px); }
+    .demo-feature-list { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+    .demo-feature-item {
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .demo-feat-icon {
+      width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+    .demo-feat-text strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .demo-feat-text span { font-size: 13px; color: var(--text-muted); }
+    .demo-launch-btn {
+      margin-top: 28px; display: inline-flex; align-items: center; gap: 8px;
+      background: var(--orange); color: #fff; border: none;
+      font-size: 15px; font-weight: 600; padding: 13px 24px;
+      border-radius: 11px; cursor: pointer;
+      box-shadow: 0 0 24px var(--orange-glow);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .demo-launch-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .demo-ui-preview {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+    .demo-ui-bar {
+      background: var(--bg2); padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .demo-ui-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .demo-ui-body { padding: 16px; }
+    .dui-job {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .dui-job:hover { border-color: rgba(249,115,22,0.3); }
+    .dui-job-icon { font-size: 20px; }
+    .dui-job-name { font-size: 13px; font-weight: 600; }
+    .dui-job-co { font-size: 11px; color: var(--text-muted); }
+    .dui-score { margin-left: auto; font-size: 13px; font-weight: 700; }
+    .dui-apply {
+      background: var(--orange); color: #fff; border: none;
+      font-size: 13px; font-weight: 600; padding: 10px 0;
+      border-radius: 8px; cursor: pointer; width: 100%; margin-top: 8px;
+      transition: opacity 0.2s;
+    }
+    .dui-apply:hover { opacity: 0.88; }
+
+    /* ── Final CTA ──────────────────────────── */
+    #cta {
+      background: var(--bg);
+      padding: 100px 24px;
+    }
+    .cta-inner {
+      max-width: 680px; margin: 0 auto; text-align: center;
+    }
+    .cta-glow {
+      width: 600px; height: 600px; max-width: 90vw;
+      background: radial-gradient(circle, rgba(249,115,22,0.08), transparent 70%);
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+    .cta-wrap { position: relative; }
+    .cta-h2 {
+      font-size: clamp(32px, 4.5vw, 54px); font-weight: 800;
+      letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 16px;
+    }
+    .cta-h2 em { font-style: normal; color: var(--orange); }
+    .cta-sub { font-size: 17px; color: var(--text-sub); margin-bottom: 36px; line-height: 1.6; }
+    .cta-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .cta-note { margin-top: 20px; font-size: 13px; color: var(--text-muted); }
+
+    /* ── Footer ─────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px; background: var(--bg);
+    }
+    .footer-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+    .footer-links a {
+      font-size: 13px; color: var(--text-muted);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text-sub); }
+    .footer-copy { font-size: 13px; color: var(--text-muted); }
+
+    /* ── Scroll fade-in ─────────────────────── */
+    .reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1);
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+    .reveal-delay-1 { transition-delay: 0.08s; }
+    .reveal-delay-2 { transition-delay: 0.16s; }
+    .reveal-delay-3 { transition-delay: 0.24s; }
+    .reveal-delay-4 { transition-delay: 0.32s; }
+
+    /* ── Responsive ─────────────────────────── */
+    @media (max-width: 900px) {
+      .nav-links, .btn-ghost { display: none; }
+      .burger { display: flex; }
+      .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+      .hero-mockup { animation: none; }
+      .bento-grid { grid-template-columns: 1fr 1fr; }
+      .bento-card.tall { grid-row: span 1; }
+      .bento-card.span-2 { grid-column: span 2; }
+      .how-grid { grid-template-columns: 1fr; }
+      .how-step { border-right: none; border-bottom: 1px solid var(--border); }
+      .how-step:last-child { border-bottom: none; }
+      .how-connector { display: none; }
+      .demo-preview { grid-template-columns: 1fr; }
+      .bento-stat-row { gap: 16px; }
+    }
+    @media (max-width: 580px) {
+      .bento-grid { grid-template-columns: 1fr; }
+      .bento-card.span-2 { grid-column: span 1; }
+      section { padding: 60px 16px; }
+      .hero-ctas { flex-direction: column; }
+      .cta-btns { flex-direction: column; align-items: center; }
+      .footer-inner { flex-direction: column; gap: 12px; text-align: center; }
+      .footer-links { justify-content: center; }
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef, useCallback } = React;
-    const { createRoot } = ReactDOM;
-    const { motion, useInView, AnimatePresence } = Motion;
+  <!-- ── NAVBAR ──────────────────────────────────────── -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <div class="nav-logo-icon">CT</div>
+        <span class="nav-logo-text">ConsTradeHire</span>
+      </a>
 
-    // ── Hooks ─────────────────────────────────────
-    function useCountUp(target, duration = 1500, active = true) {
-      const [count, setCount] = useState(0);
-      useEffect(() => {
-        if (!active) return;
-        let start = null;
-        const step = (ts) => {
-          if (!start) start = ts;
-          const prog = Math.min((ts - start) / duration, 1);
-          setCount(Math.floor(prog * target));
-          if (prog < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      }, [active, target, duration]);
-      return count;
-    }
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/jobs.html">Jobs</a></li>
+        <li><a href="/employer.html">Employers</a></li>
+        <li><a href="/resume-builder.html">AI Tools</a></li>
+      </ul>
 
-    // ── Data ──────────────────────────────────────
-    const SAMPLE_JOBS = [
-      { title: 'Senior Estimator', company: 'PCL Construction', location: 'Toronto, ON', salary: '$95K–$120K', score: 87, type: 'Full-time', badge: 'Hot' },
-      { title: 'Site Supervisor', company: 'EllisDon', location: 'Calgary, AB', salary: '$85K–$105K', score: 74, type: 'Full-time', badge: null },
-      { title: 'Project Coordinator', company: 'Graham Construction', location: 'Vancouver, BC', salary: '$70K–$90K', score: 63, type: 'Contract', badge: 'New' },
-    ];
+      <div class="nav-right">
+        <a href="/login.html" class="btn-ghost">Sign In</a>
+        <a href="/register.html" class="btn-primary">
+          Get Started
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <button class="burger" id="burger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
 
-    const FEATURES = [
-      {
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7">
-            <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
-          </svg>
-        ),
-        title: 'Instant ATS Score',
-        desc: 'See exactly how your resume scores against any job in seconds — no guessing.',
-        color: '#3b82f6',
-        bg: 'rgba(59,130,246,0.1)',
-      },
-      {
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7">
-            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-          </svg>
-        ),
-        title: 'AI Resume Tailoring',
-        desc: 'Our AI rewrites your resume to match each job — keywords, bullets, everything.',
-        color: '#10b981',
-        bg: 'rgba(16,185,129,0.1)',
-      },
-      {
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-          </svg>
-        ),
-        title: 'Smart Job Matching',
-        desc: 'Jobs ranked by your skill match — find the right fit faster across all of Canada.',
-        color: '#f59e0b',
-        bg: 'rgba(245,158,11,0.1)',
-      },
-    ];
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="/">Home</a>
+    <a href="/jobs.html">Jobs</a>
+    <a href="/employer.html">Employers</a>
+    <a href="/resume-builder.html">AI Tools</a>
+    <a href="/register.html" class="btn-primary">Get Started →</a>
+  </div>
 
-    const STEPS = [
-      { num: '01', title: 'Upload Your Resume', desc: 'Drop your PDF or Word file. We parse it instantly — no forms to fill.' },
-      { num: '02', title: 'Get Your ATS Score', desc: 'See how you match every job. Find gaps before employers do.' },
-      { num: '03', title: 'Apply with Confidence', desc: 'Tailor in one click. Apply directly from the platform.' },
-    ];
+  <!-- ── HERO ────────────────────────────────────────── -->
+  <section id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid-overlay"></div>
 
-    const STATS = [
-      { value: 2400, label: 'Jobs Posted', suffix: '+' },
-      { value: 94, label: 'Match Accuracy', suffix: '%' },
-      { value: 180, label: 'Employers', suffix: '+' },
-      { value: 3, label: 'Faster Interviews', suffix: 'x' },
-    ];
+    <div class="hero-inner">
+      <!-- Left -->
+      <div class="hero-left">
+        <div class="hero-badge reveal">
+          <span class="hero-badge-dot"></span>
+          Now Hiring Across Canada
+        </div>
 
-    const MISSING_KEYWORDS = ['Procore', 'Bluebeam', 'LEED', 'RFI Management', 'Primavera P6'];
-    const MATCHED_KEYWORDS = ['Estimating', 'AutoCAD', 'Project Management', 'Budget Control', 'Site Supervision', 'OHSA'];
+        <h1 class="hero-h1 reveal reveal-delay-1">
+          Land your next<br />construction job<br /><em>3× faster.</em>
+        </h1>
 
-    // ── Score color ───────────────────────────────
-    function scoreColor(s) {
-      if (s >= 80) return '#10b981';
-      if (s >= 65) return '#3b82f6';
-      if (s >= 50) return '#f59e0b';
-      return '#ef4444';
-    }
-    function scoreLabel(s) {
-      if (s >= 80) return 'Excellent';
-      if (s >= 65) return 'Good';
-      if (s >= 50) return 'Fair';
-      return 'Poor';
-    }
+        <p class="hero-sub reveal reveal-delay-2">
+          AI-powered matching, ATS scoring, and resume tailoring — built for trades workers and construction professionals in Canada.
+        </p>
 
-    // ── Navbar ────────────────────────────────────
-    function Navbar() {
-      const [scrolled, setScrolled] = useState(false);
-      const [open, setOpen] = useState(false);
-      const user = (() => { try { return JSON.parse(localStorage.getItem('tu_user')); } catch { return null; } })();
+        <div class="hero-search reveal reveal-delay-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search construction jobs…" id="hero-search-input" />
+          <button onclick="heroSearch()">Search</button>
+        </div>
 
-      useEffect(() => {
-        const fn = () => setScrolled(window.scrollY > 20);
-        window.addEventListener('scroll', fn, { passive: true });
-        return () => window.removeEventListener('scroll', fn);
-      }, []);
+        <div class="hero-ctas reveal reveal-delay-3">
+          <a href="/register.html" class="btn-lg">
+            Start for Free
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <button class="btn-outline-lg" onclick="openDemo()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            See It Live
+          </button>
+        </div>
 
-      return (
-        <motion.nav
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          style={{
-            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-            background: scrolled ? 'rgba(8,12,20,0.92)' : 'transparent',
-            backdropFilter: scrolled ? 'blur(16px)' : 'none',
-            borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
-            transition: 'all 0.3s ease',
-            padding: '0 24px',
-          }}
-        >
-          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
-            <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-              <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg,#3b82f6,#10b981)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#fff' }}>C</div>
-              <span style={{ fontWeight: 700, fontSize: 18, color: '#f1f5f9', letterSpacing: '-0.3px' }}>ConsTradeHire</span>
-            </a>
+        <div class="hero-social-proof reveal reveal-delay-4">
+          <div class="hero-avatars">
+            <div class="hero-avatar-ph">JM</div>
+            <div class="hero-avatar-ph">KR</div>
+            <div class="hero-avatar-ph">AP</div>
+            <div class="hero-avatar-ph">TS</div>
+          </div>
+          <div class="hero-social-text">
+            <strong>2,400+ trades professionals</strong> hired this year
+          </div>
+        </div>
+      </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <a href="/jobs.html" style={{ padding: '8px 16px', color: '#94a3b8', fontSize: 14, textDecoration: 'none', borderRadius: 8, transition: 'color 0.2s' }}
-                onMouseEnter={e => e.target.style.color='#f1f5f9'} onMouseLeave={e => e.target.style.color='#94a3b8'}>
-                Jobs
-              </a>
-              {user ? (
-                <a href={user.role === 'EMPLOYER' ? '/employer.html' : '/dashboard.html'}
-                  style={{ padding: '8px 18px', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', fontSize: 14, textDecoration: 'none', borderRadius: 8, border: '1px solid rgba(59,130,246,0.3)', fontWeight: 600 }}>
-                  Dashboard
-                </a>
-              ) : (
-                <>
-                  <a href="/login.html" style={{ padding: '8px 16px', color: '#94a3b8', fontSize: 14, textDecoration: 'none', borderRadius: 8 }}
-                    onMouseEnter={e => e.target.style.color='#f1f5f9'} onMouseLeave={e => e.target.style.color='#94a3b8'}>
-                    Sign In
-                  </a>
-                  <motion.a
-                    href="/register.html"
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.97 }}
-                    style={{ padding: '9px 20px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', fontSize: 14, textDecoration: 'none', borderRadius: 8, fontWeight: 600, boxShadow: '0 4px 15px rgba(59,130,246,0.3)' }}>
-                    Get Started
-                  </motion.a>
-                </>
-              )}
+      <!-- Right: Mockup -->
+      <div class="hero-mockup reveal reveal-delay-2">
+        <div style="position:relative;">
+          <div class="mockup-card">
+            <div class="mockup-header">
+              <div class="mockup-dot" style="background:#ff5f57;"></div>
+              <div class="mockup-dot" style="background:#ffbd2e;"></div>
+              <div class="mockup-dot" style="background:#28c840;"></div>
+              <span class="mockup-title">ConsTradeHire — Job Matches</span>
+            </div>
+            <div class="mockup-body">
+
+              <div class="job-row active">
+                <div class="job-icon" style="background:rgba(249,115,22,0.12);">🏗️</div>
+                <div class="job-info">
+                  <div class="job-title">Senior Estimator</div>
+                  <div class="job-meta">PCL Construction · Toronto, ON · $95K–$120K</div>
+                </div>
+                <div class="job-score">
+                  <div class="score-num" style="color:#22c55e;">87%</div>
+                  <div class="score-bar-wrap"><div class="score-bar" style="width:87%;background:#22c55e;"></div></div>
+                </div>
+              </div>
+
+              <div class="job-row">
+                <div class="job-icon" style="background:rgba(59,130,246,0.1);">⚡</div>
+                <div class="job-info">
+                  <div class="job-title">Site Supervisor</div>
+                  <div class="job-meta">EllisDon · Calgary, AB · $85K–$105K</div>
+                </div>
+                <div class="job-score">
+                  <div class="score-num" style="color:#3b82f6;">74%</div>
+                  <div class="score-bar-wrap"><div class="score-bar" style="width:74%;background:#3b82f6;"></div></div>
+                </div>
+              </div>
+
+              <div class="job-row">
+                <div class="job-icon" style="background:rgba(245,158,11,0.1);">🔧</div>
+                <div class="job-info">
+                  <div class="job-title">Project Coordinator</div>
+                  <div class="job-meta">Graham Construction · Vancouver, BC</div>
+                </div>
+                <div class="job-score">
+                  <div class="score-num" style="color:#f59e0b;">63%</div>
+                  <div class="score-bar-wrap"><div class="score-bar" style="width:63%;background:#f59e0b;"></div></div>
+                </div>
+              </div>
+
+              <div class="mockup-ats">
+                <div class="ats-row">
+                  <span class="ats-label">ATS Match Score</span>
+                  <span class="ats-val" style="color:#22c55e;">87 / 100</span>
+                </div>
+                <div class="ats-progress">
+                  <div class="ats-progress-fill" id="hero-ats-bar" style="width:0;"></div>
+                </div>
+                <div class="ats-row" style="margin-bottom:0;">
+                  <span class="ats-label">Missing: LEED, Procore</span>
+                  <span class="ats-val" style="color:var(--orange);font-size:12px;cursor:pointer;" onclick="openDemo()">Fix with AI →</span>
+                </div>
+              </div>
+
             </div>
           </div>
-        </motion.nav>
-      );
-    }
 
-    // ── Hero ──────────────────────────────────────
-    function HeroSection() {
-      const [query, setQuery] = useState('');
-
-      return (
-        <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingTop: 64 }}>
-          {/* Animated blobs */}
-          <motion.div
-            animate={{ scale: [1, 1.15, 1], opacity: [0.35, 0.55, 0.35] }}
-            transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
-            style={{ position: 'absolute', top: '10%', left: '5%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)', pointerEvents: 'none' }}
-          />
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.25, 0.45, 0.25] }}
-            transition={{ repeat: Infinity, duration: 10, ease: 'easeInOut', delay: 2 }}
-            style={{ position: 'absolute', bottom: '5%', right: '5%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)', pointerEvents: 'none' }}
-          />
-          <motion.div
-            animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }}
-            transition={{ repeat: Infinity, duration: 12, ease: 'easeInOut', delay: 4 }}
-            style={{ position: 'absolute', top: '40%', right: '20%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%)', pointerEvents: 'none' }}
-          />
-
-          {/* Grid pattern */}
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }} />
-
-          <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 24px', maxWidth: 800, margin: '0 auto' }}>
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 100, marginBottom: 28, fontSize: 13, color: '#93c5fd', fontWeight: 500 }}
-            >
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3b82f6', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-              AI-Powered · Canada's #1 Construction Job Board
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              style={{ fontSize: 'clamp(38px, 7vw, 76px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-2px', color: '#f8fafc', marginBottom: 20 }}
-            >
-              Get Hired in the<br />
-              <span className="gradient-text">Trades Faster</span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              style={{ fontSize: 19, color: '#94a3b8', lineHeight: 1.6, marginBottom: 40, maxWidth: 560, margin: '0 auto 40px' }}
-            >
-              See your ATS score, tailor your resume with AI, and apply to top construction jobs — all in one place.
-            </motion.p>
-
-            {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}
-            >
-              <motion.a
-                href="/register.html"
-                whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(59,130,246,0.4)' }}
-                whileTap={{ scale: 0.97 }}
-                style={{ padding: '15px 32px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', textDecoration: 'none', borderRadius: 12, fontWeight: 700, fontSize: 16, boxShadow: '0 4px 20px rgba(59,130,246,0.3)', display: 'inline-flex', alignItems: 'center', gap: 8 }}
-              >
-                Get Your ATS Score
-                <svg viewBox="0 0 20 20" fill="currentColor" style={{ width: 18, height: 18 }}>
-                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                </svg>
-              </motion.a>
-              <motion.a
-                href="/jobs.html"
-                whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.08)' }}
-                whileTap={{ scale: 0.97 }}
-                style={{ padding: '15px 32px', background: 'rgba(255,255,255,0.05)', color: '#f1f5f9', textDecoration: 'none', borderRadius: 12, fontWeight: 600, fontSize: 16, border: '1px solid rgba(255,255,255,0.12)' }}
-              >
-                Browse Jobs
-              </motion.a>
-            </motion.div>
-
-            {/* Search bar */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              style={{ display: 'flex', maxWidth: 560, margin: '0 auto', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, overflow: 'hidden', backdropFilter: 'blur(10px)' }}
-            >
-              <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center', color: '#64748b' }}>
-                <svg viewBox="0 0 20 20" fill="currentColor" style={{ width: 20, height: 20 }}>
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
-                </svg>
-              </div>
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && (window.location.href = '/jobs.html?search=' + encodeURIComponent(query))}
-                placeholder="Estimator, Electrician, Project Manager..."
-                style={{ flex: 1, padding: '16px 0', background: 'none', border: 'none', outline: 'none', color: '#f1f5f9', fontSize: 15 }}
-              />
-              <motion.button
-                onClick={() => window.location.href = '/jobs.html?search=' + encodeURIComponent(query)}
-                whileHover={{ background: '#2563eb' }}
-                style={{ padding: '0 24px', background: '#3b82f6', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14, transition: 'background 0.2s' }}
-              >
-                Search
-              </motion.button>
-            </motion.div>
-
-            {/* Social proof */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              style={{ marginTop: 24, fontSize: 13, color: '#475569' }}
-            >
-              2,400+ jobs across Ontario, BC, Alberta & more
-            </motion.p>
-          </div>
-        </section>
-      );
-    }
-
-    // ── ATS Demo ──────────────────────────────────
-    function AtsDemoSection() {
-      const ref = useRef(null);
-      const inView = useInView(ref, { once: true, margin: '-100px' });
-      const score = useCountUp(82, 1400, inView);
-
-      return (
-        <section ref={ref} style={{ padding: '100px 24px', maxWidth: 1100, margin: '0 auto' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: 'center', marginBottom: 60 }}
-          >
-            <div style={{ display: 'inline-block', padding: '5px 14px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 100, fontSize: 12, color: '#60a5fa', fontWeight: 600, marginBottom: 16, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-              Live Demo
-            </div>
-            <h2 style={{ fontSize: 'clamp(28px,5vw,44px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 12 }}>
-              See Your Resume Score
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: 17, maxWidth: 480, margin: '0 auto' }}>
-              Know exactly where you stand before you apply
-            </p>
-          </motion.div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
-            {/* Score card */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={inView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="glass"
-              style={{ borderRadius: 20, padding: 36, position: 'relative', overflow: 'hidden' }}
-            >
-              <div className="shimmer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.4 }} />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-                <div>
-                  <p style={{ fontSize: 13, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>ATS Match Score</p>
-                  <p style={{ fontSize: 12, color: '#475569' }}>Senior Estimator @ PCL Construction</p>
-                </div>
-                <div style={{ padding: '4px 12px', borderRadius: 100, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', fontSize: 12, color: '#34d399', fontWeight: 600 }}>
-                  {scoreLabel(score)}
-                </div>
-              </div>
-
-              {/* Big score */}
-              <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <motion.div
-                  style={{ fontSize: 88, fontWeight: 900, letterSpacing: '-4px', lineHeight: 1, color: scoreColor(score), filter: `drop-shadow(0 0 20px ${scoreColor(score)}50)` }}
-                >
-                  {score}
-                  <span style={{ fontSize: 36, fontWeight: 600, color: '#64748b' }}>%</span>
-                </motion.div>
-              </div>
-
-              {/* Progress bar */}
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
-                  <span style={{ color: '#94a3b8' }}>Match strength</span>
-                  <span style={{ color: '#10b981', fontWeight: 600 }}>82 / 100</span>
-                </div>
-                <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 100, overflow: 'hidden' }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={inView ? { width: '82%' } : {}}
-                    transition={{ duration: 1.4, delay: 0.4, ease: 'easeOut' }}
-                    style={{ height: '100%', background: 'linear-gradient(90deg,#3b82f6,#10b981)', borderRadius: 100 }}
-                  />
-                </div>
-              </div>
-
-              {/* Sub scores */}
-              {[['Keywords', 79], ['Skills Match', 88], ['Experience', 84], ['Formatting', 100]].map(([label, val], i) => (
-                <div key={label} style={{ marginBottom: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 12 }}>
-                    <span style={{ color: '#64748b' }}>{label}</span>
-                    <span style={{ color: '#94a3b8' }}>{val}%</span>
-                  </div>
-                  <div style={{ height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 100 }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={inView ? { width: `${val}%` } : {}}
-                      transition={{ duration: 1, delay: 0.5 + i * 0.1, ease: 'easeOut' }}
-                      style={{ height: '100%', background: val >= 80 ? '#10b981' : val >= 60 ? '#3b82f6' : '#f59e0b', borderRadius: 100 }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-
-            {/* Keywords panel */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={inView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
-            >
-              {/* Matched */}
-              <div className="glass" style={{ borderRadius: 20, padding: 28, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
-                  <h3 style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8' }}>Matched Keywords</h3>
-                  <span style={{ marginLeft: 'auto', fontSize: 12, color: '#10b981', fontWeight: 600 }}>{MATCHED_KEYWORDS.length} found</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {MATCHED_KEYWORDS.map((kw, i) => (
-                    <motion.span
-                      key={kw}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={inView ? { opacity: 1, scale: 1 } : {}}
-                      transition={{ delay: 0.4 + i * 0.07 }}
-                      style={{ padding: '5px 12px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 100, fontSize: 12, color: '#34d399', fontWeight: 500 }}
-                    >
-                      ✓ {kw}
-                    </motion.span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Missing */}
-              <div className="glass" style={{ borderRadius: 20, padding: 28, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
-                  <h3 style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8' }}>Missing Keywords</h3>
-                  <span style={{ marginLeft: 'auto', fontSize: 12, color: '#f87171', fontWeight: 600 }}>{MISSING_KEYWORDS.length} gaps</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-                  {MISSING_KEYWORDS.map((kw, i) => (
-                    <motion.span
-                      key={kw}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={inView ? { opacity: 1, scale: 1 } : {}}
-                      transition={{ delay: 0.5 + i * 0.08 }}
-                      style={{ padding: '5px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 100, fontSize: 12, color: '#f87171', fontWeight: 500 }}
-                    >
-                      ✗ {kw}
-                    </motion.span>
-                  ))}
-                </div>
-                <motion.a
-                  href="/register.html"
-                  whileHover={{ scale: 1.03, boxShadow: '0 8px 25px rgba(59,130,246,0.3)' }}
-                  whileTap={{ scale: 0.97 }}
-                  style={{ display: 'block', textAlign: 'center', padding: '12px 24px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', textDecoration: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14 }}
-                >
-                  Fix My Resume with AI →
-                </motion.a>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-      );
-    }
-
-    // ── Features ──────────────────────────────────
-    function FeaturesSection() {
-      const ref = useRef(null);
-      const inView = useInView(ref, { once: true, margin: '-80px' });
-
-      return (
-        <section ref={ref} style={{ padding: '80px 24px', background: 'rgba(255,255,255,0.015)' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              style={{ textAlign: 'center', marginBottom: 56 }}
-            >
-              <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 12 }}>
-                Everything You Need to Get Hired
-              </h2>
-              <p style={{ color: '#64748b', fontSize: 16 }}>Built specifically for Canada's construction and trades industry</p>
-            </motion.div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
-              {FEATURES.map((f, i) => (
-                <motion.div
-                  key={f.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={inView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.5, delay: i * 0.15 }}
-                  whileHover={{ y: -8, boxShadow: `0 20px 50px ${f.color}20` }}
-                  className="glass"
-                  style={{ borderRadius: 20, padding: 32, cursor: 'default', transition: 'box-shadow 0.3s' }}
-                >
-                  <motion.div
-                    whileHover={{ rotate: [0, -8, 8, 0], transition: { duration: 0.4 } }}
-                    style={{ width: 56, height: 56, borderRadius: 14, background: f.bg, border: `1px solid ${f.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: f.color, marginBottom: 20 }}
-                  >
-                    {f.icon}
-                  </motion.div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9', marginBottom: 10 }}>{f.title}</h3>
-                  <p style={{ color: '#64748b', fontSize: 15, lineHeight: 1.6 }}>{f.desc}</p>
-                </motion.div>
-              ))}
+          <!-- Float badges -->
+          <div class="mockup-badge-float">
+            <div class="badge-icon">🚀</div>
+            <div class="badge-text">
+              <strong>3× faster</strong>
+              <span>avg. time to interview</span>
             </div>
           </div>
-        </section>
-      );
-    }
-
-    // ── How It Works ──────────────────────────────
-    function HowItWorksSection() {
-      const ref = useRef(null);
-      const inView = useInView(ref, { once: true, margin: '-80px' });
-
-      return (
-        <section ref={ref} style={{ padding: '100px 24px', maxWidth: 1100, margin: '0 auto' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            style={{ textAlign: 'center', marginBottom: 60 }}
-          >
-            <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 12 }}>
-              Three Steps to Your Next Job
-            </h2>
-            <p style={{ color: '#64748b', fontSize: 16 }}>From upload to offer — faster than any other platform</p>
-          </motion.div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24, position: 'relative' }}>
-            {STEPS.map((step, i) => (
-              <motion.div
-                key={step.num}
-                initial={{ opacity: 0, y: 30 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: i * 0.2 }}
-                className="glass"
-                style={{ borderRadius: 20, padding: 32, position: 'relative', overflow: 'hidden' }}
-              >
-                <motion.div
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={inView ? { scale: 1, opacity: 1 } : {}}
-                  transition={{ duration: 0.5, delay: i * 0.2 + 0.2, type: 'spring' }}
-                  style={{ fontSize: 48, fontWeight: 900, color: 'rgba(59,130,246,0.12)', position: 'absolute', top: 20, right: 24, lineHeight: 1, letterSpacing: '-2px', userSelect: 'none' }}
-                >
-                  {step.num}
-                </motion.div>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg,#3b82f6,#2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, fontWeight: 800, fontSize: 16, color: '#fff' }}>
-                  {i + 1}
-                </div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9', marginBottom: 10 }}>{step.title}</h3>
-                <p style={{ color: '#64748b', fontSize: 15, lineHeight: 1.6 }}>{step.desc}</p>
-              </motion.div>
-            ))}
+          <div class="mockup-badge-float2">
+            <div class="badge2-dot"></div>
+            <div class="badge2-text">Live matches</div>
           </div>
-        </section>
-      );
-    }
+        </div>
+      </div>
+    </div>
+  </section>
 
-    // ── Job Preview ───────────────────────────────
-    function JobPreviewSection() {
-      const ref = useRef(null);
-      const inView = useInView(ref, { once: true, margin: '-80px' });
+  <!-- ── TRUST STRIP ──────────────────────────────────── -->
+  <div id="trust">
+    <div class="trust-track" id="trust-track">
+      <!-- set 1 -->
+      <div class="trust-item"><div class="trust-stat">2,400+</div><div><div class="trust-item-text">Active Jobs</div><div class="trust-item-sub">Across Canada</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🏢</div><div><div class="trust-item-text">PCL Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-stat">94%</div><div><div class="trust-item-text">Match Accuracy</div><div class="trust-item-sub">AI-powered</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🔨</div><div><div class="trust-item-text">EllisDon</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-stat">180+</div><div><div class="trust-item-text">Employers</div><div class="trust-item-sub">Active on platform</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">⚡</div><div><div class="trust-item-text">Graham Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-stat">3×</div><div><div class="trust-item-text">Faster Interviews</div><div class="trust-item-sub">vs job boards</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🌟</div><div><div class="trust-item-text">Bird Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <!-- set 2 (duplicate for seamless loop) -->
+      <div class="trust-item"><div class="trust-stat">2,400+</div><div><div class="trust-item-text">Active Jobs</div><div class="trust-item-sub">Across Canada</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🏢</div><div><div class="trust-item-text">PCL Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-stat">94%</div><div><div class="trust-item-text">Match Accuracy</div><div class="trust-item-sub">AI-powered</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🔨</div><div><div class="trust-item-text">EllisDon</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-stat">180+</div><div><div class="trust-item-text">Employers</div><div class="trust-item-sub">Active on platform</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">⚡</div><div><div class="trust-item-text">Graham Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-stat">3×</div><div><div class="trust-item-text">Faster Interviews</div><div class="trust-item-sub">vs job boards</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🌟</div><div><div class="trust-item-text">Bird Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+    </div>
+  </div>
 
-      return (
-        <section ref={ref} style={{ padding: '80px 24px', background: 'rgba(255,255,255,0.015)' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40, flexWrap: 'wrap', gap: 16 }}
-            >
+  <!-- ── BENTO FEATURES ───────────────────────────────── -->
+  <section id="features">
+    <div class="section-inner">
+      <div class="reveal">
+        <div class="section-tag">Platform Features</div>
+        <h2 class="section-h2">Everything you need<br />to get hired faster.</h2>
+        <p class="section-sub">From your first upload to your first day — we cover every step of your job search.</p>
+      </div>
+
+      <div class="bento-grid">
+
+        <!-- Card 1: AI Resume (tall + wide) -->
+        <div class="bento-card tall reveal reveal-delay-1" style="background:linear-gradient(145deg,var(--surface),var(--surface2));">
+          <div class="bento-icon" style="background:var(--orange-dim);">✦</div>
+          <div class="bento-title">AI Resume Builder</div>
+          <div class="bento-desc">Upload once. Our AI rewrites your resume for every job — keywords, bullets, tone — matched to what employers actually want.</div>
+
+          <div class="mini-resume">
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">RESUME PREVIEW · TAILORED</div>
+            <div class="mini-resume-bar fill" style="margin-bottom:4px;"></div>
+            <div class="mini-resume-bar fill2"></div>
+            <div class="mini-resume-short"></div>
+            <div style="height:1px;background:var(--border);margin:10px 0;"></div>
+            <div class="mini-resume-bar fill3" style="margin-bottom:4px;"></div>
+            <div class="mini-resume-bar" style="width:70%;background:var(--border);margin-bottom:4px;"></div>
+            <div class="mini-resume-short" style="width:55%;"></div>
+          </div>
+
+          <div class="bento-accent">
+            <div class="bento-stat-row">
               <div>
-                <h2 style={{ fontSize: 'clamp(24px,4vw,36px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 6 }}>
-                  Latest Construction Jobs
-                </h2>
-                <p style={{ color: '#64748b', fontSize: 15 }}>Updated every 4 hours from top employers across Canada</p>
-              </div>
-              <motion.a
-                href="/jobs.html"
-                whileHover={{ scale: 1.04 }}
-                style={{ padding: '10px 22px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 10, color: '#60a5fa', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}
-              >
-                View All Jobs →
-              </motion.a>
-            </motion.div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-              {SAMPLE_JOBS.map((job, i) => (
-                <motion.div
-                  key={job.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={inView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.4, delay: i * 0.12 }}
-                  whileHover={{ scale: 1.02, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
-                  className="glass"
-                  style={{ borderRadius: 18, padding: 24, cursor: 'pointer', transition: 'box-shadow 0.2s' }}
-                  onClick={() => window.location.href = '/jobs.html'}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9' }}>{job.title}</h3>
-                        {job.badge && (
-                          <span style={{ padding: '2px 8px', background: job.badge === 'Hot' ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)', border: `1px solid ${job.badge === 'Hot' ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`, borderRadius: 100, fontSize: 11, color: job.badge === 'Hot' ? '#f87171' : '#60a5fa', fontWeight: 600 }}>
-                            {job.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p style={{ fontSize: 13, color: '#64748b' }}>{job.company}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: scoreColor(job.score) }}>{job.score}%</div>
-                      <div style={{ fontSize: 11, color: '#475569' }}>match</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-                    {[job.location, job.salary, job.type].map((tag, ti) => (
-                      <span key={ti} style={{ fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {ti === 0 && '📍'}{ti === 1 && '💰'}{ti === 2 && '⏱'} {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Score bar */}
-                  <div style={{ height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 100, overflow: 'hidden' }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={inView ? { width: `${job.score}%` } : {}}
-                      transition={{ duration: 1, delay: 0.4 + i * 0.15, ease: 'easeOut' }}
-                      style={{ height: '100%', background: `linear-gradient(90deg,${scoreColor(job.score)}80,${scoreColor(job.score)})`, borderRadius: 100 }}
-                    />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      );
-    }
-
-    // ── Trust Stats ───────────────────────────────
-    function TrustSection() {
-      const ref = useRef(null);
-      const inView = useInView(ref, { once: true, margin: '-80px' });
-
-      return (
-        <section ref={ref} style={{ padding: '100px 24px', maxWidth: 1100, margin: '0 auto' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            style={{ textAlign: 'center', marginBottom: 60 }}
-          >
-            <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px', marginBottom: 12 }}>
-              Trusted by Canada's Trades
-            </h2>
-          </motion.div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
-            {STATS.map((stat, i) => {
-              const count = useCountUp(stat.value, 1800, inView);
-              return (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={inView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className="glass"
-                  style={{ borderRadius: 20, padding: 32, textAlign: 'center' }}
-                >
-                  <div style={{ fontSize: 44, fontWeight: 900, color: '#f8fafc', letterSpacing: '-2px', lineHeight: 1, marginBottom: 8 }}>
-                    {count.toLocaleString()}<span style={{ color: '#3b82f6' }}>{stat.suffix}</span>
-                  </div>
-                  <div style={{ fontSize: 14, color: '#64748b', fontWeight: 500 }}>{stat.label}</div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </section>
-      );
-    }
-
-    // ── Final CTA ─────────────────────────────────
-    function FinalCTA() {
-      const ref = useRef(null);
-      const inView = useInView(ref, { once: true, margin: '-80px' });
-
-      return (
-        <section ref={ref} style={{ padding: '80px 24px' }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={inView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.6 }}
-            style={{ maxWidth: 800, margin: '0 auto', borderRadius: 28, padding: '64px 48px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,rgba(59,130,246,0.15),rgba(16,185,129,0.08))', border: '1px solid rgba(59,130,246,0.2)' }}
-          >
-            {/* Background glow */}
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle,rgba(59,130,246,0.1) 0%,transparent 70%)', pointerEvents: 'none' }} />
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.2 }}
-              style={{ position: 'relative', zIndex: 1 }}
-            >
-              <h2 style={{ fontSize: 'clamp(28px,5vw,52px)', fontWeight: 900, color: '#f8fafc', letterSpacing: '-2px', lineHeight: 1.1, marginBottom: 16 }}>
-                Start Getting Hired<br />
-                <span className="gradient-text">Faster Today</span>
-              </h2>
-              <p style={{ color: '#94a3b8', fontSize: 17, marginBottom: 36, maxWidth: 420, margin: '0 auto 36px' }}>
-                Free to join. No credit card. Just results.
-              </p>
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <motion.a
-                  href="/register.html"
-                  whileHover={{ scale: 1.06, boxShadow: '0 15px 40px rgba(59,130,246,0.4)' }}
-                  whileTap={{ scale: 0.97 }}
-                  style={{ padding: '16px 36px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', textDecoration: 'none', borderRadius: 14, fontWeight: 700, fontSize: 17, boxShadow: '0 6px 25px rgba(59,130,246,0.35)' }}
-                >
-                  Get Started — It's Free
-                </motion.a>
-                <motion.a
-                  href="/jobs.html"
-                  whileHover={{ scale: 1.04 }}
-                  style={{ padding: '16px 36px', background: 'rgba(255,255,255,0.06)', color: '#f1f5f9', textDecoration: 'none', borderRadius: 14, fontWeight: 600, fontSize: 17, border: '1px solid rgba(255,255,255,0.12)' }}
-                >
-                  Browse Jobs
-                </motion.a>
-              </div>
-            </motion.div>
-          </motion.div>
-        </section>
-      );
-    }
-
-    // ── Footer ────────────────────────────────────
-    function Footer() {
-      return (
-        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '48px 24px 32px', marginTop: 20 }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 32, marginBottom: 40 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 30, height: 30, background: 'linear-gradient(135deg,#3b82f6,#10b981)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>C</div>
-                  <span style={{ fontWeight: 700, color: '#f1f5f9', fontSize: 15 }}>ConsTradeHire</span>
-                </div>
-                <p style={{ color: '#475569', fontSize: 13, lineHeight: 1.6 }}>Canada's AI-powered construction job board.</p>
+                <div class="bento-stat-val" style="color:var(--orange);">+40%</div>
+                <div class="bento-stat-label">interview rate lift</div>
               </div>
               <div>
-                <h4 style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 14 }}>Platform</h4>
-                {[['Jobs', '/jobs.html'], ['For Workers', '/register.html'], ['For Employers', '/register.html?role=employer']].map(([label, href]) => (
-                  <a key={label} href={href} style={{ display: 'block', color: '#475569', fontSize: 14, textDecoration: 'none', marginBottom: 8, transition: 'color 0.2s' }}
-                    onMouseEnter={e => e.target.style.color='#94a3b8'} onMouseLeave={e => e.target.style.color='#475569'}>
-                    {label}
-                  </a>
-                ))}
+                <div class="bento-stat-val" style="color:var(--text-sub);">2min</div>
+                <div class="bento-stat-label">avg. time to tailor</div>
               </div>
-              <div>
-                <h4 style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 14 }}>Account</h4>
-                {[['Sign In', '/login.html'], ['Register', '/register.html'], ['Dashboard', '/dashboard.html']].map(([label, href]) => (
-                  <a key={label} href={href} style={{ display: 'block', color: '#475569', fontSize: 14, textDecoration: 'none', marginBottom: 8, transition: 'color 0.2s' }}
-                    onMouseEnter={e => e.target.style.color='#94a3b8'} onMouseLeave={e => e.target.style.color='#475569'}>
-                    {label}
-                  </a>
-                ))}
-              </div>
-              <div>
-                <h4 style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 14 }}>Legal</h4>
-                {[['Privacy Policy', '/privacy.html'], ['Terms of Service', '/terms.html']].map(([label, href]) => (
-                  <a key={label} href={href} style={{ display: 'block', color: '#475569', fontSize: 14, textDecoration: 'none', marginBottom: 8 }}
-                    onMouseEnter={e => e.target.style.color='#94a3b8'} onMouseLeave={e => e.target.style.color='#475569'}>
-                    {label}
-                  </a>
-                ))}
-              </div>
-            </div>
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-              <p style={{ color: '#334155', fontSize: 13 }}>© 2026 ConsTradeHire. All rights reserved.</p>
-              <p style={{ color: '#334155', fontSize: 13 }}>PIPEDA compliant · Canada 🇨🇦</p>
             </div>
           </div>
-        </footer>
-      );
-    }
+        </div>
 
-    // ── App ───────────────────────────────────────
-    function App() {
-      return (
-        <>
-          <Navbar />
-          <HeroSection />
-          <AtsDemoSection />
-          <FeaturesSection />
-          <HowItWorksSection />
-          <JobPreviewSection />
-          <TrustSection />
-          <FinalCTA />
-          <Footer />
-        </>
-      );
-    }
+        <!-- Card 2: Smart Matching -->
+        <div class="bento-card reveal reveal-delay-2">
+          <div class="bento-icon" style="background:rgba(59,130,246,0.1);">⚡</div>
+          <div class="bento-title">Smart Job Matching</div>
+          <div class="bento-desc">Jobs ranked by real skill fit — not just title keywords. See your match score before you apply.</div>
+          <div class="keyword-wrap">
+            <span class="kw-tag kw-match">Estimating</span>
+            <span class="kw-tag kw-match">AutoCAD</span>
+            <span class="kw-tag kw-match">Site Supervision</span>
+            <span class="kw-tag kw-miss">Procore</span>
+            <span class="kw-tag kw-miss">LEED</span>
+          </div>
+        </div>
 
-    createRoot(document.getElementById('root')).render(<App />);
-  </script>
+        <!-- Card 3: ATS Score -->
+        <div class="bento-card reveal reveal-delay-3">
+          <div class="bento-icon" style="background:rgba(34,197,94,0.1);">📊</div>
+          <div class="bento-title">Instant ATS Score</div>
+          <div class="bento-desc">See exactly how your resume ranks against each job — before the employer does.</div>
+          <div style="margin-top:16px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:6px;">
+              <span>Match Score</span><span style="color:#22c55e;font-weight:700;">87%</span>
+            </div>
+            <div style="height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:87%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:3px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Interview Prep (wide) -->
+        <div class="bento-card span-2 reveal reveal-delay-2" style="background:linear-gradient(135deg,var(--surface),rgba(249,115,22,0.04));">
+          <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+              <div class="bento-icon" style="background:rgba(139,92,246,0.12);">🎯</div>
+              <div class="bento-title">Interview Prep</div>
+              <div class="bento-desc">AI generates role-specific interview questions based on the job description. Practice, then walk in confident.</div>
+            </div>
+            <div style="flex:1;min-width:200px;">
+              <div class="steps-mini">
+                <div class="step-pill"><span class="step-pill-dot"></span>Upload job posting</div>
+                <div class="step-pill"><span class="step-pill-dot"></span>Get 10 questions</div>
+                <div class="step-pill"><span class="step-pill-dot"></span>Practice answers</div>
+              </div>
+              <div style="margin-top:16px;font-size:13px;color:var(--text-muted);">Covers technical, behavioural, and trade-specific questions — every time.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: Fast Apply -->
+        <div class="bento-card reveal reveal-delay-3">
+          <div class="bento-icon" style="background:rgba(249,115,22,0.1);">🚀</div>
+          <div class="bento-title">Fast Apply</div>
+          <div class="bento-desc">Apply directly from ConsTradeHire in seconds — your tailored resume auto-attached.</div>
+          <div class="bento-accent">
+            <div class="bento-stat-val" style="color:var(--orange);font-size:22px;">48h</div>
+            <div class="bento-stat-label">avg. first response</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ─────────────────────────────────── -->
+  <section id="how">
+    <div class="section-inner">
+      <div class="reveal" style="text-align:center;">
+        <div class="section-tag">How It Works</div>
+        <h2 class="section-h2">Three steps. One platform.</h2>
+      </div>
+
+      <div class="how-grid reveal reveal-delay-1">
+
+        <div class="how-step">
+          <div class="how-num">01</div>
+          <div class="how-icon-wrap">📄</div>
+          <div class="how-title">Upload Your Resume</div>
+          <div class="how-desc">Drop your PDF or Word file. We parse it instantly — skills, experience, certifications extracted automatically. No forms.</div>
+          <div class="how-connector">→</div>
+        </div>
+
+        <div class="how-step">
+          <div class="how-num">02</div>
+          <div class="how-icon-wrap">🎯</div>
+          <div class="how-title">Get Your ATS Score</div>
+          <div class="how-desc">See how you match every job. Discover gaps before employers do. One-click AI tailoring fills them in seconds.</div>
+          <div class="how-connector">→</div>
+        </div>
+
+        <div class="how-step">
+          <div class="how-num">03</div>
+          <div class="how-icon-wrap">✅</div>
+          <div class="how-title">Apply with Confidence</div>
+          <div class="how-desc">Your tailored resume attaches automatically. Apply in under 60 seconds. Track every application from your dashboard.</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── INTERACTIVE DEMO ─────────────────────────────── -->
+  <section id="demo">
+    <div class="section-inner">
+      <div class="demo-preview">
+
+        <div class="demo-copy reveal">
+          <div class="section-tag">Live Demo</div>
+          <h2 class="section-h2">See your match score<br />before you apply.</h2>
+          <p class="section-sub" style="margin-top:12px;">Real AI. Real jobs. No account needed to see how it works.</p>
+
+          <div class="demo-feature-list">
+            <div class="demo-feature-item">
+              <div class="demo-feat-icon" style="background:var(--orange-dim);">📊</div>
+              <div class="demo-feat-text">
+                <strong>ATS Score in 2 seconds</strong>
+                <span>Instant scoring against any job description</span>
+              </div>
+            </div>
+            <div class="demo-feature-item">
+              <div class="demo-feat-icon" style="background:rgba(59,130,246,0.1);">✦</div>
+              <div class="demo-feat-text">
+                <strong>AI rewrites your resume</strong>
+                <span>Keywords and bullets matched to the role</span>
+              </div>
+            </div>
+            <div class="demo-feature-item">
+              <div class="demo-feat-icon" style="background:rgba(34,197,94,0.1);">🚀</div>
+              <div class="demo-feat-text">
+                <strong>One-click apply</strong>
+                <span>Tailored resume auto-attached every time</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="demo-launch-btn" onclick="openDemo()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Try the Demo
+          </button>
+        </div>
+
+        <div class="demo-ui-preview reveal reveal-delay-2">
+          <div class="demo-ui-bar">
+            <div class="demo-ui-dot" style="background:#ff5f57;"></div>
+            <div class="demo-ui-dot" style="background:#ffbd2e;"></div>
+            <div class="demo-ui-dot" style="background:#28c840;"></div>
+            <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">Job Apply Flow</span>
+          </div>
+          <div class="demo-ui-body">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:10px;">BEST MATCHES FOR YOU</div>
+            <div class="dui-job" onclick="openDemo()">
+              <div class="dui-job-icon">🏗️</div>
+              <div>
+                <div class="dui-job-name">Senior Estimator</div>
+                <div class="dui-job-co">PCL Construction · Toronto</div>
+              </div>
+              <div class="dui-score" style="color:#22c55e;">87%</div>
+            </div>
+            <div class="dui-job" onclick="openDemo()">
+              <div class="dui-job-icon">⚡</div>
+              <div>
+                <div class="dui-job-name">Site Supervisor</div>
+                <div class="dui-job-co">EllisDon · Calgary</div>
+              </div>
+              <div class="dui-score" style="color:#3b82f6;">74%</div>
+            </div>
+            <div class="dui-job" onclick="openDemo()">
+              <div class="dui-job-icon">🔧</div>
+              <div>
+                <div class="dui-job-name">Project Coordinator</div>
+                <div class="dui-job-co">Graham · Vancouver</div>
+              </div>
+              <div class="dui-score" style="color:#f59e0b;">63%</div>
+            </div>
+            <button class="dui-apply" onclick="openDemo()">Apply with AI Resume →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FINAL CTA ─────────────────────────────────────── -->
+  <section id="cta">
+    <div class="cta-inner reveal">
+      <div class="cta-wrap">
+        <div class="cta-glow"></div>
+        <div class="section-tag" style="margin:0 auto 20px;">Join ConsTradeHire</div>
+        <h2 class="cta-h2">Your next job is<br /><em>already waiting.</em></h2>
+        <p class="cta-sub">Free to join. Start matching in under 2 minutes. No credit card required.</p>
+        <div class="cta-btns">
+          <a href="/register.html" class="btn-lg" style="font-size:16px;padding:15px 32px;">
+            Get Started Free
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="/jobs.html" class="btn-outline-lg" style="font-size:15px;padding:14px 24px;">
+            Browse Jobs
+          </a>
+        </div>
+        <p class="cta-note">2,400+ jobs · 180+ employers · AI-powered matching</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-inner">
+      <a href="/" class="nav-logo" style="gap:8px;">
+        <div class="nav-logo-icon" style="width:28px;height:28px;font-size:11px;">CT</div>
+        <span style="font-size:14px;font-weight:700;color:var(--text-sub);">ConsTradeHire</span>
+      </a>
+      <div class="footer-links">
+        <a href="/jobs.html">Jobs</a>
+        <a href="/employer.html">Employers</a>
+        <a href="/resume-builder.html">AI Tools</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+      <p class="footer-copy">© 2026 ConsTradeHire. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ── DEMO MODAL ────────────────────────────────────── -->
+  <div id="demo-modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="demo-modal" id="demo-modal">
+      <div class="modal-header">
+        <div class="modal-title">Apply — Senior Estimator @ PCL Construction</div>
+        <button class="modal-close" onclick="closeDemo()">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="modal-steps">
+          <div class="modal-step done" id="mstep-1">✓ Review</div>
+          <div class="modal-step active" id="mstep-2">Score</div>
+          <div class="modal-step" id="mstep-3">Tailor</div>
+          <div class="modal-step" id="mstep-4">Apply</div>
+        </div>
+
+        <div class="demo-job-card">
+          <div class="demo-job-logo">🏗️</div>
+          <div>
+            <div class="demo-job-title">Senior Estimator</div>
+            <div class="demo-job-meta">PCL Construction · Toronto, ON · Full-time · $95K–$120K</div>
+            <div class="demo-job-tags">
+              <span class="demo-tag">Estimating</span>
+              <span class="demo-tag">AutoCAD</span>
+              <span class="demo-tag">Procore</span>
+              <span class="demo-tag">LEED</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ats-score-block">
+          <div class="ats-score-header">
+            <div>
+              <div class="ats-score-label">Your ATS Match Score</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Based on your uploaded resume</div>
+            </div>
+            <div class="ats-score-pct" id="modal-score-num">87%</div>
+          </div>
+          <div class="ats-full-bar">
+            <div class="ats-full-fill" id="modal-ats-fill"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-muted);">
+            <span>Excellent match</span>
+            <span>Top 8% of applicants</span>
+          </div>
+        </div>
+
+        <div class="modal-kw-section">
+          <div class="modal-kw-title">Keyword Analysis</div>
+          <div class="keyword-wrap">
+            <span class="kw-tag kw-match">✓ Estimating</span>
+            <span class="kw-tag kw-match">✓ AutoCAD</span>
+            <span class="kw-tag kw-match">✓ Project Management</span>
+            <span class="kw-tag kw-match">✓ Budget Control</span>
+            <span class="kw-tag kw-match">✓ Site Supervision</span>
+            <span class="kw-tag kw-miss">✗ Procore</span>
+            <span class="kw-tag kw-miss">✗ LEED</span>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">2 missing keywords — AI can add them to your resume in 10 seconds.</div>
+        </div>
+
+        <div class="modal-actions">
+          <a href="/resume-builder.html" class="btn-lg" style="text-decoration:none;justify-content:center;flex:1;">
+            ✦ Tailor with AI
+          </a>
+          <a href="/jobs.html" class="btn-outline-lg" style="text-decoration:none;padding:12px 18px;">
+            Apply Anyway
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    // ── Navbar scroll ────────────────────────
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 20);
+    }, { passive: true });
+
+    // ── Burger menu ──────────────────────────
+    const burger = document.getElementById('burger');
+    const mobileMenu = document.getElementById('mobile-menu');
+    burger.addEventListener('click', () => {
+      mobileMenu.classList.toggle('open');
+    });
+
+    // ── Reveal on scroll ─────────────────────
+    const reveals = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          revealObserver.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(el => revealObserver.observe(el));
+
+    // ── Trigger hero elements immediately ────
+    document.querySelectorAll('#hero .reveal').forEach((el, i) => {
+      setTimeout(() => el.classList.add('visible'), 80 + i * 80);
+    });
+
+    // ── Hero ATS bar animate ─────────────────
+    setTimeout(() => {
+      const bar = document.getElementById('hero-ats-bar');
+      if (bar) bar.style.width = '87%';
+    }, 800);
+
+    // ── Hero search ──────────────────────────
+    function heroSearch() {
+      const q = document.getElementById('hero-search-input').value.trim();
+      window.location.href = '/jobs.html' + (q ? '?search=' + encodeURIComponent(q) : '');
+    }
+    document.getElementById('hero-search-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') heroSearch();
+    });
+
+    // ── Demo Modal ───────────────────────────
+    function openDemo() {
+      document.getElementById('demo-modal-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => {
+        const fill = document.getElementById('modal-ats-fill');
+        if (fill) fill.style.width = '87%';
+      }, 200);
+    }
+    function closeDemo() {
+      document.getElementById('demo-modal-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+      const fill = document.getElementById('modal-ats-fill');
+      if (fill) fill.style.width = '0';
+    }
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('demo-modal-overlay')) closeDemo();
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeDemo();
+    });
+
+    // ── Pause marquee on hover ───────────────
+    const track = document.getElementById('trust-track');
+    if (track) {
+      track.addEventListener('mouseenter', () => track.style.animationPlayState = 'paused');
+      track.addEventListener('mouseleave', () => track.style.animationPlayState = 'running');
     }
   </script>
 </body>

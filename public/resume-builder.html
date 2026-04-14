@@ -183,6 +183,9 @@ function closeTailorModal() {
   document.getElementById('tailorModal').style.display = 'none';
   document.getElementById('tailorStatus').style.display = 'none';
 }
+document.getElementById('tailorModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('tailorModal')) closeTailorModal();
+});
 
 async function tailorResume() {
   const title = document.getElementById('tailor_title').value.trim();

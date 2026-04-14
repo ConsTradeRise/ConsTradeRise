@@ -317,17 +317,44 @@ async function loadJobs(page = 1) {
   }
 }
 
-// ── Saved Jobs (localStorage) ─────────────────
-function getSaved() { try { return JSON.parse(localStorage.getItem('ctr_saved')||'[]'); } catch { return []; } }
-function isSaved(id) { return getSaved().includes(String(id)); }
-function toggleSave(e, id, title) {
+// ── Saved Jobs (DB for logged-in users, localStorage for live/guest) ─────
+let savedJobIds = new Set();
+
+async function initSavedJobs() {
+  if (!Auth.isLoggedIn()) {
+    try { JSON.parse(localStorage.getItem('ctr_saved')||'[]').forEach(id => savedJobIds.add(String(id))); } catch {}
+    return;
+  }
+  const { ok, data } = await apiCall('GET', '/api/jobs/saved');
+  if (ok && data.jobs) data.jobs.forEach(j => savedJobIds.add(String(j.id)));
+}
+
+function isSaved(id) { return savedJobIds.has(String(id)); }
+
+async function toggleSave(e, id, title) {
   e.preventDefault(); e.stopPropagation();
-  const saved = getSaved();
-  const idx   = saved.indexOf(String(id));
-  if (idx >= 0) saved.splice(idx, 1); else saved.push(String(id));
-  localStorage.setItem('ctr_saved', JSON.stringify(saved));
+  const isLive = String(id).startsWith('http');
   const btn = document.getElementById(`save-${id}`);
-  if (btn) { btn.textContent = idx >= 0 ? '🤍' : '❤️'; btn.title = idx >= 0 ? 'Save job' : 'Saved'; }
+
+  if (isLive || !Auth.isLoggedIn()) {
+    const wasSaved = savedJobIds.has(String(id));
+    if (wasSaved) savedJobIds.delete(String(id)); else savedJobIds.add(String(id));
+    if (!Auth.isLoggedIn()) {
+      const arr = [...savedJobIds];
+      localStorage.setItem('ctr_saved', JSON.stringify(arr));
+    }
+    if (btn) btn.textContent = savedJobIds.has(String(id)) ? '❤️' : '🤍';
+    return;
+  }
+
+  // DB job — call API
+  const wasSaved = savedJobIds.has(String(id));
+  const method = wasSaved ? 'DELETE' : 'POST';
+  const { ok } = await apiCall(method, `/api/jobs/${id}/save`);
+  if (ok) {
+    if (wasSaved) savedJobIds.delete(String(id)); else savedJobIds.add(String(id));
+    if (btn) btn.textContent = savedJobIds.has(String(id)) ? '❤️' : '🤍';
+  }
 }
 
 function jobCard(job) {
@@ -406,7 +433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (_) {}
   }
 
-  await loadLiveJobs();
+  await Promise.all([loadLiveJobs(), initSavedJobs()]);
   loadJobs(1);
 });
 

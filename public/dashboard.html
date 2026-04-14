@@ -660,10 +660,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dashWelcome').textContent = `Welcome back, ${user?.name?.split(' ')[0] || 'there'}`;
   loadDashboard();
   loadProfile();
-  // Init saved badge
-  const savedIds = getSaved();
-  const sb = document.getElementById('savedBadge');
-  if (sb && savedIds.length) { sb.textContent = savedIds.length; sb.style.display = 'inline'; }
+  // Init saved badge from API
+  apiCall('GET', '/api/jobs/saved').then(({ ok, data }) => {
+    const count = ok && data.jobs ? data.jobs.length : 0;
+    const sb = document.getElementById('savedBadge');
+    if (sb) { sb.textContent = count; sb.style.display = count ? 'inline' : 'none'; }
+  });
 });
 
 // Tab switching
@@ -733,10 +735,9 @@ async function loadDashboard() {
   document.getElementById('statApplied').textContent     = apps.length;
   document.getElementById('statShortlisted').textContent = apps.filter(a => a.status === 'SHORTLISTED').length;
   document.getElementById('statViewed').textContent      = apps.filter(a => a.status === 'VIEWED').length;
-  try {
-    const saved = JSON.parse(localStorage.getItem('ctr_saved') || '[]');
-    document.getElementById('statSaved').textContent = saved.length;
-  } catch { document.getElementById('statSaved').textContent = '0'; }
+  apiCall('GET', '/api/jobs/saved').then(({ ok, data }) => {
+    document.getElementById('statSaved').textContent = ok && data.jobs ? data.jobs.length : 0;
+  });
 
   const recentEl = document.getElementById('recentApps');
   const recent   = apps.slice(0, 5);
@@ -763,58 +764,53 @@ async function loadAllApplications() {
 }
 
 // ── SAVED JOBS ────────────────────────────────
-function getSaved() { try { return JSON.parse(localStorage.getItem('ctr_saved')||'[]'); } catch { return []; } }
-
 async function loadSavedJobs() {
   const el = document.getElementById('savedJobsList');
-  const ids = getSaved();
-  // Update sidebar badge
-  const badge = document.getElementById('savedBadge');
-  if (badge) { badge.textContent = ids.length; badge.style.display = ids.length ? 'inline' : 'none'; }
-
-  if (!ids.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❤️</div><h3>No saved jobs</h3><p>Heart a job while browsing to save it here</p><a href="/jobs.html" class="btn btn-primary">Browse Jobs</a></div>`;
-    return;
-  }
   el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
 
-  const [jobResults, appsRes] = await Promise.all([
-    Promise.allSettled(ids.map(id => apiCall('GET', `/api/jobs/${id}`))),
+  const [savedRes, appsRes] = await Promise.all([
+    apiCall('GET', '/api/jobs/saved'),
     apiCall('GET', '/api/applications/mine')
   ]);
-  const jobs = jobResults.filter(r => r.status==='fulfilled' && r.value.ok).map(r => r.value.data.job);
-  const appliedJobIds = new Set((appsRes.ok ? appsRes.data.applications || [] : []).map(a => a.jobId || a.job?.id));
+
+  const jobs = savedRes.ok ? (savedRes.data.jobs || []) : [];
+  const badge = document.getElementById('savedBadge');
+  if (badge) { badge.textContent = jobs.length; badge.style.display = jobs.length ? 'inline' : 'none'; }
 
   if (!jobs.length) {
-    el.innerHTML = `<div class="empty-state"><p class="text-gray">Could not load saved jobs. They may have been removed.</p></div>`;
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❤️</div><h3>No saved jobs</h3><p>Heart a job while browsing to save it here</p><a href="/jobs.html" class="btn btn-primary">Browse Jobs</a></div>';
     return;
   }
+
+  const appliedJobIds = new Set((appsRes.ok ? appsRes.data.applications || [] : []).map(a => a.jobId || a.job?.id));
   el.innerHTML = jobs.map(j => {
     const applied = appliedJobIds.has(j.id);
-    return `<div class="app-row">
-      <div class="app-info">
-        <div class="app-title">${escapeHtml(j.title)}${applied ? ' <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;margin-left:6px;">Applied</span>' : ''}</div>
-        <div class="app-company">${escapeHtml(j.companyName||j.employer?.name||'Company')} · ${escapeHtml(j.city||j.location||'Canada')}</div>
-        <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">${escapeHtml(j.jobType||'Full-time')}${j.salary?' · '+escapeHtml(j.salary):''} · Posted ${formatDate(j.postedAt)}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">
-        <a href="/jobs.html?id=${j.id}" class="btn btn-sm ${applied?'btn-outline':'btn-primary'}">${applied?'View →':'Apply →'}</a>
-        <button onclick="unsaveJob('${j.id}')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;">Remove ❤️</button>
-      </div>
-    </div>`;
+    const appliedBadge = applied ? ' <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;margin-left:6px;">Applied</span>' : '';
+    const salary = j.salary ? ' · ' + escapeHtml(j.salary) : '';
+    return '<div class="app-row">'
+      + '<div class="app-info">'
+      + '<div class="app-title">' + escapeHtml(j.title) + appliedBadge + '</div>'
+      + '<div class="app-company">' + escapeHtml(j.companyName||j.employer?.name||'Company') + ' · ' + escapeHtml(j.city||j.location||'Canada') + '</div>'
+      + '<div style="font-size:11px;color:var(--gray-400);margin-top:2px;">' + escapeHtml(j.jobType||'Full-time') + salary + ' · Posted ' + formatDate(j.postedAt) + '</div>'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">'
+      + '<a href="/job.html?id=' + j.id + '" class="btn btn-sm ' + (applied ? 'btn-outline' : 'btn-primary') + '">' + (applied ? 'View →' : 'Apply →') + '</a>'
+      + '<button onclick="unsaveJob(\'' + j.id + '\')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;">Remove ❤️</button>'
+      + '</div></div>';
   }).join('');
 }
 
-function unsaveJob(id) {
-  const saved = getSaved().filter(s => s !== String(id));
-  localStorage.setItem('ctr_saved', JSON.stringify(saved));
-  loadSavedJobs();
-  Toast.success('Removed from saved jobs');
+async function unsaveJob(id) {
+  const { ok } = await apiCall('DELETE', `/api/jobs/${id}/save`);
+  if (ok) { loadSavedJobs(); Toast.success('Removed from saved jobs'); }
 }
 
-function clearAllSaved() {
+async function clearAllSaved() {
   if (!confirm('Remove all saved jobs?')) return;
-  localStorage.setItem('ctr_saved', '[]');
+  const { ok, data } = await apiCall('GET', '/api/jobs/saved');
+  if (ok && data.jobs?.length) {
+    await Promise.all(data.jobs.map(j => apiCall('DELETE', `/api/jobs/${j.id}/save`)));
+  }
   loadSavedJobs();
 }
 
@@ -944,13 +940,14 @@ function renderProfileCard(p) {
     : `<em style="color:var(--gray-400);font-size:13px;">No skills added yet.</em>`;
 
   // Activity
-  const saved = getSaved();
-  document.getElementById('profActivityView').innerHTML = `
-    <div class="prof-stat-row"><span class="prof-stat-label">Jobs saved</span><span class="prof-stat-val">${saved.length}</span></div>
-    <div class="prof-stat-row"><span class="prof-stat-label">Applications</span><span class="prof-stat-val" id="profStatApps">—</span></div>
-    <div class="prof-stat-row"><span class="prof-stat-label">Resumes tailored</span><span class="prof-stat-val" id="profStatResumes">—</span></div>
-  `;
-  // Fill app count async
+  document.getElementById('profActivityView').innerHTML =
+    '<div class="prof-stat-row"><span class="prof-stat-label">Jobs saved</span><span class="prof-stat-val" id="profStatSaved">—</span></div>' +
+    '<div class="prof-stat-row"><span class="prof-stat-label">Applications</span><span class="prof-stat-val" id="profStatApps">—</span></div>' +
+    '<div class="prof-stat-row"><span class="prof-stat-label">Resumes tailored</span><span class="prof-stat-val" id="profStatResumes">—</span></div>';
+  apiCall('GET', '/api/jobs/saved').then(({ ok, data }) => {
+    const el = document.getElementById('profStatSaved');
+    if (el && ok) el.textContent = data.jobs?.length ?? 0;
+  });
   apiCall('GET', '/api/applications/mine').then(({ ok, data }) => {
     const el = document.getElementById('profStatApps');
     if (el && ok) el.textContent = data.applications?.length ?? 0;
