@@ -232,10 +232,14 @@ function togglePwd() {
   inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
-// Auto-select employer if URL param
+// Auto-select employer or show verified banner from URL params
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   if (params.get('role') === 'employer') selectRole('employer');
+  if (params.get('verified') === '1') {
+    const banner = document.getElementById('loginVerifiedBanner');
+    if (banner) banner.style.display = 'flex';
+  }
 });
 </script>
 </body>

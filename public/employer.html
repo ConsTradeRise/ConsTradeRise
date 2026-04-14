@@ -700,6 +700,10 @@ function renderCandidates() {
   const el = document.getElementById('candidatesList');
   if (!list.length) { el.innerHTML = emptyHtml('No candidates', 'No candidates match your filters'); return; }
   el.innerHTML = list.map(a => appRowHtml(a, true)).join('');
+  // Auto-mark APPLIED → VIEWED when employer views a job's candidates (fire-and-forget)
+  if (jf !== 'all') list.filter(a => a.status === 'APPLIED').forEach(a => {
+    apiCall('PUT', `/api/applications/${a.id}/viewed`).then(() => { a.status = 'VIEWED'; });
+  });
 }
 
 function appRowHtml(a, actions = false) {

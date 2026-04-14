@@ -377,7 +377,7 @@ async function loadJobs(page = 1) {
 }
 
 async function toggleJob(id, btn) {
-  const { ok, data } = await apiCall('PUT', `/api/admin/jobs/${id}/active`);
+  const { ok, data } = await apiCall('PUT', `/api/admin/jobs/${id}/toggle`);
   if (ok) { Toast.success(data.isActive ? 'Job activated.' : 'Job hidden.'); loadJobs(jobPage); }
 }
 
@@ -420,7 +420,7 @@ async function loadReports(page = 1) {
 }
 
 async function resolveReport(id, btn) {
-  const { ok } = await apiCall('PUT', `/api/admin/reports/${id}`, { resolved: true });
+  const { ok } = await apiCall('PUT', `/api/admin/reports/${id}/resolve`);
   if (ok) { Toast.success('Report resolved.'); loadReports(reportPage); }
 }
 

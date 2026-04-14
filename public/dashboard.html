@@ -1014,22 +1014,10 @@ function renderProfileCard(p) {
     : `<em style="color:var(--gray-400);font-size:13px;">No certifications added.</em>`;
 }
 
-function renderProfileCompletion(p) {
-  const checks = [
-    { label: 'Phone',       done: !!p.phone },
-    { label: 'City',        done: !!p.city },
-    { label: 'Headline',    done: !!p.headline },
-    { label: 'Skills',      done: p.skills?.length > 0 },
-    { label: 'Experience',  done: Array.isArray(p.experiences) && p.experiences.length > 0 },
-    { label: 'Education',   done: Array.isArray(p.educations)  && p.educations.length  > 0 },
-    { label: 'LinkedIn',    done: !!p.linkedin },
-    { label: 'Summary',     done: !!p.summary },
-    { label: 'Availability',done: !!p.availability },
-    { label: 'Years exp',   done: !!p.yearsExperience }
-  ];
-  const done = checks.filter(c => c.done).length;
-  const pct  = Math.round((done / checks.length) * 100);
-  const missing = checks.filter(c => !c.done).map(c => c.label);
+async function renderProfileCompletion(p) {
+  const { ok, data } = await apiCall('GET', '/api/profile/completeness');
+  const pct     = ok ? (data.score ?? 0) : 0;
+  const missing = ok ? (data.missing ?? []) : [];
 
   document.getElementById('profileCompletionCard').style.display = 'block';
   document.getElementById('profilePct').textContent  = pct + '%';
@@ -1037,8 +1025,8 @@ function renderProfileCompletion(p) {
   document.getElementById('profileBar').style.background =
     pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--blue)' : 'var(--orange)';
   document.getElementById('profileMissing').innerHTML = missing.length
-    ? `Missing: ${missing.map(m => `<span style="background:var(--gray-100);padding:1px 8px;border-radius:4px;margin-right:4px;">${m}</span>`).join('')}
-       <button class="btn btn-sm btn-ghost" style="padding:2px 8px;margin-left:4px;" onclick="switchTab('profile')">Complete →</button>`
+    ? 'Missing: ' + missing.map(m => `<span style="background:var(--gray-100);padding:1px 8px;border-radius:4px;margin-right:4px;">${escapeHtml(m)}</span>`).join('') +
+      `<button class="btn btn-sm btn-ghost" style="padding:2px 8px;margin-left:4px;" onclick="switchTab('profile')">Complete →</button>`
     : `<span style="color:var(--green);font-weight:600;">✓ Profile complete!</span>`;
 }
 
