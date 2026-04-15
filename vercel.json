@@ -1,13 +1,16 @@
 {
   "version": 2,
   "buildCommand": "npx prisma generate",
-  "functions": {
-    "server.js": {
-      "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "public/**|utils/**|middleware/**|routes/**|prisma/schema.prisma"
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "includeFiles": "public/**|utils/**|middleware/**|routes/**|prisma/schema.prisma"
+      }
     }
-  },
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/server.js" }
   ]
