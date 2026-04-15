@@ -1,9 +1,29 @@
 {
   "version": 2,
+  "buildCommand": "npx prisma generate",
   "builds": [
-    { "src": "server.js", "use": "@vercel/node" }
+    {
+      "src": "server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "public/**",
+          "utils/**",
+          "middleware/**",
+          "routes/**",
+          "prisma/schema.prisma"
+        ]
+      }
+    }
   ],
   "routes": [
+    { "src": "/api/(.*)", "dest": "server.js" },
+    { "src": "/uploads/(.*)", "dest": "server.js" },
+    { "src": "/(.*\\.html)", "dest": "server.js" },
+    { "src": "/(.*\\.js)", "dest": "server.js" },
+    { "src": "/(.*\\.css)", "dest": "server.js" },
+    { "src": "/(.*\\.svg)", "dest": "server.js" },
+    { "src": "/(.*\\.png|.*\\.ico|.*\\.webmanifest)", "dest": "server.js" },
     { "src": "/(.*)", "dest": "server.js" }
   ]
 }
