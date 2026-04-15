@@ -926,6 +926,30 @@ async function loadProfile() {
   loadRecommendedJobs(p);
 }
 
+// ── Experience duration helper ─────────────────────────
+function calcExpDuration(startStr, endStr) {
+  if (!startStr) return '';
+  const parseDate = s => {
+    if (!s) return new Date();
+    const trimmed = s.trim();
+    // Try "Month YYYY" or "YYYY-MM" or "YYYY"
+    const d = new Date(trimmed);
+    if (!isNaN(d)) return d;
+    const m = trimmed.match(/(\d{4})/);
+    return m ? new Date(m[1], 0) : null;
+  };
+  const start = parseDate(startStr);
+  const end   = endStr ? parseDate(endStr) : new Date();
+  if (!start || !end || end < start) return '';
+  let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+  if (months < 1) months = 1;
+  const yrs = Math.floor(months / 12);
+  const mos = months % 12;
+  if (yrs === 0) return `${mos} mo${mos !== 1 ? 's' : ''}`;
+  if (mos === 0) return `${yrs} yr${yrs !== 1 ? 's' : ''}`;
+  return `${yrs} yr${yrs !== 1 ? 's' : ''} ${mos} mo${mos !== 1 ? 's' : ''}`;
+}
+
 function renderProfileCard(p) {
   const user = Auth.getUser();
   const name = user?.name || p.name || '—';
@@ -990,7 +1014,7 @@ function renderProfileCard(p) {
           <div style="flex:1;min-width:0;">
             <div class="prof-item-title">${escapeHtml(e.title || '')}</div>
             <div class="prof-item-sub">${escapeHtml(e.company || '')}${e.location ? ' · ' + escapeHtml(e.location) : ''}</div>
-            <div class="prof-item-dates">${escapeHtml([e.startDate, e.isCurrent ? 'Present' : e.endDate].filter(Boolean).join(' - '))}</div>
+            <div class="prof-item-dates">${escapeHtml([e.startDate, e.isCurrent ? 'Present' : e.endDate].filter(Boolean).join(' – '))}${(()=>{const d=calcExpDuration(e.startDate,e.isCurrent?null:e.endDate);return d?' <span style="color:var(--blue);font-size:11px;font-weight:600;">('+d+')</span>':'';})()}</div>
           </div>
           <div class="prof-item-actions">
             <button class="btn btn-sm btn-ghost" style="padding:2px 8px;" onclick="openItemModal('exp',${i})">Edit</button>
@@ -1415,8 +1439,9 @@ function showParsedModal(p, fileName, profileSaved) {
       <h4>📋 Contact Details</h4>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
-          <span class="text-gray text-sm">Name</span>
-          <div style="font-weight:600;font-size:14px;">${escapeHtml(p.name || '—')}</div>
+          <span class="text-gray text-sm">Name <span style="color:var(--blue);font-size:11px;">(editable)</span></span>
+          <input id="parsedNameInput" value="${escapeHtml(p.name || '')}" placeholder="Your full name"
+            style="font-weight:600;font-size:14px;width:100%;border:1px solid var(--gray-300);border-radius:4px;padding:4px 6px;background:#fff;color:var(--gray-900);margin-top:4px;" />
         </div>
         <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
           <span class="text-gray text-sm">Phone</span>
@@ -1456,7 +1481,7 @@ function showParsedModal(p, fileName, profileSaved) {
         <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
           <div style="font-weight:700;font-size:14px;">${escapeHtml(exp.title || '')}</div>
           <div style="font-size:13px;color:var(--gray-600);margin:2px 0;">${escapeHtml(exp.company || '')} ${exp.location ? '· ' + escapeHtml(exp.location) : ''}</div>
-          <div style="font-size:12px;color:var(--gray-400);margin-bottom:6px;">${escapeHtml([exp.startDate, exp.isCurrent ? 'Present' : exp.endDate].filter(Boolean).join(' – '))}</div>
+          <div style="font-size:12px;color:var(--gray-400);margin-bottom:6px;">${escapeHtml([exp.startDate, exp.isCurrent ? 'Present' : exp.endDate].filter(Boolean).join(' – '))}${(()=>{const d=calcExpDuration(exp.startDate,exp.isCurrent?null:exp.endDate);return d?' <span style="color:var(--blue);font-size:11px;font-weight:600;">('+d+')</span>':'';})()}</div>
           ${Array.isArray(exp.bullets) && exp.bullets.length ? `<div style="font-size:13px;color:var(--gray-600);white-space:pre-line;">${escapeHtml(exp.bullets.join('\n'))}</div>` : exp.bullets ? `<div style="font-size:13px;color:var(--gray-600);white-space:pre-line;">${escapeHtml(exp.bullets)}</div>` : ''}
         </div>`).join('')}
     </div>` : ''}
@@ -1524,8 +1549,13 @@ document.getElementById('applyToProfileBtn').addEventListener('click', async () 
   const city     = (p.city || '').split(',')[0]?.trim() || '';
   const province = (p.city || '').split(',')[1]?.trim() || '';
 
+  // Read editable name from input if present
+  const nameInput = document.getElementById('parsedNameInput');
+  const parsedName = nameInput ? nameInput.value.trim() : (p.name || '');
+
   // Only send fields that actually exist in the parsed resume
   const payload = {};
+  if (parsedName)         payload.name             = parsedName;
   if (p.phone)            payload.phone            = p.phone;
   if (p.email)            payload.email            = p.email;
   if (p.linkedin)         payload.linkedin         = p.linkedin;

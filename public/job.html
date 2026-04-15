@@ -10,7 +10,7 @@
     @media(max-width:768px){ .job-detail-layout{grid-template-columns:1fr;} .job-sidebar{order:-1;} }
     .job-sidebar { display:flex; flex-direction:column; gap:16px; }
     .job-sidebar .card { position:sticky; top:80px; }
-    .job-body { font-size:15px; line-height:1.8; color:var(--gray-700); white-space:pre-wrap; }
+    .job-body { font-size:15px; line-height:1.8; color:var(--gray-700); word-break:break-word; }
     .job-body h3 { font-size:16px; font-weight:700; color:var(--gray-900); margin:20px 0 8px; }
     .ats-breakdown { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
     .ats-bar-row { display:flex; align-items:center; gap:10px; }
@@ -238,7 +238,7 @@ function renderJob(job) {
 
         <div class="card">
           <div class="card-title">Job Description</div>
-          <div class="job-body">${escapeHtml(job.description)}</div>
+          <div class="job-body">${escapeHtml(job.description).replace(/\n/g,'<br>')}</div>
         </div>
       </div>
 
