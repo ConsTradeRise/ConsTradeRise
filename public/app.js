@@ -91,6 +91,7 @@ const Toast = {
 
   success(msg) { this.show(msg, 'success'); },
   error(msg)   { this.show(msg, 'error'); },
+  warn(msg)    { this.show(msg, 'default'); },
   info(msg)    { this.show(msg, 'default'); }
 };
 
