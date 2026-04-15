@@ -91,6 +91,7 @@ app.use(helmet({
       connectSrc:     ["'self'", 'https://api.adzuna.com', 'https://esm.sh', 'https://*.supabase.co'],
       frameSrc:       ["'none'"],
       objectSrc:      ["'none'"],
+      scriptSrcAttr:  ["'unsafe-inline'"],
       upgradeInsecureRequests: []
     }
   },
