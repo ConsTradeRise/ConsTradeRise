@@ -4,145 +4,200 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Create Account — ConsTradeHire</title>
-  <link rel="stylesheet" href="/style.css?v=3" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
-    body { background: var(--bg); }
-
-    .reg-page {
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #09090f;
+      --surface: #13131f;
+      --border: rgba(255,255,255,0.07);
+      --orange: #f97316;
+      --orange-dim: rgba(249,115,22,0.12);
+      --orange-glow: rgba(249,115,22,0.25);
+      --green: #22c55e;
+      --text: #f1f5f9;
+      --text-muted: #64748b;
+      --text-sub: #94a3b8;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 16px;
-      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(59,130,246,.12) 0%, transparent 70%), var(--bg);
+      -webkit-font-smoothing: antialiased;
+      background-image:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(249,115,22,0.07) 0%, transparent 70%),
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 64px 64px, 64px 64px;
     }
 
-    .reg-logo {
-      font-size: 22px; font-weight: 800; color: var(--blue);
-      text-decoration: none; margin-bottom: 28px; display: block; text-align: center;
-      letter-spacing: -.4px;
+    .page {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px 16px;
     }
 
-    /* Role chooser */
+    .logo {
+      font-size: 22px; font-weight: 800; color: var(--text);
+      text-decoration: none; margin-bottom: 32px;
+      display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px;
+    }
+    .logo-dot { color: var(--orange); }
+
     .role-chooser {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      width: 100%;
-      max-width: 480px;
-      margin-bottom: 20px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; width: 100%; max-width: 480px; margin-bottom: 16px;
     }
     .role-choice {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 18px 14px;
-      text-align: center;
-      cursor: pointer;
-      background: rgba(255,255,255,.04);
-      transition: all .2s var(--ease);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px 12px; text-align: center; cursor: pointer;
+      background: rgba(255,255,255,0.03); transition: all 0.2s ease;
       backdrop-filter: blur(12px);
     }
-    .role-choice:hover { border-color: var(--blue); background: var(--blue-light); box-shadow: 0 0 20px var(--blue-glow); }
-    .role-choice.active.worker,
-    .role-choice.active.employer { border-color: var(--blue); background: var(--blue-light); box-shadow: 0 0 20px var(--blue-glow); }
-    .role-choice-icon  { font-size: 32px; margin-bottom: 6px; }
-    .role-choice-title { font-size: 14px; font-weight: 700; color: var(--gray-700); margin-bottom: 2px; }
-    .role-choice-sub   { font-size: 11px; color: var(--gray-500); }
+    .role-choice:hover { border-color: var(--orange); background: var(--orange-dim); box-shadow: 0 0 20px var(--orange-glow); }
+    .role-choice.active { border-color: var(--orange); background: var(--orange-dim); box-shadow: 0 0 20px var(--orange-glow); }
+    .role-choice-icon  { font-size: 28px; margin-bottom: 6px; }
+    .role-choice-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .role-choice-sub   { font-size: 11px; color: var(--text-muted); }
 
-    /* Card */
-    .reg-card {
-      background: rgba(255,255,255,.04);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 32px;
-      width: 100%;
-      max-width: 480px;
-      box-shadow: var(--shadow-lg);
-      backdrop-filter: blur(24px);
+    .card {
+      background: rgba(19,19,31,0.8); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px; width: 100%; max-width: 480px;
+      backdrop-filter: blur(24px); box-shadow: 0 0 60px rgba(0,0,0,0.5);
     }
-    .reg-card-header {
+    .card-header {
       display: flex; align-items: center; gap: 12px;
-      margin-bottom: 20px; padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
     }
-    .reg-card-icon  { font-size: 28px; }
-    .reg-card-title { font-size: 18px; font-weight: 800; color: var(--gray-700); }
-    .reg-card-sub   { font-size: 13px; color: var(--gray-500); }
+    .card-icon  { font-size: 26px; }
+    .card-title { font-size: 17px; font-weight: 800; color: var(--text); }
+    .card-sub   { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
-    .reg-benefits {
-      background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 12px 14px; margin-bottom: 20px;
+    .benefits {
+      background: rgba(249,115,22,0.05); border: 1px solid rgba(249,115,22,0.15);
+      border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 18px;
       display: flex; flex-direction: column; gap: 6px;
     }
-    .reg-benefit { font-size: 12px; color: var(--gray-500); display: flex; align-items: center; gap: 6px; }
-    .reg-benefit span:first-child { color: var(--green); font-weight: 700; }
+    .benefit { font-size: 12px; color: var(--text-sub); display: flex; align-items: center; gap: 8px; }
+    .benefit-check { color: var(--green); font-weight: 700; font-size: 13px; }
 
-    /* Employer-specific fields */
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; letter-spacing: 0.3px; }
+    .form-input {
+      width: 100%; padding: 11px 14px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text); font-family: var(--font); font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+    }
+    .form-input::placeholder { color: var(--text-muted); }
+    .form-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(249,115,22,0.12); }
+    .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .pwd-wrap { position: relative; }
+    .pwd-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 15px; padding: 0;
+    }
+
+    .btn-primary {
+      width: 100%; padding: 12px; background: var(--orange);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 700; font-family: var(--font);
+      cursor: pointer; margin-top: 6px; transition: background 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover:not(:disabled) { background: #ea6c0e; box-shadow: 0 0 24px var(--orange-glow); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+    .divider-line { flex: 1; height: 1px; background: var(--border); }
+    .divider-text { font-size: 11px; color: var(--text-muted); }
+
+    a.link { color: var(--orange); font-weight: 600; text-decoration: none; }
+    a.link:hover { text-decoration: underline; }
+    a.link-muted { color: var(--text-muted); font-weight: 500; text-decoration: none; }
+    a.link-muted:hover { color: var(--text-sub); }
+
+    .alert { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
+    .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .hidden { display: none !important; }
+
+    /* Verify panel */
+    .verify-panel { text-align: center; padding: 8px 0; }
+    .verify-icon  { font-size: 44px; margin-bottom: 12px; }
+    .verify-title { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    .verify-desc  { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+    .verify-email { font-size: 14px; font-weight: 700; color: var(--orange); margin-bottom: 16px; }
+    .verify-sub   { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+    .btn-outline {
+      padding: 9px 20px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+      color: var(--text-sub); cursor: pointer; font-size: 13px; font-weight: 600;
+      font-family: var(--font); transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+
+    .page-footer { margin-top: 20px; font-size: 11px; color: var(--text-muted); text-align: center; }
+
     #employerFields { display: none; }
   </style>
 </head>
 <body>
 
-<div class="reg-page">
-  <a href="/" class="reg-logo">ConsTradeHire</a>
+<div class="page">
+  <a href="/" class="logo"><span>ConsTradeHire</span><span class="logo-dot">.</span></a>
 
-  <!-- Step 1: Choose role -->
-  <div style="text-align:center;margin-bottom:16px;">
-    <div style="font-size:14px;font-weight:700;color:var(--gray-700);margin-bottom:4px;">Create your account</div>
-    <div style="font-size:12px;color:var(--gray-400);">Choose your account type to get started</div>
+  <div style="text-align:center;margin-bottom:14px;">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">Create your account</div>
+    <div style="font-size:11px;color:var(--text-muted);">Choose your account type to get started</div>
   </div>
 
   <div class="role-chooser">
-    <div class="role-choice worker active" id="choiceWorker" onclick="selectRole('worker')">
+    <div class="role-choice active" id="choiceWorker" onclick="selectRole('worker')">
       <div class="role-choice-icon">👷</div>
       <div class="role-choice-title">Job Seeker</div>
       <div class="role-choice-sub">Find construction jobs</div>
     </div>
-    <div class="role-choice employer" id="choiceEmployer" onclick="selectRole('employer')">
+    <div class="role-choice" id="choiceEmployer" onclick="selectRole('employer')">
       <div class="role-choice-icon">🏢</div>
       <div class="role-choice-title">Employer</div>
-      <div class="role-choice-sub">Post jobs & hire talent</div>
+      <div class="role-choice-sub">Post jobs &amp; hire talent</div>
     </div>
   </div>
 
-  <!-- Registration card -->
-  <div class="reg-card">
-
-    <div class="reg-card-header">
-      <div class="reg-card-icon" id="cardIcon">👷</div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" id="cardIcon">👷</div>
       <div>
-        <div class="reg-card-title" id="cardTitle">Job Seeker Account</div>
-        <div class="reg-card-sub"  id="cardSub">Free forever — start finding jobs today</div>
+        <div class="card-title" id="cardTitle">Job Seeker Account</div>
+        <div class="card-sub"   id="cardSub">Free forever — start finding jobs today</div>
       </div>
     </div>
 
-    <div class="reg-benefits" id="benefitsStrip">
-      <div class="reg-benefit"><span>✓</span> Browse thousands of construction jobs across Canada</div>
-      <div class="reg-benefit"><span>✓</span> Get ATS match score before applying</div>
-      <div class="reg-benefit"><span>✓</span> Build & download your resume as PDF — free</div>
+    <div class="benefits" id="benefitsStrip">
+      <div class="benefit"><span class="benefit-check">✓</span> Browse thousands of construction jobs across Canada</div>
+      <div class="benefit"><span class="benefit-check">✓</span> Get ATS match score before applying</div>
+      <div class="benefit"><span class="benefit-check">✓</span> Build &amp; download your resume as PDF — free</div>
     </div>
 
     <div id="registerError" class="alert alert-error hidden"></div>
 
-    <!-- Email verification success panel (shown after registration) -->
-    <div id="regVerifyPanel" style="display:none;text-align:center;padding:12px 0;">
-      <div style="font-size:48px;margin-bottom:12px;">📧</div>
-      <h3 style="font-size:18px;font-weight:800;color:var(--gray-900);margin:0 0 8px;">Check your inbox!</h3>
-      <p style="font-size:14px;color:var(--gray-600);margin:0 0 6px;">
-        We sent a verification link to:
-      </p>
-      <p style="font-size:15px;font-weight:700;color:var(--blue);margin:0 0 16px;" id="regVerifyEmail"></p>
-      <p style="font-size:13px;color:var(--gray-500);margin:0 0 20px;">
-        Click the link in the email to activate your account. Check your spam folder if you don't see it.
-      </p>
-      <button id="resendVerifyBtn"
-        onclick="resendVerificationEmail(window._pendingVerifyEmail)"
-        style="padding:9px 20px;border-radius:6px;border:1px solid var(--gray-300);background:#fff;color:var(--gray-700);cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;">
-        Resend Verification Email
-      </button>
-      <p style="margin-top:16px;font-size:12px;color:var(--gray-400);">
-        Already verified? <a href="/login.html" style="color:var(--blue);font-weight:700;">Login →</a>
+    <!-- Email verify panel (shown after registration) -->
+    <div id="regVerifyPanel" class="verify-panel hidden">
+      <div class="verify-icon">📧</div>
+      <div class="verify-title">Check your inbox!</div>
+      <p class="verify-desc">We sent a verification link to:</p>
+      <p id="regVerifyEmail" class="verify-email"></p>
+      <p class="verify-sub">Click the link in the email to activate your account.<br>Check your spam folder if you don't see it.</p>
+      <button class="btn-outline" onclick="resendVerificationEmail(window._pendingVerifyEmail)">Resend Verification Email</button>
+      <p style="margin-top:16px;font-size:12px;color:var(--text-muted);">
+        Already verified? <a href="/login.html" class="link">Login →</a>
       </p>
     </div>
 
@@ -150,11 +205,10 @@
       <input type="hidden" id="regRole" value="WORKER" />
 
       <div class="form-group">
-        <label class="form-label" for="regName" id="nameLabel">Full Name</label>
+        <label class="form-label" id="nameLabel" for="regName">Full Name</label>
         <input class="form-input" id="regName" type="text" placeholder="John Smith" autocomplete="name" required />
       </div>
 
-      <!-- Employer-only: company name -->
       <div class="form-group" id="employerFields">
         <label class="form-label" for="regCompany">Company Name</label>
         <input class="form-input" id="regCompany" type="text" placeholder="ABC Construction Ltd." autocomplete="organization" />
@@ -164,43 +218,41 @@
         <label class="form-label" for="regEmail">Email Address</label>
         <input class="form-input" id="regEmail" type="email" placeholder="you@example.com" autocomplete="email" required />
       </div>
+
       <div class="form-group">
         <label class="form-label" for="regPassword">Password</label>
-        <div style="position:relative;">
-          <input class="form-input" id="regPassword" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required style="padding-right:44px;" />
-          <button type="button" onclick="togglePwd()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:16px;" id="pwdToggle">👁</button>
+        <div class="pwd-wrap">
+          <input class="form-input" id="regPassword" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required style="padding-right:40px;" />
+          <button type="button" onclick="togglePwd()" class="pwd-toggle">👁</button>
         </div>
         <p class="form-hint">At least 8 characters</p>
       </div>
 
-      <p class="form-hint mb-2">
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:6px;line-height:1.6;">
         By creating an account you agree to our
-        <a href="/terms.html" style="color:var(--blue)">Terms of Service</a> and
-        <a href="/privacy.html" style="color:var(--blue)">Privacy Policy</a> (PIPEDA compliant).
+        <a href="/terms.html" class="link">Terms of Service</a> and
+        <a href="/privacy.html" class="link">Privacy Policy</a> (PIPEDA compliant).
       </p>
 
-      <button type="submit" class="btn btn-full mt-2" id="regBtn" style="background:var(--blue);color:#fff;font-size:15px;padding:13px;">
-        Create Free Account →
-      </button>
+      <button type="submit" class="btn-primary" id="regBtn">Create Free Account →</button>
     </form>
 
-    <div style="display:flex;align-items:center;gap:12px;margin:20px 0;">
-      <div style="flex:1;height:1px;background:var(--gray-200);"></div>
-      <span style="font-size:12px;color:var(--gray-400);">OR</span>
-      <div style="flex:1;height:1px;background:var(--gray-200);"></div>
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span class="divider-text">OR</span>
+      <div class="divider-line"></div>
     </div>
 
-    <p style="text-align:center;font-size:13px;color:var(--gray-500);">
-      Already have an account?
-      <a href="/login.html" id="loginLink" style="color:var(--blue);font-weight:700;">Login →</a>
+    <p style="text-align:center;font-size:13px;color:var(--text-muted);">
+      Already have an account? <a href="/login.html" id="loginLink" class="link">Login →</a>
     </p>
-    <p style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:8px;">
-      <a href="/login.html?role=employer" id="switchRoleLink" style="color:var(--gray-400);">Register as Employer instead</a>
+    <p style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px;">
+      <a href="/register.html?role=employer" id="switchRoleLink" class="link-muted">Already an Employer? Register here →</a>
     </p>
   </div>
 
-  <p style="margin-top:20px;font-size:11px;color:var(--gray-400);text-align:center;">
-    Protected by PIPEDA · <a href="/privacy.html" style="color:var(--gray-400);">Privacy Policy</a>
+  <p class="page-footer">
+    Protected by PIPEDA · <a href="/privacy.html" class="link-muted">Privacy Policy</a>
   </p>
 </div>
 
@@ -208,13 +260,11 @@
 <script>
 let selectedRole = 'worker';
 
-const ROLE_CONFIG = {
+var ROLE_CONFIG = {
   worker: {
     icon: '👷', title: 'Job Seeker Account', sub: 'Free forever — start finding jobs today',
-    btnText: 'Create Free Account →', btnColor: 'var(--blue)',
-    roleValue: 'WORKER',
-    nameLabel: 'Full Name',
-    showCompany: false,
+    btnText: 'Create Free Account →',
+    roleValue: 'WORKER', nameLabel: 'Full Name', showCompany: false,
     benefits: [
       'Browse thousands of construction jobs across Canada',
       'Get ATS match score before applying',
@@ -226,10 +276,8 @@ const ROLE_CONFIG = {
   },
   employer: {
     icon: '🏢', title: 'Employer Account', sub: 'Start hiring skilled tradespeople today',
-    btnText: 'Create Employer Account →', btnColor: '#1e3a5f',
-    roleValue: 'EMPLOYER',
-    nameLabel: 'Your Full Name',
-    showCompany: true,
+    btnText: 'Create Employer Account →',
+    roleValue: 'EMPLOYER', nameLabel: 'Your Full Name', showCompany: true,
     benefits: [
       'Post unlimited jobs and receive applications',
       'Candidates ranked by ATS match score automatically',
@@ -243,7 +291,7 @@ const ROLE_CONFIG = {
 
 function selectRole(role) {
   selectedRole = role;
-  const cfg = ROLE_CONFIG[role];
+  var cfg = ROLE_CONFIG[role];
 
   document.getElementById('choiceWorker').classList.toggle('active', role === 'worker');
   document.getElementById('choiceEmployer').classList.toggle('active', role === 'employer');
@@ -252,7 +300,6 @@ function selectRole(role) {
   document.getElementById('cardTitle').textContent = cfg.title;
   document.getElementById('cardSub').textContent   = cfg.sub;
   document.getElementById('regBtn').textContent    = cfg.btnText;
-  document.getElementById('regBtn').style.background = cfg.btnColor;
   document.getElementById('regRole').value         = cfg.roleValue;
   document.getElementById('nameLabel').textContent = cfg.nameLabel;
   document.getElementById('loginLink').href        = cfg.loginLink;
@@ -260,17 +307,28 @@ function selectRole(role) {
   document.getElementById('switchRoleLink').href   = cfg.switchLink;
   document.getElementById('employerFields').style.display = cfg.showCompany ? 'block' : 'none';
 
-  document.getElementById('benefitsStrip').innerHTML = cfg.benefits
-    .map(b => `<div class="reg-benefit"><span>✓</span> ${b}</div>`).join('');
+  var strip = document.getElementById('benefitsStrip');
+  strip.textContent = '';
+  cfg.benefits.forEach(function(b) {
+    var row = document.createElement('div');
+    row.className = 'benefit';
+    var chk = document.createElement('span');
+    chk.className = 'benefit-check';
+    chk.textContent = '✓';
+    var txt = document.createTextNode(' ' + b);
+    row.appendChild(chk);
+    row.appendChild(txt);
+    strip.appendChild(row);
+  });
 }
 
 function togglePwd() {
-  const inp = document.getElementById('regPassword');
+  var inp = document.getElementById('regPassword');
   inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const params = new URLSearchParams(window.location.search);
+document.addEventListener('DOMContentLoaded', function() {
+  var params = new URLSearchParams(window.location.search);
   if (params.get('role') === 'employer') selectRole('employer');
 });
 </script>

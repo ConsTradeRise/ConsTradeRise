@@ -4,135 +4,311 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login — ConsTradeHire</title>
-  <link rel="stylesheet" href="/style.css?v=3" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
-    body { background: var(--bg); }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #09090f;
+      --surface: #13131f;
+      --surface2: #1a1a2e;
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.14);
+      --orange: #f97316;
+      --orange-dim: rgba(249,115,22,0.12);
+      --orange-glow: rgba(249,115,22,0.25);
+      --green: #22c55e;
+      --text: #f1f5f9;
+      --text-muted: #64748b;
+      --text-sub: #94a3b8;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      /* Grid overlay */
+      background-image:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(249,115,22,0.07) 0%, transparent 70%),
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 64px 64px, 64px 64px;
+    }
 
-    .login-page {
+    .page {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px 16px;
-      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(59,130,246,.12) 0%, transparent 70%), var(--bg);
+      padding: 32px 16px;
     }
 
-    .login-logo {
-      font-size: 22px; font-weight: 800; color: var(--blue);
-      text-decoration: none; margin-bottom: 28px; display: block; text-align: center;
-      letter-spacing: -.4px;
+    /* Logo */
+    .logo {
+      font-size: 22px; font-weight: 800; color: var(--text);
+      text-decoration: none; margin-bottom: 32px; display: flex;
+      align-items: center; gap: 8px; letter-spacing: -0.5px;
     }
+    .logo-dot { color: var(--orange); }
 
     /* Role chooser */
     .role-chooser {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
       max-width: 440px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .role-choice {
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 18px 14px;
+      border-radius: var(--radius);
+      padding: 16px 12px;
       text-align: center;
       cursor: pointer;
-      background: rgba(255,255,255,.04);
-      transition: all .2s var(--ease);
+      background: rgba(255,255,255,0.03);
+      transition: all 0.2s ease;
       backdrop-filter: blur(12px);
     }
-    .role-choice:hover { border-color: var(--blue); background: var(--blue-light); box-shadow: 0 0 20px var(--blue-glow); }
-    .role-choice.active.worker,
-    .role-choice.active.employer { border-color: var(--blue); background: var(--blue-light); box-shadow: 0 0 20px var(--blue-glow); }
-    .role-choice-icon { font-size: 32px; margin-bottom: 6px; }
-    .role-choice-title { font-size: 14px; font-weight: 700; color: var(--gray-700); margin-bottom: 2px; }
-    .role-choice-sub   { font-size: 11px; color: var(--gray-500); }
+    .role-choice:hover {
+      border-color: var(--orange);
+      background: var(--orange-dim);
+      box-shadow: 0 0 20px var(--orange-glow);
+    }
+    .role-choice.active {
+      border-color: var(--orange);
+      background: var(--orange-dim);
+      box-shadow: 0 0 20px var(--orange-glow);
+    }
+    .role-choice-icon { font-size: 28px; margin-bottom: 6px; }
+    .role-choice-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .role-choice-sub   { font-size: 11px; color: var(--text-muted); }
 
-    /* Login card */
-    .login-card {
-      background: rgba(255,255,255,.04);
+    /* Card */
+    .card {
+      background: rgba(19,19,31,0.8);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 32px;
+      border-radius: var(--radius);
+      padding: 28px;
       width: 100%;
       max-width: 440px;
-      box-shadow: var(--shadow-lg);
       backdrop-filter: blur(24px);
+      box-shadow: 0 0 60px rgba(0,0,0,0.5);
     }
-    .login-card-header {
+
+    .card-header {
       display: flex; align-items: center; gap: 12px;
-      margin-bottom: 20px; padding-bottom: 16px;
+      margin-bottom: 18px; padding-bottom: 14px;
       border-bottom: 1px solid var(--border);
     }
-    .login-card-icon { font-size: 28px; }
-    .login-card-title { font-size: 18px; font-weight: 800; color: var(--gray-700); }
-    .login-card-sub   { font-size: 13px; color: var(--gray-500); }
+    .card-icon { font-size: 26px; }
+    .card-title { font-size: 17px; font-weight: 800; color: var(--text); }
+    .card-sub   { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
-    .login-benefits {
-      background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 12px 14px; margin-bottom: 20px;
+    /* Benefits */
+    .benefits {
+      background: rgba(249,115,22,0.05);
+      border: 1px solid rgba(249,115,22,0.15);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 18px;
       display: flex; flex-direction: column; gap: 6px;
     }
-    .login-benefit { font-size: 12px; color: var(--gray-500); display: flex; align-items: center; gap: 6px; }
-    .login-benefit span:first-child { color: var(--green); font-weight: 700; }
+    .benefit { font-size: 12px; color: var(--text-sub); display: flex; align-items: center; gap: 8px; }
+    .benefit-check { color: var(--green); font-weight: 700; font-size: 13px; }
+
+    /* Form */
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--text-sub); margin-bottom: 6px; letter-spacing: 0.3px;
+    }
+    .form-input {
+      width: 100%; padding: 11px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text); font-family: var(--font); font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .form-input::placeholder { color: var(--text-muted); }
+    .form-input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+    }
+    .pwd-wrap { position: relative; }
+    .pwd-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--text-muted);
+      font-size: 15px; padding: 0; line-height: 1;
+    }
+    .pwd-toggle:hover { color: var(--text-sub); }
+
+    /* Button */
+    .btn-primary {
+      width: 100%; padding: 12px;
+      background: var(--orange);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 700; font-family: var(--font);
+      cursor: pointer; margin-top: 6px;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #ea6c0e;
+      box-shadow: 0 0 24px var(--orange-glow);
+    }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* Divider */
+    .divider {
+      display: flex; align-items: center; gap: 12px; margin: 18px 0;
+    }
+    .divider-line { flex: 1; height: 1px; background: var(--border); }
+    .divider-text { font-size: 11px; color: var(--text-muted); }
+
+    /* Links */
+    a.link { color: var(--orange); font-weight: 600; text-decoration: none; }
+    a.link:hover { text-decoration: underline; }
+    a.link-muted { color: var(--text-muted); font-weight: 500; text-decoration: none; }
+    a.link-muted:hover { color: var(--text-sub); }
+
+    /* Alert */
+    .alert {
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      font-size: 13px; margin-bottom: 14px;
+    }
+    .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .alert-success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #86efac; }
+    .hidden { display: none !important; }
+
+    /* OTP panel */
+    .otp-panel { text-align: center; padding: 4px 0; }
+    .otp-icon { font-size: 44px; margin-bottom: 12px; }
+    .otp-title { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .otp-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+    .otp-email { font-size: 14px; font-weight: 700; color: var(--orange); margin-bottom: 20px; }
+    .otp-input {
+      font-size: 28px; font-weight: 800; letter-spacing: 10px; text-align: center;
+      width: 100%; max-width: 210px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 12px 10px; font-family: monospace;
+      color: var(--text); background: rgba(255,255,255,0.05);
+      display: block; margin: 0 auto 14px; transition: border-color 0.2s;
+      outline: none;
+    }
+    .otp-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(249,115,22,0.12); }
+    .otp-timer { font-size: 12px; color: var(--text-muted); margin: 0 0 4px; }
+    .otp-resend {
+      font-size: 12px; color: var(--text-muted); background: none; border: none;
+      cursor: not-allowed; font-weight: 600; padding: 4px; font-family: var(--font);
+    }
+    .otp-resend.active { color: var(--orange); cursor: pointer; }
+    .otp-back {
+      margin-top: 10px; font-size: 12px; color: var(--text-muted);
+      background: none; border: none; cursor: pointer; font-family: var(--font);
+    }
+    .otp-back:hover { color: var(--text-sub); }
+
+    /* Verified banner */
+    .verified-banner {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25);
+      border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px;
+    }
+    .verified-banner-icon { font-size: 18px; }
+    .verified-banner-title { font-size: 13px; font-weight: 700; color: #86efac; }
+    .verified-banner-sub { font-size: 11px; color: #4ade80; margin-top: 2px; }
+
+    /* Footer note */
+    .page-footer {
+      margin-top: 20px; font-size: 11px; color: var(--text-muted); text-align: center;
+    }
   </style>
 </head>
 <body>
 
-<div class="login-page">
-  <a href="/" class="login-logo">ConsTradeHire</a>
+<div class="page">
+  <a href="/" class="logo">
+    <span>ConsTradeHire</span><span class="logo-dot">.</span>
+  </a>
 
-  <!-- Step 1: Choose role -->
-  <div style="text-align:center;margin-bottom:16px;">
-    <div style="font-size:14px;font-weight:700;color:var(--gray-700);margin-bottom:4px;">Who are you logging in as?</div>
-    <div style="font-size:12px;color:var(--gray-400);">Choose your account type to continue</div>
+  <!-- Role chooser -->
+  <div style="text-align:center;margin-bottom:14px;">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">Who are you logging in as?</div>
+    <div style="font-size:11px;color:var(--text-muted);">Choose your account type to continue</div>
   </div>
 
   <div class="role-chooser">
-    <div class="role-choice worker active" id="choiceWorker" onclick="selectRole('worker')">
+    <div class="role-choice active" id="choiceWorker" onclick="selectRole('worker')">
       <div class="role-choice-icon">👷</div>
       <div class="role-choice-title">Job Seeker</div>
       <div class="role-choice-sub">Find construction jobs</div>
     </div>
-    <div class="role-choice employer" id="choiceEmployer" onclick="selectRole('employer')">
+    <div class="role-choice" id="choiceEmployer" onclick="selectRole('employer')">
       <div class="role-choice-icon">🏢</div>
       <div class="role-choice-title">Employer</div>
-      <div class="role-choice-sub">Post jobs & hire</div>
+      <div class="role-choice-sub">Post jobs &amp; hire</div>
     </div>
   </div>
 
-  <!-- Login card -->
-  <div class="login-card">
+  <!-- Card -->
+  <div class="card">
 
-    <!-- Dynamic header -->
-    <div class="login-card-header">
-      <div class="login-card-icon" id="cardIcon">👷</div>
+    <!-- Verified banner (hidden by default) -->
+    <div id="loginVerifiedBanner" class="verified-banner hidden">
+      <span class="verified-banner-icon">✅</span>
       <div>
-        <div class="login-card-title" id="cardTitle">Job Seeker Login</div>
-        <div class="login-card-sub"  id="cardSub">Welcome back — find your next job</div>
+        <div class="verified-banner-title">Email verified successfully!</div>
+        <div class="verified-banner-sub">Your account is now active. Log in below.</div>
       </div>
     </div>
 
-    <!-- Benefits strip -->
-    <div class="login-benefits" id="benefitsStrip">
-      <div class="login-benefit"><span>✓</span> Browse thousands of construction jobs</div>
-      <div class="login-benefit"><span>✓</span> See your ATS match score on every job</div>
-      <div class="login-benefit"><span>✓</span> Download your resume as PDF — free</div>
+    <div class="card-header">
+      <div class="card-icon" id="cardIcon">👷</div>
+      <div>
+        <div class="card-title" id="cardTitle">Job Seeker Login</div>
+        <div class="card-sub" id="cardSub">Welcome back — find your next job</div>
+      </div>
     </div>
 
-    <!-- Email verified success banner -->
-    <div id="loginVerifiedBanner" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:none;align-items:center;gap:10px;">
-      <span style="font-size:20px;">✅</span>
-      <div>
-        <div style="font-size:14px;font-weight:700;color:#16a34a;">Email verified successfully!</div>
-        <div style="font-size:12px;color:#15803d;margin-top:2px;">Your account is now active. Log in below.</div>
-      </div>
+    <!-- Benefits -->
+    <div class="benefits" id="benefitsStrip">
+      <div class="benefit"><span class="benefit-check">✓</span> Browse thousands of construction jobs</div>
+      <div class="benefit"><span class="benefit-check">✓</span> See your ATS match score on every job</div>
+      <div class="benefit"><span class="benefit-check">✓</span> Download your resume as PDF — free</div>
     </div>
 
     <div id="loginError" class="alert alert-error hidden"></div>
 
+    <!-- OTP panel -->
+    <div id="otpPanel" class="otp-panel hidden">
+      <div class="otp-icon">🔐</div>
+      <div class="otp-title">Enter your login code</div>
+      <p class="otp-desc">We sent a 6-digit code to</p>
+      <p id="otpMaskedEmail" class="otp-email"></p>
+
+      <div id="otpError" class="alert alert-error hidden" style="text-align:left;"></div>
+
+      <input id="otpInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+        placeholder="000000" class="otp-input" autocomplete="one-time-code" />
+
+      <button id="otpSubmitBtn" class="btn-primary" onclick="submitOtpStep()" style="max-width:210px;margin:0 auto 12px;">Verify Code</button>
+
+      <p id="otpTimer" class="otp-timer"></p>
+      <button id="otpResendBtn" class="otp-resend" onclick="resendOtpStep()" disabled>Resend code</button>
+      <br>
+      <button class="otp-back" onclick="cancelOtpStep()">← Back</button>
+    </div>
+
+    <!-- Login form -->
     <form id="loginForm">
       <div class="form-group">
         <label class="form-label" for="loginEmail">Email Address</label>
@@ -140,47 +316,46 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="loginPassword">Password</label>
-        <div style="position:relative;">
-          <input class="form-input" id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password" required style="padding-right:44px;" />
-          <button type="button" onclick="togglePwd()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:16px;" id="pwdToggle">👁</button>
+        <div class="pwd-wrap">
+          <input class="form-input" id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password" required style="padding-right:40px;" />
+          <button type="button" onclick="togglePwd()" class="pwd-toggle" id="pwdToggle">👁</button>
         </div>
       </div>
-      <button type="submit" class="btn btn-full mt-2" id="loginBtn" style="background:var(--blue);color:#fff;font-size:15px;padding:13px;">
-        Login as Job Seeker
-      </button>
+      <button type="submit" class="btn-primary" id="loginBtn">Login as Job Seeker</button>
     </form>
-    <p style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:12px;">
-      <a href="/forgot-password.html" style="color:var(--gray-500);">Forgot password?</a>
+
+    <p style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:10px;">
+      <a href="/forgot-password.html" class="link-muted">Forgot password?</a>
     </p>
 
-    <div style="display:flex;align-items:center;gap:12px;margin:20px 0;">
-      <div style="flex:1;height:1px;background:var(--gray-200);"></div>
-      <span style="font-size:12px;color:var(--gray-400);">OR</span>
-      <div style="flex:1;height:1px;background:var(--gray-200);"></div>
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span class="divider-text">OR</span>
+      <div class="divider-line"></div>
     </div>
 
-    <p style="text-align:center;font-size:13px;color:var(--gray-500);">
+    <p style="text-align:center;font-size:13px;color:var(--text-muted);">
       Don't have an account?
-      <a href="/register.html" id="registerLink" style="color:var(--blue);font-weight:700;">Create free account →</a>
+      <a href="/register.html" id="registerLink" class="link">Create free account →</a>
     </p>
-    <p style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:8px;">
-      <a href="/register.html?role=employer" id="switchRoleLink" style="color:var(--gray-400);">Register as Employer instead</a>
+    <p style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px;">
+      <a href="/register.html?role=employer" id="switchRoleLink" class="link-muted">Register as Employer instead</a>
     </p>
   </div>
 
-  <p style="margin-top:20px;font-size:11px;color:var(--gray-400);text-align:center;">
-    Protected by PIPEDA · <a href="/privacy.html" style="color:var(--gray-400);">Privacy Policy</a>
+  <p class="page-footer">
+    Protected by PIPEDA · <a href="/privacy.html" class="link-muted">Privacy Policy</a>
   </p>
 </div>
 
-<script src="/app.js"></script>
+<script src="/app.js?v=2"></script>
 <script>
 let selectedRole = 'worker';
 
 const ROLE_CONFIG = {
   worker: {
     icon: '👷', title: 'Job Seeker Login', sub: 'Welcome back — find your next job',
-    btnText: 'Login as Job Seeker', btnColor: 'var(--blue)',
+    btnText: 'Login as Job Seeker',
     benefits: [
       'Browse thousands of construction jobs',
       'See your ATS match score on every job',
@@ -192,7 +367,7 @@ const ROLE_CONFIG = {
   },
   employer: {
     icon: '🏢', title: 'Employer Login', sub: 'Welcome back — manage your jobs & candidates',
-    btnText: 'Login as Employer', btnColor: '#1e3a5f',
+    btnText: 'Login as Employer',
     benefits: [
       'Post jobs and receive applications instantly',
       'See candidates ranked by ATS match score',
@@ -208,37 +383,43 @@ function selectRole(role) {
   selectedRole = role;
   const cfg = ROLE_CONFIG[role];
 
-  // Update chooser UI
   document.getElementById('choiceWorker').classList.toggle('active', role === 'worker');
   document.getElementById('choiceEmployer').classList.toggle('active', role === 'employer');
 
-  // Update card
   document.getElementById('cardIcon').textContent  = cfg.icon;
   document.getElementById('cardTitle').textContent = cfg.title;
   document.getElementById('cardSub').textContent   = cfg.sub;
   document.getElementById('loginBtn').textContent  = cfg.btnText;
-  document.getElementById('loginBtn').style.background = cfg.btnColor;
   document.getElementById('registerLink').href     = cfg.registerLink;
   document.getElementById('switchRoleLink').textContent = cfg.switchText;
   document.getElementById('switchRoleLink').href   = cfg.switchLink;
 
-  // Update benefits
-  document.getElementById('benefitsStrip').innerHTML = cfg.benefits
-    .map(b => `<div class="login-benefit"><span>✓</span> ${b}</div>`).join('');
+  const strip = document.getElementById('benefitsStrip');
+  strip.textContent = '';
+  cfg.benefits.forEach(function(b) {
+    var row = document.createElement('div');
+    row.className = 'benefit';
+    var chk = document.createElement('span');
+    chk.className = 'benefit-check';
+    chk.textContent = '✓';
+    var txt = document.createTextNode(' ' + b);
+    row.appendChild(chk);
+    row.appendChild(txt);
+    strip.appendChild(row);
+  });
 }
 
 function togglePwd() {
-  const inp = document.getElementById('loginPassword');
+  var inp = document.getElementById('loginPassword');
   inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
-// Auto-select employer or show verified banner from URL params
-document.addEventListener('DOMContentLoaded', () => {
-  const params = new URLSearchParams(window.location.search);
+document.addEventListener('DOMContentLoaded', function() {
+  var params = new URLSearchParams(window.location.search);
   if (params.get('role') === 'employer') selectRole('employer');
   if (params.get('verified') === '1') {
-    const banner = document.getElementById('loginVerifiedBanner');
-    if (banner) banner.style.display = 'flex';
+    var banner = document.getElementById('loginVerifiedBanner');
+    if (banner) banner.classList.remove('hidden');
   }
 });
 </script>
