@@ -80,6 +80,22 @@
 
     /* Employer-specific fields */
     #employerFields { display: none; }
+
+    /* OTP panel */
+    .otp-input {
+      font-size: 32px; font-weight: 800; letter-spacing: 10px; text-align: center;
+      width: 210px; border: 2px solid var(--gray-300); border-radius: 12px;
+      padding: 14px 10px; font-family: monospace; color: var(--gray-900); background: #fff;
+      display: block; margin: 0 auto 16px; transition: border-color .2s;
+    }
+    .otp-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+    .otp-submit {
+      width: 100%; padding: 13px; background: var(--blue); color: #fff; border: none;
+      border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 12px;
+      transition: background .2s;
+    }
+    .otp-submit:hover:not(:disabled) { background: #1d4ed8; }
+    .otp-submit:disabled { opacity: .6; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -125,25 +141,30 @@
 
     <div id="registerError" class="alert alert-error hidden"></div>
 
-    <!-- Email verification success panel (shown after registration) -->
-    <div id="regVerifyPanel" style="display:none;text-align:center;padding:12px 0;">
-      <div style="font-size:48px;margin-bottom:12px;">📧</div>
-      <h3 style="font-size:18px;font-weight:800;color:var(--gray-900);margin:0 0 8px;">Check your inbox!</h3>
-      <p style="font-size:14px;color:var(--gray-600);margin:0 0 6px;">
-        We sent a verification link to:
-      </p>
-      <p style="font-size:15px;font-weight:700;color:var(--blue);margin:0 0 16px;" id="regVerifyEmail"></p>
-      <p style="font-size:13px;color:var(--gray-500);margin:0 0 20px;">
-        Click the link in the email to activate your account. Check your spam folder if you don't see it.
-      </p>
-      <button id="resendVerifyBtn"
-        onclick="resendVerificationEmail(window._pendingVerifyEmail)"
-        style="padding:9px 20px;border-radius:6px;border:1px solid var(--gray-300);background:#fff;color:var(--gray-700);cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;">
-        Resend Verification Email
+    <!-- OTP verification panel (shown after registration) -->
+    <div id="otpPanel" style="display:none;text-align:center;padding:8px 0;">
+      <div style="font-size:48px;margin-bottom:12px;">📬</div>
+      <h3 style="font-size:18px;font-weight:800;color:var(--gray-900);margin:0 0 8px;">Enter your verification code</h3>
+      <p style="font-size:14px;color:var(--gray-500);margin:0 0 4px;">We sent a 6-digit code to</p>
+      <p id="otpMaskedEmail" style="font-size:15px;font-weight:700;color:var(--blue);margin:0 0 20px;"></p>
+
+      <div id="otpError" class="alert alert-error hidden" style="text-align:left;margin-bottom:12px;"></div>
+
+      <input id="otpInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+        placeholder="000000" class="otp-input" autocomplete="one-time-code" />
+
+      <button id="otpSubmitBtn" class="otp-submit" onclick="submitOtpStep()">Verify Code</button>
+
+      <p id="otpTimer" style="font-size:13px;color:var(--gray-500);margin:0 0 6px;"></p>
+      <button id="otpResendBtn" onclick="resendOtpStep()"
+        style="font-size:13px;color:var(--gray-400);cursor:not-allowed;background:none;border:none;font-weight:600;padding:4px;" disabled>
+        Resend code
       </button>
-      <p style="margin-top:16px;font-size:12px;color:var(--gray-400);">
-        Already verified? <a href="/login.html" style="color:var(--blue);font-weight:700;">Login →</a>
-      </p>
+      <br>
+      <button onclick="cancelOtpStep()"
+        style="margin-top:12px;font-size:12px;color:var(--gray-400);background:none;border:none;cursor:pointer;">
+        ← Back
+      </button>
     </div>
 
     <form id="registerForm">

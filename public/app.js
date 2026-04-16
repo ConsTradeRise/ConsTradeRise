@@ -207,6 +207,159 @@ async function markAllRead() {
   if (el) el.style.display = 'none';
 }
 
+// ── Shared OTP step state ──────────────────────
+let _otpEmail    = '';
+let _otpPurpose  = '';
+let _otpOnOk     = null;
+let _otpOnCancel = null;
+let _otpTimerIv  = null;
+let _otpResendIv = null;
+
+function showOtpPanel(email, masked, purpose, onOk, onCancel) {
+  _otpEmail    = email;
+  _otpPurpose  = purpose;
+  _otpOnOk     = onOk;
+  _otpOnCancel = onCancel || null;
+
+  const panel = document.getElementById('otpPanel');
+  if (!panel) return;
+  panel.style.display = 'block';
+
+  const maskedEl = document.getElementById('otpMaskedEmail');
+  if (maskedEl) maskedEl.textContent = masked || email;
+
+  const errEl = document.getElementById('otpError');
+  if (errEl) errEl.classList.add('hidden');
+
+  const input     = document.getElementById('otpInput');
+  const submitBtn = document.getElementById('otpSubmitBtn');
+  if (input) {
+    input.value = '';
+    input.disabled = false;
+    input.focus();
+    // Strip non-digits and auto-submit at 6 chars
+    input.oninput = () => {
+      input.value = input.value.replace(/\D/g,'').slice(0,6);
+      if (input.value.length === 6) submitOtpStep();
+    };
+    input.onkeydown = (e) => { if (e.key === 'Enter') submitOtpStep(); };
+  }
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Verify Code'; }
+
+  _otpStartTimer(10 * 60);
+  _otpStartResendCooldown(60);
+}
+
+function _otpStartTimer(seconds) {
+  clearInterval(_otpTimerIv);
+  let rem = seconds;
+  const el = document.getElementById('otpTimer');
+  const update = () => {
+    if (!el) return;
+    if (rem <= 0) {
+      clearInterval(_otpTimerIv);
+      el.textContent = 'Code expired — request a new one below.';
+      el.style.color = '#ef4444';
+      const inp = document.getElementById('otpInput');
+      const btn = document.getElementById('otpSubmitBtn');
+      if (inp) inp.disabled = true;
+      if (btn) btn.disabled = true;
+      return;
+    }
+    const m = String(Math.floor(rem/60)).padStart(2,'0');
+    const s = String(rem%60).padStart(2,'0');
+    el.textContent = `Expires in ${m}:${s}`;
+    el.style.color = rem < 60 ? '#ef4444' : '';
+    rem--;
+  };
+  update();
+  _otpTimerIv = setInterval(update, 1000);
+}
+
+function _otpStartResendCooldown(seconds) {
+  clearInterval(_otpResendIv);
+  let rem = seconds;
+  const btn = document.getElementById('otpResendBtn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.style.cssText = 'font-size:13px;color:var(--gray-400);cursor:not-allowed;background:none;border:none;font-weight:600;padding:4px;';
+  const update = () => {
+    if (rem <= 0) {
+      clearInterval(_otpResendIv);
+      btn.disabled = false;
+      btn.style.cssText = 'font-size:13px;color:var(--blue);cursor:pointer;background:none;border:none;font-weight:600;padding:4px;';
+      btn.textContent = 'Resend code';
+      return;
+    }
+    btn.textContent = `Resend code (${rem}s)`;
+    rem--;
+  };
+  update();
+  _otpResendIv = setInterval(update, 1000);
+}
+
+async function submitOtpStep() {
+  const input  = document.getElementById('otpInput');
+  const errEl  = document.getElementById('otpError');
+  const btn    = document.getElementById('otpSubmitBtn');
+  const otp    = input ? input.value.trim() : '';
+
+  if (!otp || otp.length !== 6) {
+    if (errEl) { errEl.textContent = 'Please enter the 6-digit code'; errEl.classList.remove('hidden'); }
+    return;
+  }
+  if (errEl) errEl.classList.add('hidden');
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+  if (input) input.disabled = true;
+
+  const endpoint = _otpPurpose === 'LOGIN'
+    ? '/api/auth/verify-login-otp'
+    : '/api/auth/verify-email-otp';
+
+  const { ok, data } = await apiCall('POST', endpoint, { email: _otpEmail, otp });
+
+  if (ok) {
+    clearInterval(_otpTimerIv);
+    clearInterval(_otpResendIv);
+    if (data.token) Auth.save(data.token, data.user);
+    if (_otpOnOk) _otpOnOk(data);
+  } else {
+    if (errEl) { errEl.textContent = data.error || 'Invalid code — try again'; errEl.classList.remove('hidden'); }
+    if (btn)   { btn.disabled = false; btn.textContent = 'Verify Code'; }
+    if (input) { input.disabled = false; input.value = ''; input.focus(); }
+  }
+}
+
+async function resendOtpStep() {
+  const btn   = document.getElementById('otpResendBtn');
+  const errEl = document.getElementById('otpError');
+  if (btn) btn.disabled = true;
+
+  const { ok, data } = await apiCall('POST', '/api/auth/resend-otp', { email: _otpEmail, purpose: _otpPurpose });
+
+  if (ok) {
+    if (errEl) errEl.classList.add('hidden');
+    Toast.success('New code sent — check your email.');
+    const inp = document.getElementById('otpInput');
+    const sub = document.getElementById('otpSubmitBtn');
+    if (inp) { inp.disabled = false; inp.value = ''; inp.focus(); }
+    if (sub) sub.disabled = false;
+    _otpStartTimer(10 * 60);
+    _otpStartResendCooldown(60);
+  } else {
+    if (errEl) { errEl.textContent = data.error || 'Failed to resend. Try again.'; errEl.classList.remove('hidden'); }
+    if (btn) btn.disabled = false;
+  }
+}
+
+function cancelOtpStep() {
+  clearInterval(_otpTimerIv);
+  clearInterval(_otpResendIv);
+  const panel = document.getElementById('otpPanel');
+  if (panel) panel.style.display = 'none';
+  if (_otpOnCancel) _otpOnCancel();
+}
+
 // ─── REGISTER PAGE ────────────────────────────
 function initRegisterPage() {
   const form = document.getElementById('registerForm');
@@ -214,14 +367,14 @@ function initRegisterPage() {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn    = document.getElementById('regBtn');
+    const btn     = document.getElementById('regBtn');
     const errorEl = document.getElementById('registerError');
 
-    const role    = document.getElementById('regRole')?.value || 'WORKER';
-    const name    = document.getElementById('regName').value.trim();
-    const email   = document.getElementById('regEmail').value.trim();
+    const role     = document.getElementById('regRole')?.value || 'WORKER';
+    const name     = document.getElementById('regName').value.trim();
+    const email    = document.getElementById('regEmail').value.trim();
     const password = document.getElementById('regPassword').value;
-    const company = document.getElementById('regCompany')?.value.trim() || '';
+    const company  = document.getElementById('regCompany')?.value.trim() || '';
 
     if (!name || !email || !password) {
       if (errorEl) { errorEl.textContent = 'All fields are required'; errorEl.classList.remove('hidden'); }
@@ -233,70 +386,55 @@ function initRegisterPage() {
     }
 
     btn.disabled = true;
-    btn.textContent = 'Validating email...';
-
-    // Mailboxlayer email validation
-    try {
-      const vRes = await fetch('/api/validate/email', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      const vData = await vRes.json();
-      if (vData.valid === false) {
-        if (errorEl) { errorEl.textContent = vData.reason || 'Invalid email address'; errorEl.classList.remove('hidden'); }
-        btn.disabled = false; btn.textContent = 'Create Account';
-        return;
-      }
-    } catch (_) { /* validation unavailable — continue */ }
-
-    btn.textContent = 'Creating account...';
+    btn.textContent = 'Creating account…';
 
     const payload = { name, email, password, role };
     if (role === 'EMPLOYER' && company) payload.company = company;
 
     const { ok, data } = await apiCall('POST', '/api/auth/register', payload);
 
-    if (ok) {
-      if (data.requiresVerification) {
-        // Show email verification prompt — hide form, show success panel
-        form.style.display = 'none';
-        const successPanel = document.getElementById('regVerifyPanel');
-        if (successPanel) {
-          successPanel.style.display = 'block';
-          const emailSpan = document.getElementById('regVerifyEmail');
-          if (emailSpan) emailSpan.textContent = data.email || email;
-        }
-        // Store email for resend button
-        window._pendingVerifyEmail = data.email || email;
-      } else {
-        Auth.save(data.token, data.user);
-        Toast.success('Account created! Welcome to ConsTradeHire.');
+    if (ok && data.requiresOtp) {
+      // Hide form + benefits, show OTP panel
+      form.style.display = 'none';
+      const benefitsEl = document.getElementById('benefitsStrip');
+      const headerEl   = document.querySelector('.reg-card-header');
+      if (benefitsEl) benefitsEl.style.display = 'none';
+      if (headerEl)   headerEl.style.display   = 'none';
+      if (errorEl)    errorEl.classList.add('hidden');
+
+      showOtpPanel(data.email || email, data.masked, 'VERIFY_EMAIL', () => {
+        Toast.success('Email verified! Welcome to ConsTradeHire.');
         setTimeout(() => Auth.redirectToDashboard(), 800);
-      }
+      }, () => {
+        // Back to form
+        form.style.display = 'block';
+        if (benefitsEl) benefitsEl.style.display = '';
+        if (headerEl)   headerEl.style.display   = '';
+        btn.disabled = false;
+        const cfg = typeof ROLE_CONFIG !== 'undefined' && typeof selectedRole !== 'undefined'
+          ? ROLE_CONFIG[selectedRole] : null;
+        btn.textContent = cfg ? cfg.btnText : 'Create Account';
+      });
+
+    } else if (ok && data.token) {
+      // Email not required (dev mode) — log in directly
+      Auth.save(data.token, data.user);
+      Toast.success('Account created! Welcome to ConsTradeHire.');
+      setTimeout(() => Auth.redirectToDashboard(), 800);
+
     } else {
       if (errorEl) { errorEl.textContent = data.error || 'Registration failed'; errorEl.classList.remove('hidden'); }
       btn.disabled = false;
-      btn.textContent = 'Create Account';
+      const cfg = typeof ROLE_CONFIG !== 'undefined' && typeof selectedRole !== 'undefined'
+        ? ROLE_CONFIG[selectedRole] : null;
+      btn.textContent = cfg ? cfg.btnText : 'Create Account';
     }
   });
 }
 
 async function resendVerificationEmail(email) {
-  const btn = document.getElementById('resendVerifyBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
-
-  const { ok, data } = await apiCall('POST', '/api/auth/resend-verification', { email });
-
-  if (btn) {
-    btn.textContent = ok ? 'Sent! Check your inbox' : 'Failed — try again';
-    btn.style.background = ok ? '#16a34a' : '#dc2626';
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = 'Resend Verification Email';
-      btn.style.background = '';
-    }, 4000);
-  }
-
+  // Legacy helper — now proxies through resend-otp
+  const { ok, data } = await apiCall('POST', '/api/auth/resend-otp', { email, purpose: 'VERIFY_EMAIL' });
   Toast[ok ? 'success' : 'error'](data.message || data.error || 'Done');
 }
 
@@ -305,31 +443,23 @@ function initLoginPage() {
   const form = document.getElementById('loginForm');
   if (!form) return;
 
-  // Redirect if already logged in
-  if (Auth.isLoggedIn()) {
-    Auth.redirectToDashboard();
-    return;
-  }
+  if (Auth.isLoggedIn()) { Auth.redirectToDashboard(); return; }
 
-  // Show email verified success banner
-  const params = new URLSearchParams(window.location.search);
+  const params         = new URLSearchParams(window.location.search);
   const verifiedBanner = document.getElementById('loginVerifiedBanner');
   const loginError     = document.getElementById('loginError');
 
-  if (params.get('verified') === '1' && verifiedBanner) {
-    verifiedBanner.style.display = 'block';
-  }
+  if (params.get('verified') === '1' && verifiedBanner) verifiedBanner.style.display = 'block';
   if (params.get('verifyError') && loginError) {
-    const msg = params.get('verifyError') === 'expired'
+    loginError.textContent = params.get('verifyError') === 'expired'
       ? 'Verification link has expired. Please request a new one.'
       : 'Invalid verification link. Please try again.';
-    loginError.textContent = msg;
     loginError.classList.remove('hidden');
   }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = form.querySelector('[type=submit]');
+    const btn     = form.querySelector('[type=submit]');
     const errorEl = document.getElementById('loginError');
 
     if (verifiedBanner) verifiedBanner.style.display = 'none';
@@ -339,56 +469,70 @@ function initLoginPage() {
     const password = document.getElementById('loginPassword').value;
 
     btn.disabled = true;
-    btn.textContent = 'Logging in...';
+    btn.textContent = 'Sending code…';
 
     const { ok, data } = await apiCall('POST', '/api/auth/login', { email, password });
 
-    if (ok) {
-      Auth.save(data.token, data.user);
-      const actualRole = data.user.role;
-      const chosenRole = typeof selectedRole !== 'undefined' ? selectedRole : null;
-      const roleMismatch = chosenRole === 'employer' && actualRole === 'WORKER'
-        || chosenRole === 'worker' && actualRole === 'EMPLOYER';
+    const restoreBtn = () => {
+      btn.disabled = false;
+      const cfg = typeof ROLE_CONFIG !== 'undefined' && typeof selectedRole !== 'undefined'
+        ? ROLE_CONFIG[selectedRole] : null;
+      btn.textContent = cfg ? cfg.btnText : 'Login';
+    };
 
-      if (roleMismatch) {
-        const label = actualRole === 'EMPLOYER' ? 'Employer' : 'Job Seeker';
-        const errorEl = document.getElementById('loginError');
-        if (errorEl) {
-          errorEl.style.cssText = 'background:#fffbeb;border:1px solid #fbbf24;color:#92400e;padding:10px 14px;border-radius:8px;font-size:13px;';
-          errorEl.textContent = `This account is registered as a ${label}. Redirecting you to the correct dashboard...`;
-          errorEl.classList.remove('hidden');
-        }
-        setTimeout(() => Auth.redirectToDashboard(), 2200);
-      } else {
+    if (ok && data.requiresOtp) {
+      // Hide login form, show OTP panel
+      form.style.display = 'none';
+      const benefitsEl = document.getElementById('benefitsStrip');
+      const headerEl   = document.querySelector('.login-card-header');
+      if (benefitsEl) benefitsEl.style.display = 'none';
+      if (headerEl)   headerEl.style.display   = 'none';
+
+      showOtpPanel(data.email || email, data.masked, 'LOGIN', (result) => {
         Toast.success('Welcome back!');
         const next = new URLSearchParams(window.location.search).get('next');
         setTimeout(() => {
           if (next && next.startsWith('/')) window.location.href = next;
           else Auth.redirectToDashboard();
         }, 600);
-      }
+      }, () => {
+        form.style.display = 'block';
+        if (benefitsEl) benefitsEl.style.display = '';
+        if (headerEl)   headerEl.style.display   = '';
+        restoreBtn();
+      });
+
+    } else if (!ok && data.requiresOtp) {
+      // Unverified email — show OTP panel for email verification
+      form.style.display = 'none';
+      const benefitsEl = document.getElementById('benefitsStrip');
+      const headerEl   = document.querySelector('.login-card-header');
+      if (benefitsEl) benefitsEl.style.display = 'none';
+      if (headerEl)   headerEl.style.display   = 'none';
+
+      showOtpPanel(data.email || email, data.masked, 'VERIFY_EMAIL', () => {
+        Toast.success('Email verified! Welcome to ConsTradeHire.');
+        setTimeout(() => Auth.redirectToDashboard(), 800);
+      }, () => {
+        form.style.display = 'block';
+        if (benefitsEl) benefitsEl.style.display = '';
+        if (headerEl)   headerEl.style.display   = '';
+        restoreBtn();
+      });
+
+    } else if (ok && data.token) {
+      // Dev mode: no email configured, direct token returned
+      Auth.save(data.token, data.user);
+      Toast.success('Welcome back!');
+      const next = new URLSearchParams(window.location.search).get('next');
+      setTimeout(() => {
+        if (next && next.startsWith('/')) window.location.href = next;
+        else Auth.redirectToDashboard();
+      }, 600);
+
     } else {
-      if (errorEl) {
-        if (data.requiresVerification) {
-          // Show error with resend button
-          window._pendingVerifyEmail = data.email || email;
-          errorEl.innerHTML = `
-            ${escapeHtml(data.error || 'Please verify your email first.')}
-            <div style="margin-top:10px;">
-              <button id="loginResendBtn" onclick="resendVerificationEmail(window._pendingVerifyEmail)"
-                style="padding:7px 16px;border-radius:6px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">
-                Resend Verification Email
-              </button>
-            </div>`;
-        } else {
-          errorEl.textContent = data.error || 'Login failed';
-        }
-        errorEl.classList.remove('hidden');
-      }
-      btn.disabled = false;
-      const roleCfg = typeof ROLE_CONFIG !== 'undefined' && typeof selectedRole !== 'undefined'
-        ? ROLE_CONFIG[selectedRole] : null;
-      btn.textContent = roleCfg ? roleCfg.btnText : 'Login';
+      if (errorEl) { errorEl.textContent = data.error || 'Login failed'; errorEl.classList.remove('hidden'); }
+      restoreBtn();
     }
   });
 }

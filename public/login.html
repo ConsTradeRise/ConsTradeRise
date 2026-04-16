@@ -77,6 +77,22 @@
     }
     .login-benefit { font-size: 12px; color: var(--gray-500); display: flex; align-items: center; gap: 6px; }
     .login-benefit span:first-child { color: var(--green); font-weight: 700; }
+
+    /* OTP panel */
+    .otp-input {
+      font-size: 32px; font-weight: 800; letter-spacing: 10px; text-align: center;
+      width: 210px; border: 2px solid var(--gray-300); border-radius: 12px;
+      padding: 14px 10px; font-family: monospace; color: var(--gray-900); background: #fff;
+      display: block; margin: 0 auto 16px; transition: border-color .2s;
+    }
+    .otp-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+    .otp-submit {
+      width: 100%; padding: 13px; background: var(--blue); color: #fff; border: none;
+      border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 12px;
+      transition: background .2s;
+    }
+    .otp-submit:hover:not(:disabled) { background: #1d4ed8; }
+    .otp-submit:disabled { opacity: .6; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -132,6 +148,32 @@
     </div>
 
     <div id="loginError" class="alert alert-error hidden"></div>
+
+    <!-- OTP verification panel -->
+    <div id="otpPanel" style="display:none;text-align:center;padding:8px 0;">
+      <div style="font-size:48px;margin-bottom:12px;">🔐</div>
+      <h3 style="font-size:18px;font-weight:800;color:var(--gray-700);margin:0 0 8px;">Enter your login code</h3>
+      <p style="font-size:14px;color:var(--gray-500);margin:0 0 4px;">We sent a 6-digit code to</p>
+      <p id="otpMaskedEmail" style="font-size:15px;font-weight:700;color:var(--blue);margin:0 0 20px;"></p>
+
+      <div id="otpError" class="alert alert-error hidden" style="text-align:left;margin-bottom:12px;"></div>
+
+      <input id="otpInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+        placeholder="000000" class="otp-input" autocomplete="one-time-code" />
+
+      <button id="otpSubmitBtn" class="otp-submit" onclick="submitOtpStep()">Verify Code</button>
+
+      <p id="otpTimer" style="font-size:13px;color:var(--gray-500);margin:0 0 6px;"></p>
+      <button id="otpResendBtn" onclick="resendOtpStep()"
+        style="font-size:13px;color:var(--gray-400);cursor:not-allowed;background:none;border:none;font-weight:600;padding:4px;" disabled>
+        Resend code
+      </button>
+      <br>
+      <button onclick="cancelOtpStep()"
+        style="margin-top:12px;font-size:12px;color:var(--gray-400);background:none;border:none;cursor:pointer;">
+        ← Back
+      </button>
+    </div>
 
     <form id="loginForm">
       <div class="form-group">
