@@ -986,22 +986,22 @@
     <div class="trust-track" id="trust-track">
       <!-- set 1 -->
       <div class="trust-item"><div class="trust-stat">2,400+</div><div><div class="trust-item-text">Active Jobs</div><div class="trust-item-sub">Across Canada</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🏢</div><div><div class="trust-item-text">PCL Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🏗️</div><div><div class="trust-item-text">Jobs from Employers</div><div class="trust-item-sub">Across Canada</div></div></div>
       <div class="trust-item"><div class="trust-stat">94%</div><div><div class="trust-item-text">Match Accuracy</div><div class="trust-item-sub">AI-powered</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🔨</div><div><div class="trust-item-text">EllisDon</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">📍</div><div><div class="trust-item-text">Jobs from Ontario</div><div class="trust-item-sub">Trades &amp; Construction</div></div></div>
       <div class="trust-item"><div class="trust-stat">180+</div><div><div class="trust-item-text">Employers</div><div class="trust-item-sub">Active on platform</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">⚡</div><div><div class="trust-item-text">Graham Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">📍</div><div><div class="trust-item-text">Jobs from BC &amp; Alberta</div><div class="trust-item-sub">Trades &amp; Construction</div></div></div>
       <div class="trust-item"><div class="trust-stat">3×</div><div><div class="trust-item-text">Faster Interviews</div><div class="trust-item-sub">vs job boards</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🌟</div><div><div class="trust-item-text">Bird Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🔧</div><div><div class="trust-item-text">All Trades Welcome</div><div class="trust-item-sub">Electricians, Welders &amp; more</div></div></div>
       <!-- set 2 (duplicate for seamless loop) -->
       <div class="trust-item"><div class="trust-stat">2,400+</div><div><div class="trust-item-text">Active Jobs</div><div class="trust-item-sub">Across Canada</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🏢</div><div><div class="trust-item-text">PCL Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🏗️</div><div><div class="trust-item-text">Jobs from Employers</div><div class="trust-item-sub">Across Canada</div></div></div>
       <div class="trust-item"><div class="trust-stat">94%</div><div><div class="trust-item-text">Match Accuracy</div><div class="trust-item-sub">AI-powered</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🔨</div><div><div class="trust-item-text">EllisDon</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">📍</div><div><div class="trust-item-text">Jobs from Ontario</div><div class="trust-item-sub">Trades &amp; Construction</div></div></div>
       <div class="trust-item"><div class="trust-stat">180+</div><div><div class="trust-item-text">Employers</div><div class="trust-item-sub">Active on platform</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">⚡</div><div><div class="trust-item-text">Graham Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">📍</div><div><div class="trust-item-text">Jobs from BC &amp; Alberta</div><div class="trust-item-sub">Trades &amp; Construction</div></div></div>
       <div class="trust-item"><div class="trust-stat">3×</div><div><div class="trust-item-text">Faster Interviews</div><div class="trust-item-sub">vs job boards</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🌟</div><div><div class="trust-item-text">Bird Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🔧</div><div><div class="trust-item-text">All Trades Welcome</div><div class="trust-item-sub">Electricians, Welders &amp; more</div></div></div>
     </div>
   </div>
 
@@ -1507,7 +1507,7 @@
           if (typeof Auth !== 'undefined') Auth.save(data.token, data.user);
           else { localStorage.setItem('tu_token', data.token); localStorage.setItem('tu_user', JSON.stringify(data.user)); }
           closeLoginModal();
-          window.location.href = LM_ROLES[_lmRole].redirect;
+          window.location.href = lmNextUrl(LM_ROLES[_lmRole].redirect);
         } else if (data.requiresOtp) {
           window._lmEmail = email;
           window._lmPass  = pass;
@@ -1552,7 +1552,7 @@
           if (typeof Auth !== 'undefined') Auth.save(data.token, data.user);
           else { localStorage.setItem('tu_token', data.token); localStorage.setItem('tu_user', JSON.stringify(data.user)); }
           closeLoginModal();
-          window.location.href = LM_ROLES[_lmRole].redirect;
+          window.location.href = lmNextUrl(LM_ROLES[_lmRole].redirect);
         } else {
           errEl.textContent = data.error || 'Invalid code — try again';
           errEl.classList.remove('lm-hidden');
@@ -1624,6 +1624,12 @@
     function lmTogglePwd() {
       var inp = document.getElementById('lm-password');
       inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    // Redirect destination after login
+    function lmNextUrl(defaultUrl) {
+      var p = new URLSearchParams(window.location.search);
+      return p.get('next') || defaultUrl;
     }
 
     // Open modal if URL has ?login=1
