@@ -210,6 +210,7 @@ app.use('/api/messages',      messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin',         adminRoutes);
 app.use('/api/cover-letter', coverLetterRoutes);
+app.use('/api/ai',          aiLimiter, require('./routes/ai'));
 app.use('/api/alerts',      alertRoutes);
 app.use('/api/interviews',  interviewRoutes);
 app.use('/api/workers',     workerRoutes);
