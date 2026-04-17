@@ -233,6 +233,15 @@
       <div class="stats-grid" id="statsGrid">
         <div class="loading">Loading stats…</div>
       </div>
+
+      <div class="section-header" style="margin-top:28px;">
+        <div class="section-title">Job Scraper — Construction Companies</div>
+        <button class="page-btn" id="scrapeBtn" onclick="runScrape()">Run Scrape</button>
+      </div>
+      <div id="scrapeStatus" style="font-size:13px;color:var(--text-sub);margin-bottom:8px;">
+        Scrapes Adzuna for jobs at PCL, EllisDon, Aecon, Graham, Bird, Ledcor, Pomerleau and 30+ more.
+      </div>
+      <div id="scrapeResults" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;"></div>
     </div>
 
     <!-- ── Users ── -->
@@ -643,6 +652,57 @@ function renderPagination(elId, page, pages, onPage) {
   next.disabled = page >= pages;
   next.onclick = function() { onPage(page + 1); };
   wrap.appendChild(next);
+}
+
+// ── Company Job Scraper ───────────────────────────
+async function runScrape() {
+  var btn = document.getElementById('scrapeBtn');
+  var status = document.getElementById('scrapeStatus');
+  var results = document.getElementById('scrapeResults');
+  btn.disabled = true;
+  btn.textContent = 'Scraping…';
+  status.textContent = 'Running — this takes ~30 seconds, querying Adzuna for each company…';
+  results.style.display = 'none';
+
+  var res = await api('POST', '/scrape-companies');
+  btn.disabled = false;
+  btn.textContent = 'Run Scrape';
+
+  if (!res.ok) {
+    status.textContent = 'Error: ' + (res.data?.error || 'Scrape failed');
+    return;
+  }
+
+  var d = res.data;
+  status.textContent = 'Done — ' + d.added + ' new jobs added, ' + d.skipped + ' duplicates skipped.';
+  results.style.display = 'block';
+  results.textContent = '';
+
+  var summary = document.createElement('div');
+  summary.style.cssText = 'font-weight:700;margin-bottom:10px;color:var(--green)';
+  summary.textContent = '+' + d.added + ' jobs added across ' + (d.companies || []).filter(function(c) { return c.added > 0; }).length + ' companies';
+  results.appendChild(summary);
+
+  (d.companies || []).forEach(function(c) {
+    if (c.found === 0) return;
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:4px 0;border-bottom:1px solid var(--border);';
+    row.textContent = c.company + ' — ' + c.found + ' found, ' + c.added + ' added';
+    results.appendChild(row);
+  });
+
+  if (d.errors && d.errors.length) {
+    var errTitle = document.createElement('div');
+    errTitle.style.cssText = 'margin-top:10px;font-weight:700;color:var(--red)';
+    errTitle.textContent = 'Errors (' + d.errors.length + ')';
+    results.appendChild(errTitle);
+    d.errors.forEach(function(e) {
+      var row = document.createElement('div');
+      row.style.cssText = 'color:var(--red);font-size:12px;';
+      row.textContent = e.company + ': ' + e.error;
+      results.appendChild(row);
+    });
+  }
 }
 
 // ── Init ──────────────────────────────────────────
