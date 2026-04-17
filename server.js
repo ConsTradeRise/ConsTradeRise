@@ -366,7 +366,7 @@ async function searchJobsWithAdzuna(role, location) {
       source:   'Adzuna',
       posted:   j.created,
       url:      j.redirect_url,
-      summary:  j.description ? j.description.substring(0, 300) : ''
+      description: j.description || ''
     }));
     return jobs.filter(j => j.title && j.company);
   } catch (e) {
@@ -408,7 +408,7 @@ async function searchJobsWithJooble(keywords, location) {
             source:   'Jooble',
             posted:   j.updated,
             url:      j.link    || null,
-            summary:  j.snippet ? j.snippet.substring(0, 300) : ''
+            description: j.snippet || ''
           }));
           resolve(jobs.filter(j => j.title));
         } catch { resolve([]); }
@@ -442,7 +442,7 @@ async function fetchApifyDataset() {
       source:   'Indeed (CA)',
       posted:   j.postingDateParsed || j.postedAt || null,
       url:      j.externalApplyLink || j.url || null,
-      summary:  j.description ? j.description.substring(0, 300) : ''
+      description: j.description || ''
     })).filter(j => j.title);
   } catch (e) {
     console.error('[search] Apify dataset fetch failed:', e.message);

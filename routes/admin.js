@@ -357,6 +357,24 @@ router.get('/applications', async (req, res) => {
   }
 });
 
+// ─── PURGE TRUNCATED API JOBS ───────────────────
+// DELETE /api/admin/purge-truncated
+// Removes API-sourced jobs with description ≤300 chars so they get re-imported fresh
+router.delete('/purge-truncated', requireAuth, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const all = await prisma.job.findMany({
+      where: { source: 'API' },
+      select: { id: true, description: true }
+    });
+    const truncated = all.filter(j => (j.description || '').length <= 300).map(j => j.id);
+    if (!truncated.length) return res.json({ ok: true, deleted: 0 });
+    await prisma.job.deleteMany({ where: { id: { in: truncated } } });
+    res.json({ ok: true, deleted: truncated.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── SCRAPE COMPANY JOBS ────────────────────────
 // POST /api/admin/scrape-companies
 // Pulls jobs from Adzuna for each company in our directory, saves new ones to DB

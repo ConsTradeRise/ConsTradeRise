@@ -236,6 +236,7 @@
 
       <div class="section-header" style="margin-top:28px;">
         <div class="section-title">Job Scraper — Construction Companies</div>
+        <button class="page-btn action-btn-red" id="purgeBtn" onclick="purgeTruncated()" style="margin-right:8px;">Purge Truncated</button>
         <button class="page-btn" id="scrapeBtn" onclick="runScrape()">Run Scrape</button>
       </div>
       <div id="scrapeStatus" style="font-size:13px;color:var(--text-sub);margin-bottom:8px;">
@@ -652,6 +653,24 @@ function renderPagination(elId, page, pages, onPage) {
   next.disabled = page >= pages;
   next.onclick = function() { onPage(page + 1); };
   wrap.appendChild(next);
+}
+
+// ── Purge truncated descriptions ──────────────────
+async function purgeTruncated() {
+  var btn = document.getElementById('purgeBtn');
+  var status = document.getElementById('scrapeStatus');
+  if (!confirm('Delete all API jobs with descriptions ≤300 chars so they can be re-imported fresh?')) return;
+  btn.disabled = true;
+  btn.textContent = 'Purging…';
+  status.textContent = 'Deleting truncated jobs…';
+  var res = await api('DELETE', '/purge-truncated');
+  btn.disabled = false;
+  btn.textContent = 'Purge Truncated';
+  if (res.ok) {
+    status.textContent = 'Deleted ' + res.data.deleted + ' truncated jobs. Now click Run Scrape to re-import with full descriptions.';
+  } else {
+    status.textContent = 'Error: ' + (res.data?.error || 'Purge failed');
+  }
 }
 
 // ── Company Job Scraper ───────────────────────────
