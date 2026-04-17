@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Construction Companies — ConsTradeHire</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .page-hero {
+      padding: 48px 0 32px;
+      text-align: center;
+    }
+    .page-hero h1 {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+    .page-hero p {
+      font-size: 15px;
+      color: var(--gray-500);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-bar input, .filter-bar select {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-card);
+      color: var(--gray-700);
+      font-size: 14px;
+      font-family: var(--font);
+      outline: none;
+    }
+    .filter-bar input { flex: 1; min-width: 200px; }
+    .filter-bar input:focus, .filter-bar select:focus {
+      border-color: var(--blue);
+    }
+    .results-count {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+    .companies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .company-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      transition: border-color .2s, transform .15s;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .company-card:hover {
+      border-color: var(--blue);
+      transform: translateY(-1px);
+    }
+    .company-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+    .company-type {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .company-meta {
+      font-size: 13px;
+      color: var(--gray-500);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .company-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .company-desc {
+      font-size: 13px;
+      color: var(--gray-400);
+      line-height: 1.6;
+      flex: 1;
+    }
+    .company-trades {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .trade-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: rgba(37,99,235,.12);
+      color: var(--blue);
+    }
+    .company-links {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .company-links a {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: background .15s;
+    }
+    .link-website {
+      background: rgba(255,255,255,.06);
+      color: var(--gray-500);
+      border: 1px solid var(--border);
+    }
+    .link-website:hover { background: rgba(255,255,255,.1); }
+    .link-careers {
+      background: var(--blue);
+      color: #fff;
+    }
+    .link-careers:hover { opacity: .9; }
+    .province-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .prov-pill {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255,255,255,.06);
+      color: var(--gray-500);
+      letter-spacing: .3px;
+    }
+    .empty-companies {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--gray-500);
+    }
+    .empty-companies h3 { font-size: 18px; margin-bottom: 8px; color: var(--gray-700); }
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding-bottom: 40px;
+    }
+    .page-btn {
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-card);
+      color: var(--gray-700);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .page-btn:hover { background: rgba(255,255,255,.08); }
+    .page-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .page-btn:disabled { opacity: .4; cursor: default; }
+    @media(max-width:640px) {
+      .companies-grid { grid-template-columns: 1fr; }
+      .filter-bar { flex-direction: column; }
+      .results-count { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar" id="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="logo">ConsTradeHire</a>
+    <div class="nav-links" id="navLinks">
+      <a href="/jobs.html">Browse Jobs</a>
+      <a href="/companies.html" class="active">Companies</a>
+      <a href="#" id="navDashboardLink" style="display:none">Dashboard</a>
+      <a href="#" id="navLogoutBtn" style="display:none" class="btn btn-ghost">Logout</a>
+      <a href="/" id="navLoginBtn" class="btn btn-ghost">Login</a>
+      <a href="/register.html" id="navRegisterBtn" class="btn btn-primary">Get Started</a>
+    </div>
+    <button class="nav-toggle" id="navToggle">&#9776;</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-hero">
+    <h1>Construction Companies Directory</h1>
+    <p>Browse verified Canadian construction employers — from national GCs to specialty trade contractors across Ontario and beyond.</p>
+  </div>
+
+  <div class="filter-bar">
+    <input type="text" id="searchInput" placeholder="Search company name, trade, or city…" />
+    <select id="provinceFilter">
+      <option value="">All Provinces</option>
+      <option value="ON">Ontario</option>
+      <option value="BC">British Columbia</option>
+      <option value="AB">Alberta</option>
+      <option value="QC">Quebec</option>
+      <option value="MB">Manitoba</option>
+      <option value="SK">Saskatchewan</option>
+      <option value="NS">Nova Scotia</option>
+      <option value="NB">New Brunswick</option>
+      <option value="NL">Newfoundland</option>
+    </select>
+    <select id="typeFilter">
+      <option value="">All Types</option>
+    </select>
+    <span class="results-count" id="resultsCount"></span>
+  </div>
+
+  <div class="companies-grid" id="companiesGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:40px;">
+      <div class="spinner" style="width:36px;height:36px;border-width:3px;margin:auto;"></div>
+    </div>
+  </div>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+(function initNav() {
+  if (Auth.isLoggedIn()) {
+    var role = Auth.getRole();
+    document.getElementById('navLoginBtn').style.display    = 'none';
+    document.getElementById('navRegisterBtn').style.display = 'none';
+    document.getElementById('navLogoutBtn').style.display   = 'inline-flex';
+    var dash = document.getElementById('navDashboardLink');
+    dash.style.display = 'inline';
+    dash.href = role === 'EMPLOYER' ? '/employer.html' : '/dashboard.html';
+    dash.textContent = 'Dashboard';
+    document.getElementById('navLogoutBtn').onclick = function() {
+      Auth.clear(); window.location.href = '/';
+    };
+  }
+})();
+
+// Navbar scroll
+var navbar = document.getElementById('navbar');
+window.addEventListener('scroll', function() {
+  navbar.classList.toggle('scrolled', window.scrollY > 20);
+});
+
+// Mobile nav
+var navToggle = document.getElementById('navToggle');
+var navLinks  = document.getElementById('navLinks');
+navToggle.addEventListener('click', function() {
+  navLinks.classList.toggle('open');
+});
+
+// ── State ──────────────────────────────────────
+var _page     = 1;
+var _search   = '';
+var _province = '';
+var _type     = '';
+var _debounce = null;
+
+// ── Fetch & Render ─────────────────────────────
+async function loadCompanies() {
+  var params = new URLSearchParams();
+  if (_page     > 1)  params.set('page',     _page);
+  if (_search)        params.set('search',   _search);
+  if (_province)      params.set('province', _province);
+  if (_type)          params.set('type',     _type);
+
+  var res  = await fetch('/api/companies?' + params.toString());
+  var data = await res.json();
+
+  renderGrid(data.companies || []);
+  renderPagination(data.total || 0, data.pages || 1);
+  document.getElementById('resultsCount').textContent =
+    (data.total || 0) + ' compan' + ((data.total || 0) === 1 ? 'y' : 'ies');
+
+  // Populate type filter once
+  if (data.types && document.getElementById('typeFilter').options.length === 1) {
+    data.types.forEach(function(t) {
+      var opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      document.getElementById('typeFilter').appendChild(opt);
+    });
+  }
+}
+
+function renderGrid(companies) {
+  var grid = document.getElementById('companiesGrid');
+  grid.textContent = '';
+
+  if (!companies.length) {
+    var empty = document.createElement('div');
+    empty.className = 'empty-companies';
+    empty.style.gridColumn = '1 / -1';
+    var h3 = document.createElement('h3');
+    h3.textContent = 'No companies found';
+    var p  = document.createElement('p');
+    p.textContent = 'Try a different search or filter.';
+    empty.appendChild(h3);
+    empty.appendChild(p);
+    grid.appendChild(empty);
+    return;
+  }
+
+  companies.forEach(function(c) {
+    var card = document.createElement('div');
+    card.className = 'company-card';
+
+    // Header row
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;';
+
+    var nameWrap = document.createElement('div');
+    var nameEl   = document.createElement('div');
+    nameEl.className = 'company-name';
+    nameEl.textContent = c.name;
+    var typeEl = document.createElement('div');
+    typeEl.className = 'company-type';
+    typeEl.textContent = c.type;
+    nameWrap.appendChild(nameEl);
+    nameWrap.appendChild(typeEl);
+
+    var sizeEl = document.createElement('span');
+    sizeEl.style.cssText = 'font-size:11px;color:var(--gray-500);white-space:nowrap;';
+    sizeEl.textContent = c.size || '';
+
+    header.appendChild(nameWrap);
+    header.appendChild(sizeEl);
+    card.appendChild(header);
+
+    // Meta: HQ + founded
+    var meta = document.createElement('div');
+    meta.className = 'company-meta';
+    var hqSpan = document.createElement('span');
+    hqSpan.textContent = '\uD83D\uDCCD ' + (c.hq || '');
+    meta.appendChild(hqSpan);
+    if (c.founded) {
+      var fndSpan = document.createElement('span');
+      fndSpan.textContent = '\uD83D\uDCC5 Est. ' + c.founded;
+      meta.appendChild(fndSpan);
+    }
+    card.appendChild(meta);
+
+    // Description
+    if (c.description) {
+      var desc = document.createElement('div');
+      desc.className = 'company-desc';
+      desc.textContent = c.description;
+      card.appendChild(desc);
+    }
+
+    // Province pills
+    if (c.provinces && c.provinces.length) {
+      var provWrap = document.createElement('div');
+      provWrap.className = 'province-pills';
+      c.provinces.forEach(function(pv) {
+        var pill = document.createElement('span');
+        pill.className = 'prov-pill';
+        pill.textContent = pv;
+        provWrap.appendChild(pill);
+      });
+      card.appendChild(provWrap);
+    }
+
+    // Trade tags
+    if (c.trades && c.trades.length) {
+      var tradeWrap = document.createElement('div');
+      tradeWrap.className = 'company-trades';
+      c.trades.slice(0, 5).forEach(function(t) {
+        var tag = document.createElement('span');
+        tag.className = 'trade-tag';
+        tag.textContent = t;
+        tradeWrap.appendChild(tag);
+      });
+      card.appendChild(tradeWrap);
+    }
+
+    // Links
+    var links = document.createElement('div');
+    links.className = 'company-links';
+
+    if (c.website) {
+      var wLink = document.createElement('a');
+      wLink.href = c.website;
+      wLink.target = '_blank';
+      wLink.rel = 'noopener noreferrer';
+      wLink.className = 'link-website';
+      wLink.textContent = 'Website \u2197';
+      links.appendChild(wLink);
+    }
+    if (c.careers) {
+      var cLink = document.createElement('a');
+      cLink.href = c.careers;
+      cLink.target = '_blank';
+      cLink.rel = 'noopener noreferrer';
+      cLink.className = 'link-careers';
+      cLink.textContent = 'View Careers \u2192';
+      links.appendChild(cLink);
+    }
+    card.appendChild(links);
+
+    grid.appendChild(card);
+  });
+}
+
+function renderPagination(total, pages) {
+  var pag = document.getElementById('pagination');
+  pag.textContent = '';
+  if (pages <= 1) return;
+
+  var prev = document.createElement('button');
+  prev.className = 'page-btn';
+  prev.textContent = '\u2190 Prev';
+  prev.disabled = _page <= 1;
+  prev.onclick = function() { _page--; loadCompanies(); window.scrollTo(0,0); };
+  pag.appendChild(prev);
+
+  for (var i = 1; i <= pages; i++) {
+    var btn = document.createElement('button');
+    btn.className = 'page-btn' + (i === _page ? ' active' : '');
+    btn.textContent = i;
+    btn.dataset.page = i;
+    (function(pg) {
+      btn.onclick = function() { _page = pg; loadCompanies(); window.scrollTo(0,0); };
+    })(i);
+    pag.appendChild(btn);
+  }
+
+  var next = document.createElement('button');
+  next.className = 'page-btn';
+  next.textContent = 'Next \u2192';
+  next.disabled = _page >= pages;
+  next.onclick = function() { _page++; loadCompanies(); window.scrollTo(0,0); };
+  pag.appendChild(next);
+}
+
+// ── Filters ────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(_debounce);
+  _debounce = setTimeout(function() {
+    _search = document.getElementById('searchInput').value.trim();
+    _page   = 1;
+    loadCompanies();
+  }, 280);
+});
+
+document.getElementById('provinceFilter').addEventListener('change', function() {
+  _province = this.value;
+  _page     = 1;
+  loadCompanies();
+});
+
+document.getElementById('typeFilter').addEventListener('change', function() {
+  _type = this.value;
+  _page = 1;
+  loadCompanies();
+});
+
+// ── Init ───────────────────────────────────────
+loadCompanies();
+</script>
+</body>
+</html>

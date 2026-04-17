@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login — ConsTradeHire</title>
+  <script>
+    if (localStorage.getItem('adminToken')) {
+      window.location.replace('/admin/index.html');
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #09090f;
+      --surface: #13131f;
+      --border: rgba(255,255,255,0.07);
+      --orange: #f97316;
+      --orange-dim: rgba(249,115,22,0.12);
+      --orange-glow: rgba(249,115,22,0.25);
+      --text: #f1f5f9;
+      --text-muted: #64748b;
+      --text-sub: #94a3b8;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    body {
+      background: var(--bg); color: var(--text); font-family: var(--font);
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
+      background-image:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(249,115,22,0.07) 0%, transparent 70%),
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 64px 64px, 64px 64px;
+    }
+    .page {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 32px 16px;
+    }
+    .logo {
+      font-size: 22px; font-weight: 800; color: var(--text);
+      text-decoration: none; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px;
+    }
+    .logo-dot { color: var(--orange); }
+    .logo-sub { font-size: 11px; font-weight: 700; color: var(--orange); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 28px; }
+    .card {
+      background: rgba(19,19,31,0.8); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 32px; width: 100%; max-width: 400px;
+      backdrop-filter: blur(24px); box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    }
+    .card-title { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+    .card-sub   { font-size: 12px; color: var(--text-muted); margin-bottom: 22px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+    .form-input {
+      width: 100%; padding: 11px 14px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text); font-family: var(--font); font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+    }
+    .form-input::placeholder { color: var(--text-muted); }
+    .form-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(249,115,22,0.12); }
+    .btn-primary {
+      width: 100%; padding: 12px; background: var(--orange);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 700; font-family: var(--font);
+      cursor: pointer; margin-top: 6px; transition: background 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover:not(:disabled) { background: #ea6c0e; box-shadow: 0 0 24px var(--orange-glow); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+    .alert { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
+    .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .hidden { display: none !important; }
+    .back-link { margin-top: 20px; font-size: 12px; color: var(--text-muted); text-align: center; }
+    .back-link a { color: var(--text-muted); text-decoration: none; }
+    .back-link a:hover { color: var(--text-sub); }
+  </style>
+</head>
+<body>
+<div class="page">
+  <a href="/" class="logo"><span>ConsTradeHire</span><span class="logo-dot">.</span></a>
+  <div class="logo-sub">Admin Panel</div>
+
+  <div class="card">
+    <div class="card-title">Admin Login</div>
+    <div class="card-sub">Restricted access — authorised personnel only</div>
+
+    <div id="loginError" class="alert alert-error hidden"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input class="form-input" id="email" type="email" placeholder="admin@example.com" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-input" id="password" type="password" placeholder="Admin password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn-primary" id="loginBtn">Login to Admin Panel</button>
+    </form>
+  </div>
+
+  <p class="back-link"><a href="/">← Back to site</a></p>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var btn     = document.getElementById('loginBtn');
+  var errorEl = document.getElementById('loginError');
+  var email   = document.getElementById('email').value.trim();
+  var password = document.getElementById('password').value;
+
+  errorEl.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Logging in…';
+
+  try {
+    var res = await fetch('/api/admin/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    var data = await res.json();
+
+    if (res.ok && data.token) {
+      localStorage.setItem('adminToken', data.token);
+      localStorage.setItem('adminName', data.name || 'Admin');
+      window.location.href = '/admin/index.html';
+    } else {
+      errorEl.textContent = data.error || 'Invalid credentials';
+      errorEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Login to Admin Panel';
+    }
+  } catch (err) {
+    errorEl.textContent = 'Network error — please try again';
+    errorEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Login to Admin Panel';
+  }
+});
+</script>
+</body>
+</html>

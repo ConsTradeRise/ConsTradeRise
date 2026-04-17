@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Worker Dashboard — ConsTradeHire</title>
+  <script>if(!localStorage.getItem('tu_token')){var _rn=encodeURIComponent(location.pathname+location.search);location.replace('/?login=1&role=worker&next='+_rn);}</script>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#f97316" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -82,6 +83,7 @@
     <a href="/" class="logo">ConsTradeHire</a>
     <div class="nav-links" id="navLinks">
       <a href="/jobs.html">Browse Jobs</a>
+      <a href="/companies.html">Companies</a>
       <a href="#" id="navDashboardLink" style="display:none">Dashboard</a>
       <a href="#" id="navLogoutBtn" style="display:none" class="btn btn-ghost">Logout</a>
       <a href="/login.html" id="navLoginBtn" class="btn btn-ghost">Login</a>
@@ -266,10 +268,13 @@
         </div>
       </div>
 
-      <!-- Recommended Jobs -->
+      <!-- AI Recommended Jobs -->
       <div class="card mt-2" id="recommendedCard" style="display:none;">
         <div class="flex-between mb-2">
-          <div class="card-title" style="margin-bottom:0;">Recommended for You</div>
+          <div class="card-title" style="margin-bottom:0;">
+            🤖 AI Picks For You
+            <span id="aiMatchBadge" style="display:none;margin-left:8px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;vertical-align:middle;">AI</span>
+          </div>
           <a href="/jobs.html" class="btn btn-ghost btn-sm">Browse All →</a>
         </div>
         <div id="recommendedJobs"></div>
@@ -727,26 +732,93 @@ function switchTab(tab) {
   if (mobileItem) mobileItem.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
 }
 
-// Recommended jobs based on profile skills
+// AI-powered job matching (Match Profile to Positions agent)
 async function loadRecommendedJobs(profile) {
   if (!profile?.skills?.length && !profile?.headline) return;
-  const search = profile.headline?.split(' ')[0] || profile.skills?.[0] || '';
-  if (!search) return;
-  const { ok, data } = await apiCall('GET', `/api/jobs?search=${encodeURIComponent(search)}&limit=3`);
-  if (!ok || !data.jobs?.length) return;
-  const card = document.getElementById('recommendedCard');
-  const el   = document.getElementById('recommendedJobs');
+  var card  = document.getElementById('recommendedCard');
+  var el    = document.getElementById('recommendedJobs');
+  var badge = document.getElementById('aiMatchBadge');
+
+  // Loading state via DOM
   card.style.display = 'block';
-  el.innerHTML = data.jobs.map(j => `
-    <a href="/job.html?id=${j.id}" style="text-decoration:none;">
-      <div class="app-row" style="border-bottom:1px solid var(--gray-100);">
-        <div class="app-info">
-          <div class="app-title">${escapeHtml(j.title)}</div>
-          <div class="app-company">${escapeHtml(j.companyName||'')} · ${escapeHtml(j.city||j.location||'')}</div>
-        </div>
-        <span class="btn btn-sm btn-outline" style="flex-shrink:0;">View →</span>
-      </div>
-    </a>`).join('');
+  el.textContent = '';
+  var loadDiv = document.createElement('div');
+  loadDiv.style.cssText = 'text-align:center;padding:16px;';
+  var spin = document.createElement('div');
+  spin.className = 'spinner';
+  var loadTxt = document.createElement('p');
+  loadTxt.style.cssText = 'font-size:12px;color:var(--gray-500);margin-top:8px;';
+  loadTxt.textContent = 'AI is finding your best matches\u2026';
+  loadDiv.appendChild(spin);
+  loadDiv.appendChild(loadTxt);
+  el.appendChild(loadDiv);
+
+  var result = await apiCall('POST', '/api/ai/match', {});
+  if (!result.ok || !result.data.jobs?.length) { card.style.display = 'none'; return; }
+  var aiData = result.data;
+
+  if (aiData.aiPowered) badge.style.display = 'inline';
+  el.textContent = '';
+
+  aiData.jobs.forEach(function(j, idx) {
+    var score      = j.score || 0;
+    var scoreColor = score >= 80 ? '#16a34a' : score >= 60 ? '#d97706' : '#6b7280';
+    var isLast     = idx === aiData.jobs.length - 1;
+
+    var link = document.createElement('a');
+    link.href  = '/job.html?id=' + encodeURIComponent(j.id);
+    link.style.cssText = 'text-decoration:none;display:block;';
+
+    var row = document.createElement('div');
+    row.className = 'app-row';
+    row.style.cssText = (isLast ? '' : 'border-bottom:1px solid var(--gray-100);') + 'padding:10px 0;';
+
+    // Info column
+    var info = document.createElement('div');
+    info.className = 'app-info';
+    info.style.cssText = 'flex:1;min-width:0;';
+
+    var titleEl = document.createElement('div');
+    titleEl.className = 'app-title';
+    titleEl.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    titleEl.textContent = j.title || '';
+
+    var companyEl = document.createElement('div');
+    companyEl.className = 'app-company';
+    var loc = [j.companyName, (j.city || j.location), j.jobType].filter(Boolean).join(' \u00b7 ');
+    companyEl.textContent = loc;
+
+    info.appendChild(titleEl);
+    info.appendChild(companyEl);
+
+    if (j.reason) {
+      var reasonEl = document.createElement('div');
+      reasonEl.style.cssText = 'font-size:11px;color:var(--gray-400);margin-top:2px;';
+      reasonEl.textContent = '\ud83d\udca1 ' + j.reason;
+      info.appendChild(reasonEl);
+    }
+
+    // Right column: score + view button
+    var right = document.createElement('div');
+    right.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;margin-left:12px;';
+
+    if (aiData.aiPowered) {
+      var scoreBadge = document.createElement('span');
+      scoreBadge.style.cssText = 'font-size:11px;font-weight:700;color:' + scoreColor + ';background:' + scoreColor + '18;padding:2px 8px;border-radius:12px;';
+      scoreBadge.textContent = score + '% match';
+      right.appendChild(scoreBadge);
+    }
+
+    var viewBtn = document.createElement('span');
+    viewBtn.className = 'btn btn-sm btn-outline';
+    viewBtn.textContent = 'View \u2192';
+    right.appendChild(viewBtn);
+
+    row.appendChild(info);
+    row.appendChild(right);
+    link.appendChild(row);
+    el.appendChild(link);
+  });
 }
 
 // Load dashboard data

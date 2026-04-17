@@ -26,7 +26,7 @@ const Auth = {
 
   redirectIfNotAuth() {
     if (!this.isLoggedIn()) {
-      window.location.href = '/login.html?next=' + encodeURIComponent(window.location.pathname);
+      window.location.href = '/?login=1&next=' + encodeURIComponent(window.location.pathname);
       return true;
     }
     return false;

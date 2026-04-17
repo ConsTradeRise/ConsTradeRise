@@ -12,12 +12,48 @@
 
 'use strict';
 const express = require('express');
-const prisma = require('../utils/prisma');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const bcrypt  = require('bcryptjs');
+const prisma  = require('../utils/prisma');
+const { requireAuth, requireRole, generateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// All admin routes require ADMIN role
+// ─── ADMIN LOGIN (public — no auth required) ───
+router.post('/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const ADMIN_EMAIL    = process.env.ADMIN_EMAIL;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+      return res.status(503).json({ error: 'Admin access is not configured on this server.' });
+    }
+    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Find or create the admin user in DB for JWT payload
+    let user = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+    if (!user) {
+      const hash = await bcrypt.hash(ADMIN_PASSWORD, 12);
+      user = await prisma.user.create({
+        data: {
+          name: 'Admin', email: ADMIN_EMAIL,
+          passwordHash: hash, role: 'ADMIN',
+          emailVerified: true,
+          profile: { create: {} }
+        }
+      });
+    }
+
+    const token = generateToken(user);
+    res.json({ token, name: user.name, email: user.email });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// All other admin routes require ADMIN role
 router.use(requireAuth, requireRole('ADMIN'));
 
 // ─── STATS ────────────────────────────────────

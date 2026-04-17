@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Employer Dashboard — ConsTradeHire</title>
+  <script>if(!localStorage.getItem('tu_token')){var _rn=encodeURIComponent(location.pathname+location.search);location.replace('/?login=1&role=employer&next='+_rn);}</script>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#2563eb" />
   <link rel="stylesheet" href="/style.css" />
@@ -540,7 +541,13 @@
         </div>
       </div>
       <div class="field"><label>Salary / Rate</label><input class="input" id="jSalary" placeholder="e.g. $80k–$100k/yr" /></div>
-      <div class="field"><label>Description *</label><textarea class="textarea" id="jDesc" required placeholder="Role, responsibilities, requirements…"></textarea></div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin:0;">Description *</label>
+          <button type="button" id="genDescBtn" onclick="generateJobDesc()" style="font-size:11px;font-weight:700;padding:4px 10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:6px;cursor:pointer;">&#10024; Generate with AI</button>
+        </div>
+        <textarea class="textarea" id="jDesc" required placeholder="Role, responsibilities, requirements\u2026"></textarea>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn" onclick="closePostJob()">Cancel</button>
@@ -848,6 +855,40 @@ async function setStatus(appId, status) {
 }
 
 // ── Post Job ──────────────────────────────────
+// ── AI Job Description Generator ──────────────
+async function generateJobDesc() {
+  var btn    = document.getElementById('genDescBtn');
+  var desc   = document.getElementById('jDesc');
+  var title  = (document.getElementById('jTitle')  || {}).value  || '';
+  var city   = (document.getElementById('jCity')   || {}).value  || '';
+  var prov   = (document.getElementById('jProv')   || {}).value  || '';
+  var salary = (document.getElementById('jSalary') || {}).value  || '';
+  var jType  = (document.getElementById('jType')   || {}).value  || '';
+
+  if (!title) { Toast.error('Enter a job title first'); return; }
+
+  btn.disabled    = true;
+  btn.textContent = 'Generating\u2026';
+
+  var res  = await fetch('/api/ai/generate-job', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + Auth.getToken() },
+    body:    JSON.stringify({ title: title, city: city, province: prov, salary: salary, jobType: jType })
+  });
+  var data = await res.json();
+
+  if (res.ok && data.description) {
+    desc.value = data.description;
+    desc.style.minHeight = '220px';
+    Toast.success('Description generated \u2014 review and edit as needed');
+  } else {
+    Toast.error(data.error || 'AI generation failed. Check ANTHROPIC_API_KEY.');
+  }
+
+  btn.disabled    = false;
+  btn.textContent = '\u2728 Generate with AI';
+}
+
 function openPostJob() { document.getElementById('postJobModal').classList.add('open'); }
 function closePostJob() {
   document.getElementById('postJobModal').classList.remove('open');

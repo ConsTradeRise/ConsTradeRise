@@ -692,6 +692,121 @@
       .footer-inner { flex-direction: column; gap: 12px; text-align: center; }
       .footer-links { justify-content: center; }
     }
+
+    /* ── Login Modal ──────────────────────────── */
+    #login-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 2000;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    #login-modal-overlay.open { display: flex; }
+    .login-modal {
+      background: rgba(19,19,31,0.97); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px; width: 100%; max-width: 460px;
+      backdrop-filter: blur(24px); box-shadow: 0 0 80px rgba(0,0,0,0.6);
+      animation: modal-in 0.22s cubic-bezier(0.34,1.56,0.64,1);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .lm-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 0;
+    }
+    .lm-logo { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.4px; }
+    .lm-logo span { color: var(--orange); }
+    .lm-close {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); border: none; cursor: pointer;
+      color: var(--text-muted); font-size: 14px; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .lm-close:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+    .lm-body { padding: 16px 20px 24px; }
+
+    /* Role chooser inside modal */
+    .lm-role-chooser {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;
+    }
+    .lm-role-choice {
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 10px; text-align: center; cursor: pointer;
+      background: rgba(255,255,255,0.03); transition: all 0.2s ease;
+    }
+    .lm-role-choice:hover { border-color: var(--orange); background: var(--orange-dim); }
+    .lm-role-choice.active { border-color: var(--orange); background: var(--orange-dim); box-shadow: 0 0 16px var(--orange-glow); }
+    .lm-role-icon  { font-size: 24px; margin-bottom: 4px; }
+    .lm-role-title { font-size: 12px; font-weight: 700; color: var(--text); }
+    .lm-role-sub   { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+
+    /* Card inside modal */
+    .lm-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px;
+    }
+    .lm-card-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .lm-card-icon  { font-size: 22px; }
+    .lm-card-title { font-size: 15px; font-weight: 800; color: var(--text); }
+    .lm-card-sub   { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .lm-form-group { margin-bottom: 12px; }
+    .lm-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 5px; }
+    .lm-input {
+      width: 100%; padding: 10px 13px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 9px; color: var(--text); font-family: var(--font); font-size: 13px;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .lm-input::placeholder { color: var(--text-muted); }
+    .lm-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(249,115,22,0.12); }
+    .lm-pwd-wrap { position: relative; }
+    .lm-pwd-toggle {
+      position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 14px; padding: 0;
+    }
+    .lm-btn {
+      width: 100%; padding: 11px; background: var(--orange);
+      color: #fff; border: none; border-radius: 9px;
+      font-size: 13px; font-weight: 700; font-family: var(--font);
+      cursor: pointer; margin-top: 4px; transition: background 0.2s, box-shadow 0.2s;
+    }
+    .lm-btn:hover:not(:disabled) { background: #ea6c0e; box-shadow: 0 0 20px var(--orange-glow); }
+    .lm-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .lm-alert { border-radius: 8px; padding: 9px 12px; font-size: 12px; margin-bottom: 12px; }
+    .lm-alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .lm-hidden { display: none !important; }
+
+    .lm-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+    .lm-divider-line { flex: 1; height: 1px; background: var(--border); }
+    .lm-divider-text { font-size: 10px; color: var(--text-muted); }
+
+    /* OTP inside modal */
+    .lm-otp-panel { text-align: center; padding: 4px 0; }
+    .lm-otp-icon  { font-size: 36px; margin-bottom: 10px; }
+    .lm-otp-title { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+    .lm-otp-desc  { font-size: 12px; color: var(--text-muted); }
+    .lm-otp-email { font-size: 13px; font-weight: 700; color: var(--orange); margin-bottom: 16px; }
+    .lm-otp-input {
+      font-size: 24px; font-weight: 800; letter-spacing: 8px; text-align: center;
+      width: 100%; max-width: 190px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 10px 8px; font-family: monospace;
+      color: var(--text); background: rgba(255,255,255,0.05);
+      display: block; margin: 0 auto 12px; outline: none; transition: border-color 0.2s;
+    }
+    .lm-otp-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(249,115,22,0.12); }
+    .lm-otp-timer  { font-size: 11px; color: var(--text-muted); margin: 0 0 4px; }
+    .lm-otp-resend {
+      font-size: 11px; color: var(--text-muted); background: none; border: none;
+      cursor: not-allowed; font-weight: 600; padding: 4px; font-family: var(--font);
+    }
+    .lm-otp-resend.active { color: var(--orange); cursor: pointer; }
+    .lm-otp-back {
+      margin-top: 8px; font-size: 11px; color: var(--text-muted);
+      background: none; border: none; cursor: pointer; font-family: var(--font);
+    }
   </style>
 </head>
 <body>
@@ -707,12 +822,13 @@
       <ul class="nav-links">
         <li><a href="/">Home</a></li>
         <li><a href="/jobs.html">Jobs</a></li>
+        <li><a href="/companies.html">Companies</a></li>
         <li><a href="/employer.html">Employers</a></li>
         <li><a href="/resume-builder.html">AI Tools</a></li>
       </ul>
 
       <div class="nav-right">
-        <a href="/login.html" class="btn-ghost">Sign In</a>
+        <button class="btn-ghost" onclick="openLoginModal()">Sign In</button>
         <a href="/register.html" class="btn-primary">
           Get Started
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -871,22 +987,22 @@
     <div class="trust-track" id="trust-track">
       <!-- set 1 -->
       <div class="trust-item"><div class="trust-stat">2,400+</div><div><div class="trust-item-text">Active Jobs</div><div class="trust-item-sub">Across Canada</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🏢</div><div><div class="trust-item-text">PCL Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🏗️</div><div><div class="trust-item-text">Jobs from Employers</div><div class="trust-item-sub">Across Canada</div></div></div>
       <div class="trust-item"><div class="trust-stat">94%</div><div><div class="trust-item-text">Match Accuracy</div><div class="trust-item-sub">AI-powered</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🔨</div><div><div class="trust-item-text">EllisDon</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">📍</div><div><div class="trust-item-text">Jobs from Ontario</div><div class="trust-item-sub">Trades &amp; Construction</div></div></div>
       <div class="trust-item"><div class="trust-stat">180+</div><div><div class="trust-item-text">Employers</div><div class="trust-item-sub">Active on platform</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">⚡</div><div><div class="trust-item-text">Graham Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">📍</div><div><div class="trust-item-text">Jobs from BC &amp; Alberta</div><div class="trust-item-sub">Trades &amp; Construction</div></div></div>
       <div class="trust-item"><div class="trust-stat">3×</div><div><div class="trust-item-text">Faster Interviews</div><div class="trust-item-sub">vs job boards</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🌟</div><div><div class="trust-item-text">Bird Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🔧</div><div><div class="trust-item-text">All Trades Welcome</div><div class="trust-item-sub">Electricians, Welders &amp; more</div></div></div>
       <!-- set 2 (duplicate for seamless loop) -->
       <div class="trust-item"><div class="trust-stat">2,400+</div><div><div class="trust-item-text">Active Jobs</div><div class="trust-item-sub">Across Canada</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🏢</div><div><div class="trust-item-text">PCL Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🏗️</div><div><div class="trust-item-text">Jobs from Employers</div><div class="trust-item-sub">Across Canada</div></div></div>
       <div class="trust-item"><div class="trust-stat">94%</div><div><div class="trust-item-text">Match Accuracy</div><div class="trust-item-sub">AI-powered</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🔨</div><div><div class="trust-item-text">EllisDon</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">📍</div><div><div class="trust-item-text">Jobs from Ontario</div><div class="trust-item-sub">Trades &amp; Construction</div></div></div>
       <div class="trust-item"><div class="trust-stat">180+</div><div><div class="trust-item-text">Employers</div><div class="trust-item-sub">Active on platform</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">⚡</div><div><div class="trust-item-text">Graham Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">📍</div><div><div class="trust-item-text">Jobs from BC &amp; Alberta</div><div class="trust-item-sub">Trades &amp; Construction</div></div></div>
       <div class="trust-item"><div class="trust-stat">3×</div><div><div class="trust-item-text">Faster Interviews</div><div class="trust-item-sub">vs job boards</div></div></div>
-      <div class="trust-item"><div class="trust-item-icon">🌟</div><div><div class="trust-item-text">Bird Construction</div><div class="trust-item-sub">Hiring Partner</div></div></div>
+      <div class="trust-item"><div class="trust-item-icon">🔧</div><div><div class="trust-item-text">All Trades Welcome</div><div class="trust-item-sub">Electricians, Welders &amp; more</div></div></div>
     </div>
   </div>
 
@@ -1301,6 +1417,315 @@
       track.addEventListener('mouseenter', () => track.style.animationPlayState = 'paused');
       track.addEventListener('mouseleave', () => track.style.animationPlayState = 'running');
     }
+
+    // ── Login Modal ──────────────────────────
+    var _lmRole = 'worker';
+    var _lmTimerIv = null, _lmResendIv = null;
+
+    var LM_ROLES = {
+      worker: {
+        icon: '👷', title: 'Job Seeker Login', sub: 'Welcome back — find your next job',
+        btnText: 'Login as Job Seeker', redirect: '/dashboard.html'
+      },
+      employer: {
+        icon: '🏢', title: 'Employer Login', sub: 'Welcome back — manage your jobs',
+        btnText: 'Login as Employer', redirect: '/employer.html'
+      }
+    };
+
+    function openLoginModal(role) {
+      document.getElementById('login-modal-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      lmSelectRole(role || 'worker');
+      lmShowForm();
+    }
+    function closeLoginModal() {
+      document.getElementById('login-modal-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+      clearInterval(_lmTimerIv);
+      clearInterval(_lmResendIv);
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { closeLoginModal(); closeDemo(); }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('login-modal-overlay').addEventListener('click', function(e) {
+        if (e.target === this) closeLoginModal();
+      });
+      document.getElementById('lm-otp-input').addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').slice(0, 6);
+        if (this.value.length === 6) lmVerifyOtp();
+      });
+
+      // Form submit — must be wired after DOM is ready (form lives after this script block)
+      document.getElementById('lm-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var btn   = document.getElementById('lm-submit-btn');
+        var errEl = document.getElementById('lm-error');
+        var email = document.getElementById('lm-email').value.trim();
+        var pass  = document.getElementById('lm-password').value;
+
+        errEl.classList.add('lm-hidden');
+        btn.disabled = true;
+        btn.textContent = 'Logging in\u2026';
+
+        try {
+          var res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: pass, role: _lmRole.toUpperCase() })
+          });
+          var data = await res.json();
+
+          if (res.ok && data.token) {
+            if (typeof Auth !== 'undefined') Auth.save(data.token, data.user);
+            else { localStorage.setItem('tu_token', data.token); localStorage.setItem('tu_user', JSON.stringify(data.user)); }
+            closeLoginModal();
+            window.location.href = lmNextUrl(LM_ROLES[_lmRole].redirect);
+            return; // keep button disabled — page is navigating
+          } else if (data.requiresOtp) {
+            window._lmEmail = email;
+            window._lmPass  = pass;
+            lmShowOtp(data.masked || email);
+          } else {
+            errEl.textContent = data.error || 'Invalid credentials';
+            errEl.classList.remove('lm-hidden');
+          }
+        } catch (err) {
+          errEl.textContent = 'Network error \u2014 please try again';
+          errEl.classList.remove('lm-hidden');
+        }
+
+        btn.disabled = false;
+        btn.textContent = LM_ROLES[_lmRole].btnText;
+      });
+    });
+
+    function lmSelectRole(role) {
+      _lmRole = role;
+      var cfg = LM_ROLES[role];
+      document.getElementById('lm-choice-worker').classList.toggle('active', role === 'worker');
+      document.getElementById('lm-choice-employer').classList.toggle('active', role === 'employer');
+      document.getElementById('lm-card-icon').textContent  = cfg.icon;
+      document.getElementById('lm-card-title').textContent = cfg.title;
+      document.getElementById('lm-card-sub').textContent   = cfg.sub;
+      document.getElementById('lm-submit-btn').textContent = cfg.btnText;
+    }
+
+    function lmShowForm() {
+      document.getElementById('lm-form-wrap').classList.remove('lm-hidden');
+      document.getElementById('lm-otp-panel').classList.add('lm-hidden');
+      document.getElementById('lm-error').classList.add('lm-hidden');
+    }
+    function lmShowOtp(maskedEmail) {
+      document.getElementById('lm-otp-email').textContent = maskedEmail;
+      document.getElementById('lm-form-wrap').classList.add('lm-hidden');
+      document.getElementById('lm-otp-panel').classList.remove('lm-hidden');
+      document.getElementById('lm-otp-input').value = '';
+      document.getElementById('lm-otp-input').focus();
+      lmStartTimer(10 * 60);
+      lmStartResend(60);
+    }
+
+    async function lmVerifyOtp() {
+      var inp   = document.getElementById('lm-otp-input');
+      var errEl = document.getElementById('lm-otp-error');
+      var btn   = document.getElementById('lm-otp-submit');
+      var otp   = inp.value.trim();
+
+      if (otp.length !== 6) {
+        errEl.textContent = 'Please enter the 6-digit code';
+        errEl.classList.remove('lm-hidden');
+        return;
+      }
+      errEl.classList.add('lm-hidden');
+      btn.disabled = true;
+      btn.textContent = 'Verifying…';
+
+      try {
+        var res = await fetch('/api/auth/verify-login-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: window._lmEmail, otp: otp })
+        });
+        var data = await res.json();
+
+        if (res.ok && data.token) {
+          if (typeof Auth !== 'undefined') Auth.save(data.token, data.user);
+          else { localStorage.setItem('tu_token', data.token); localStorage.setItem('tu_user', JSON.stringify(data.user)); }
+          closeLoginModal();
+          window.location.href = lmNextUrl(LM_ROLES[_lmRole].redirect);
+        } else {
+          errEl.textContent = data.error || 'Invalid code — try again';
+          errEl.classList.remove('lm-hidden');
+          btn.disabled = false;
+          btn.textContent = 'Verify Code';
+        }
+      } catch (err) {
+        errEl.textContent = 'Network error';
+        errEl.classList.remove('lm-hidden');
+        btn.disabled = false;
+        btn.textContent = 'Verify Code';
+      }
+    }
+
+    async function lmResendOtp() {
+      var btn   = document.getElementById('lm-otp-resend');
+      var errEl = document.getElementById('lm-otp-error');
+      btn.disabled = true;
+      try {
+        var res = await fetch('/api/auth/resend-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: window._lmEmail, purpose: 'LOGIN' })
+        });
+        var data = await res.json();
+        if (res.ok) {
+          errEl.classList.add('lm-hidden');
+          document.getElementById('lm-otp-input').value = '';
+          document.getElementById('lm-otp-input').focus();
+          lmStartTimer(10 * 60);
+          lmStartResend(60);
+        } else {
+          errEl.textContent = data.error || 'Failed to resend';
+          errEl.classList.remove('lm-hidden');
+          btn.disabled = false;
+        }
+      } catch (e) {
+        btn.disabled = false;
+      }
+    }
+
+    function lmStartTimer(secs) {
+      clearInterval(_lmTimerIv);
+      var rem = secs;
+      var el  = document.getElementById('lm-otp-timer');
+      var inp = document.getElementById('lm-otp-input');
+      var sub = document.getElementById('lm-otp-submit');
+      var tick = function() {
+        if (rem <= 0) { clearInterval(_lmTimerIv); el.textContent = 'Code expired.'; el.style.color = '#ef4444'; if (inp) inp.disabled = true; if (sub) sub.disabled = true; return; }
+        var m = String(Math.floor(rem/60)).padStart(2,'0'), s = String(rem%60).padStart(2,'0');
+        el.textContent = 'Expires in ' + m + ':' + s;
+        el.style.color = rem < 60 ? '#ef4444' : '';
+        rem--;
+      };
+      tick(); _lmTimerIv = setInterval(tick, 1000);
+    }
+    function lmStartResend(secs) {
+      clearInterval(_lmResendIv);
+      var rem = secs;
+      var btn = document.getElementById('lm-otp-resend');
+      btn.disabled = true; btn.classList.remove('active');
+      var tick = function() {
+        if (rem <= 0) { clearInterval(_lmResendIv); btn.disabled = false; btn.classList.add('active'); btn.textContent = 'Resend code'; return; }
+        btn.textContent = 'Resend code (' + rem + 's)'; rem--;
+      };
+      tick(); _lmResendIv = setInterval(tick, 1000);
+    }
+
+    function lmTogglePwd() {
+      var inp = document.getElementById('lm-password');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    // Redirect destination after login
+    function lmNextUrl(defaultUrl) {
+      var p = new URLSearchParams(window.location.search);
+      return p.get('next') || defaultUrl;
+    }
+
+    // Open modal if URL has ?login=1 (defer until DOM is ready — modal HTML is below this script)
+    document.addEventListener('DOMContentLoaded', function() {
+      var p = new URLSearchParams(window.location.search);
+      if (p.get('login') === '1') openLoginModal(p.get('role') || 'worker');
+    });
   </script>
+
+  <!-- ── Login Modal ───────────────────────────────────── -->
+  <div id="login-modal-overlay">
+    <div class="login-modal">
+      <div class="lm-header">
+        <div class="lm-logo">ConsTradeHire<span>.</span></div>
+        <button class="lm-close" onclick="closeLoginModal()">✕</button>
+      </div>
+      <div class="lm-body">
+
+        <!-- Role chooser -->
+        <div class="lm-role-chooser">
+          <div class="lm-role-choice active" id="lm-choice-worker" onclick="lmSelectRole('worker')">
+            <div class="lm-role-icon">👷</div>
+            <div class="lm-role-title">Job Seeker</div>
+            <div class="lm-role-sub">Find jobs</div>
+          </div>
+          <div class="lm-role-choice" id="lm-choice-employer" onclick="lmSelectRole('employer')">
+            <div class="lm-role-icon">🏢</div>
+            <div class="lm-role-title">Employer</div>
+            <div class="lm-role-sub">Post &amp; hire</div>
+          </div>
+        </div>
+
+        <!-- Login card -->
+        <div class="lm-card">
+          <div class="lm-card-header">
+            <div class="lm-card-icon" id="lm-card-icon">👷</div>
+            <div>
+              <div class="lm-card-title" id="lm-card-title">Job Seeker Login</div>
+              <div class="lm-card-sub"   id="lm-card-sub">Welcome back — find your next job</div>
+            </div>
+          </div>
+
+          <div id="lm-error" class="lm-alert lm-alert-error lm-hidden"></div>
+
+          <!-- OTP panel -->
+          <div id="lm-otp-panel" class="lm-otp-panel lm-hidden">
+            <div class="lm-otp-icon">🔐</div>
+            <div class="lm-otp-title">Enter your login code</div>
+            <p class="lm-otp-desc">We sent a 6-digit code to</p>
+            <p id="lm-otp-email" class="lm-otp-email"></p>
+            <div id="lm-otp-error" class="lm-alert lm-alert-error lm-hidden" style="text-align:left;margin-bottom:10px;"></div>
+            <input id="lm-otp-input" type="text" inputmode="numeric" pattern="[0-9]*"
+              maxlength="6" placeholder="000000" class="lm-otp-input" autocomplete="one-time-code" />
+            <button id="lm-otp-submit" class="lm-btn" onclick="lmVerifyOtp()" style="max-width:190px;margin:0 auto 10px;">Verify Code</button>
+            <p id="lm-otp-timer" class="lm-otp-timer"></p>
+            <button id="lm-otp-resend" class="lm-otp-resend" onclick="lmResendOtp()" disabled>Resend code</button>
+            <br>
+            <button class="lm-otp-back" onclick="lmShowForm()">← Back</button>
+          </div>
+
+          <!-- Login form -->
+          <div id="lm-form-wrap">
+          <form id="lm-form">
+              <div class="lm-form-group">
+                <label class="lm-label" for="lm-email">Email Address</label>
+                <input class="lm-input" id="lm-email" type="email" placeholder="you@example.com" autocomplete="email" required />
+              </div>
+              <div class="lm-form-group">
+                <label class="lm-label" for="lm-password">Password</label>
+                <div class="lm-pwd-wrap">
+                  <input class="lm-input" id="lm-password" type="password" placeholder="Your password" autocomplete="current-password" required style="padding-right:36px;" />
+                  <button type="button" onclick="lmTogglePwd()" class="lm-pwd-toggle">👁</button>
+                </div>
+              </div>
+              <button type="submit" class="lm-btn" id="lm-submit-btn">Login as Job Seeker</button>
+              <p style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px;">
+                <a href="/forgot-password.html" style="color:var(--text-muted);">Forgot password?</a>
+              </p>
+          </form>
+          </div>
+        </div>
+
+        <div class="lm-divider">
+          <div class="lm-divider-line"></div>
+          <span class="lm-divider-text">OR</span>
+          <div class="lm-divider-line"></div>
+        </div>
+
+        <p style="text-align:center;font-size:12px;color:var(--text-muted);">
+          No account?
+          <a href="/register.html" style="color:var(--orange);font-weight:600;">Create free account →</a>
+        </p>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
