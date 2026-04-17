@@ -1455,6 +1455,49 @@
         this.value = this.value.replace(/\D/g, '').slice(0, 6);
         if (this.value.length === 6) lmVerifyOtp();
       });
+
+      // Form submit — must be wired after DOM is ready (form lives after this script block)
+      document.getElementById('lm-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var btn   = document.getElementById('lm-submit-btn');
+        var errEl = document.getElementById('lm-error');
+        var email = document.getElementById('lm-email').value.trim();
+        var pass  = document.getElementById('lm-password').value;
+
+        errEl.classList.add('lm-hidden');
+        btn.disabled = true;
+        btn.textContent = 'Logging in\u2026';
+
+        try {
+          var res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: pass, role: _lmRole.toUpperCase() })
+          });
+          var data = await res.json();
+
+          if (res.ok && data.token) {
+            if (typeof Auth !== 'undefined') Auth.save(data.token, data.user);
+            else { localStorage.setItem('tu_token', data.token); localStorage.setItem('tu_user', JSON.stringify(data.user)); }
+            closeLoginModal();
+            window.location.href = lmNextUrl(LM_ROLES[_lmRole].redirect);
+            return; // keep button disabled — page is navigating
+          } else if (data.requiresOtp) {
+            window._lmEmail = email;
+            window._lmPass  = pass;
+            lmShowOtp(data.masked || email);
+          } else {
+            errEl.textContent = data.error || 'Invalid credentials';
+            errEl.classList.remove('lm-hidden');
+          }
+        } catch (err) {
+          errEl.textContent = 'Network error \u2014 please try again';
+          errEl.classList.remove('lm-hidden');
+        }
+
+        btn.disabled = false;
+        btn.textContent = LM_ROLES[_lmRole].btnText;
+      });
     });
 
     function lmSelectRole(role) {
@@ -1482,48 +1525,6 @@
       lmStartTimer(10 * 60);
       lmStartResend(60);
     }
-
-    document.getElementById('lm-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      var btn   = document.getElementById('lm-submit-btn');
-      var errEl = document.getElementById('lm-error');
-      var email = document.getElementById('lm-email').value.trim();
-      var pass  = document.getElementById('lm-password').value;
-
-      errEl.classList.add('lm-hidden');
-      btn.disabled = true;
-      btn.textContent = 'Logging in…';
-
-      try {
-        var res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email, password: pass, role: _lmRole.toUpperCase() })
-        });
-        var data = await res.json();
-
-        if (res.ok && data.token) {
-          // Direct login (dev mode or future)
-          if (typeof Auth !== 'undefined') Auth.save(data.token, data.user);
-          else { localStorage.setItem('tu_token', data.token); localStorage.setItem('tu_user', JSON.stringify(data.user)); }
-          closeLoginModal();
-          window.location.href = lmNextUrl(LM_ROLES[_lmRole].redirect);
-        } else if (data.requiresOtp) {
-          window._lmEmail = email;
-          window._lmPass  = pass;
-          lmShowOtp(data.masked || email);
-        } else {
-          errEl.textContent = data.error || 'Invalid credentials';
-          errEl.classList.remove('lm-hidden');
-        }
-      } catch (err) {
-        errEl.textContent = 'Network error — please try again';
-        errEl.classList.remove('lm-hidden');
-      }
-
-      btn.disabled = false;
-      btn.textContent = LM_ROLES[_lmRole].btnText;
-    });
 
     async function lmVerifyOtp() {
       var inp   = document.getElementById('lm-otp-input');
@@ -1632,11 +1633,11 @@
       return p.get('next') || defaultUrl;
     }
 
-    // Open modal if URL has ?login=1
-    (function() {
+    // Open modal if URL has ?login=1 (defer until DOM is ready — modal HTML is below this script)
+    document.addEventListener('DOMContentLoaded', function() {
       var p = new URLSearchParams(window.location.search);
       if (p.get('login') === '1') openLoginModal(p.get('role') || 'worker');
-    })();
+    });
   </script>
 
   <!-- ── Login Modal ───────────────────────────────────── -->
