@@ -23,6 +23,10 @@ model User {
   passwordResetToken  String?
   emailVerifyExpiry   DateTime?
   emailVerifyToken    String?
+  otpCode             String?
+  otpExpiry           DateTime?
+  otpPurpose          String?
+  otpResendAt         DateTime?
   applications        Application[]
   atsResults          AtsResult[]
   jobAlerts           JobAlert[]

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npx prisma generate",
+  "buildCommand": "npx prisma db push --accept-data-loss && npx prisma generate",
   "builds": [
     {
       "src": "server.js",

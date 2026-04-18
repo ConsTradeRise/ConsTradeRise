@@ -16,3 +16,7 @@ uploads/
 *.pdf
 
 .vercel
+
+# Runtime data (not needed in git)
+data/seen-jobs.json
+response.json
