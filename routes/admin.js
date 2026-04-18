@@ -11,11 +11,12 @@
 // ─────────────────────────────────────────────
 
 'use strict';
-const express = require('express');
-const bcrypt  = require('bcryptjs');
-const https   = require('https');
-const prisma  = require('../utils/prisma');
+const express  = require('express');
+const bcrypt   = require('bcryptjs');
+const https    = require('https');
+const prisma   = require('../utils/prisma');
 const { requireAuth, requireRole, generateToken } = require('../middleware/auth');
+const { fetchFullDescription, closeBrowser } = require('../utils/fetchJobDescription');
 
 // ─── Company names to scrape via Adzuna ──────────
 const SCRAPE_COMPANIES = [
@@ -396,11 +397,14 @@ router.post('/scrape-companies', requireAuth, requireRole('ADMIN'), async (req, 
         const exists = await prisma.job.findFirst({ where: { externalUrl: j.externalUrl }, select: { id: true } });
         if (exists) { results.skipped++; continue; }
 
+        // Fetch full description from the actual job page
+        const fullDesc = await fetchFullDescription(j.externalUrl, j.description);
+
         const province = guessProvince(j.location);
         await prisma.job.create({
           data: {
             title:       j.title.trim(),
-            description: j.description.trim(),
+            description: (fullDesc || j.description).trim(),
             location:    j.location,
             city:        j.location.split(',')[0]?.trim() || null,
             province,
@@ -428,6 +432,9 @@ router.post('/scrape-companies', requireAuth, requireRole('ADMIN'), async (req, 
       results.errors.push({ company, error: e.message });
     }
   }
+
+  // Close Puppeteer browser when done
+  await closeBrowser().catch(() => {});
 
   res.json({ ok: true, ...results });
 });
