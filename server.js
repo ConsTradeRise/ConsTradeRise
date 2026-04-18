@@ -1036,11 +1036,21 @@ if (require.main === module) {
   // Auto-expire: deactivate jobs past their expiresAt (runs every 6 hours)
   async function expireOldJobs() {
     try {
-      const { count } = await prisma.job.updateMany({
-        where: { isActive: true, expiresAt: { lt: new Date() } },
+      const now = new Date();
+
+      // Delete expired API/scraped jobs completely
+      const { count: deleted } = await prisma.job.deleteMany({
+        where: { source: 'API', expiresAt: { lt: now } }
+      });
+
+      // Deactivate expired MANUAL employer jobs (keep for employer's reference)
+      const { count: deactivated } = await prisma.job.updateMany({
+        where: { source: 'MANUAL', isActive: true, expiresAt: { lt: now } },
         data: { isActive: false }
       });
-      if (count > 0) console.log(`[expire] Deactivated ${count} expired job(s).`);
+
+      if (deleted > 0)     console.log(`[expire] Deleted ${deleted} expired API job(s).`);
+      if (deactivated > 0) console.log(`[expire] Deactivated ${deactivated} expired manual job(s).`);
     } catch (e) {
       console.error('[expire] Error:', e.message);
     }
