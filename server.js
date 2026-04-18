@@ -169,6 +169,15 @@ const reportLimiter = rateLimit({
   message: { error: 'Too many reports submitted. Please try again later.' }
 });
 
+// Rate limiting — admin login (5 attempts / 15 min per IP)
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many admin login attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 app.use('/api/', apiLimiter);
 
 // ============================================================
@@ -208,6 +217,7 @@ app.use('/api/profile',       profileRoutes);
 app.use('/api/applications',  applicationRoutes);
 app.use('/api/messages',      messageRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.post('/api/admin/auth/login', adminLoginLimiter);
 app.use('/api/admin',         adminRoutes);
 app.use('/api/cover-letter', coverLetterRoutes);
 app.use('/api/ai',          aiLimiter, require('./routes/ai'));
@@ -907,7 +917,7 @@ Requirements: Under 150 words, professional tone, reiterate interest, clear call
 //  PREFERENCES
 // ============================================================
 app.get('/api/preferences', apiLimiter, (req, res) => res.json(searchPrefs));
-app.post('/api/preferences', apiLimiter, requireAuth, (req, res) => {
+app.post('/api/preferences', apiLimiter, requireAuth, require('./middleware/auth').requireRole('ADMIN'), (req, res) => {
   const { roles, location, autoSearchInterval } = req.body;
   if (Array.isArray(roles))   searchPrefs.roles = roles;
   if (location)               searchPrefs.location = location;
