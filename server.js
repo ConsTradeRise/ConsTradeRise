@@ -1057,6 +1057,26 @@ if (require.main === module) {
   }
   setTimeout(expireOldJobs, 10000);
   setInterval(expireOldJobs, 6 * 60 * 60 * 1000);
+
+  // ── Auto-scrape construction company jobs every 3 hours ──
+  const { scrapeAllCompanies } = require('./utils/companyScraper');
+  let isScraping = false;
+  async function runCompanyScrape() {
+    if (isScraping) return;
+    isScraping = true;
+    console.log('[companyScrape] Starting scheduled scrape...');
+    try {
+      const r = await scrapeAllCompanies();
+      console.log(`[companyScrape] Done — +${r.added} added, ${r.skipped} skipped, ${r.errors.length} errors`);
+    } catch (e) {
+      console.error('[companyScrape] Error:', e.message);
+    } finally {
+      isScraping = false;
+    }
+  }
+  // First run 2 min after boot, then every 3 hours
+  setTimeout(runCompanyScrape, 2 * 60 * 1000);
+  setInterval(runCompanyScrape, 3 * 60 * 60 * 1000);
 }
 
 // ─── JOB ALERTS ──────────────────────────────────────────────
